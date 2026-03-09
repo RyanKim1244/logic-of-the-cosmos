@@ -46,8 +46,8 @@ The non-relativistic cyclotron frequency would be $\\omega_0 = \\frac{qB}{m_0}$,
 $$\\omega_c = \\frac{\\omega_0}{\\gamma} = \\frac{3}{5}\\omega_0$$
 
 The relativistic cyclotron frequency is reduced by a factor of $\\gamma$.`,
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-15",
+    createdAt: "2026-01-15",
+    updatedAt: "2026-01-15",
   },
   {
     id: "kpho-2022-3",
@@ -91,8 +91,8 @@ $$Q_{41} = nC_v(T_1 - T_4) = \\frac{3}{2}(P_1 - P_2)V_1 = \\frac{3}{2}(2P_2)V_1 
 한 순환에서 한 일: $W = (P_1 - P_2)(V_2 - V_1) = 2P_2 \\cdot V_1$
 
 $$\\eta = \\frac{W}{Q_{\\text{in}}} = \\frac{2P_2 V_1}{\\frac{21}{2}P_2 V_1} = \\frac{4}{21} \\approx 19.0\\%$$`,
-    createdAt: "2024-02-01",
-    updatedAt: "2024-02-01",
+    createdAt: "2026-02-01",
+    updatedAt: "2026-02-01",
   },
   {
     id: "icho-2023-2",
@@ -131,8 +131,8 @@ $\\text{NH}_3$ is a strong-field ligand (high in the spectrochemical series), so
 For low-spin $d^6$: $t_{2g}^6 e_g^0$ — all six electrons are paired in the $t_{2g}$ set.
 
 **(d)** $\\text{F}^-$ is a weak-field ligand (low in the spectrochemical series), so $[\\text{CoF}_6]^{3-}$ has a smaller $\\Delta_o$. A smaller $\\Delta_o$ means the complex absorbs lower-energy (longer wavelength) light, resulting in a different transmitted color. $[\\text{CoF}_6]^{3-}$ is high-spin and appears blue, while $[\\text{Co}(\\text{NH}_3)_6]^{3+}$ appears orange/yellow.`,
-    createdAt: "2024-01-20",
-    updatedAt: "2024-01-20",
+    createdAt: "2026-01-20",
+    updatedAt: "2026-01-20",
   },
   {
     id: "kmo-2023-1",
@@ -157,8 +157,8 @@ $$k^{p-1} \\equiv 1 \\pmod{p}$$
 $$\\sum_{k=1}^{p-1} k^{p-1} \\equiv \\sum_{k=1}^{p-1} 1 = p - 1 \\equiv -1 \\pmod{p}$$
 
 $\\blacksquare$`,
-    createdAt: "2024-03-10",
-    updatedAt: "2024-03-10",
+    createdAt: "2026-03-10",
+    updatedAt: "2026-03-10",
   },
   {
     id: "ibo-2022-1",
@@ -206,8 +206,8 @@ The repressor cannot bind, so the operon is always partially active regardless o
 - +Glucose, +Lactose: **Low** (no CAP activation)
 
 **(d)** When glucose is absent, adenylyl cyclase produces cAMP. cAMP binds to CAP (catabolite activator protein), forming the CAP-cAMP complex. This complex binds to the CAP binding site upstream of the *lac* promoter, bending the DNA and enhancing RNA polymerase binding, thereby increasing transcription ~50-fold. This ensures that the *lac* operon is maximally expressed only when glucose is absent (catabolite repression).`,
-    createdAt: "2024-02-15",
-    updatedAt: "2024-02-15",
+    createdAt: "2026-02-15",
+    updatedAt: "2026-02-15",
   },
   {
     id: "snu-physics-2023",
@@ -254,8 +254,8 @@ $$\\Delta x = \\sqrt{\\langle x^2 \\rangle - \\langle x \\rangle^2} = L\\sqrt{\\
 $$\\Delta x \\to \\frac{L}{\\sqrt{12}} = \\frac{L}{2\\sqrt{3}}$$
 
 이는 고전역학에서 $[0, L]$ 구간에 균일하게 분포된 입자의 위치 표준편차와 정확히 일치한다 (대응원리).`,
-    createdAt: "2024-04-01",
-    updatedAt: "2024-04-01",
+    createdAt: "2026-04-01",
+    updatedAt: "2026-04-01",
   },
   {
     id: "kpho-2023-5",
@@ -304,8 +304,8 @@ $$k = \\frac{36 \\cdot 2^{2/3} \\times 1.654 \\times 10^{-21}}{(3.405 \\times 10
 아르곤의 환산 질량 $\\mu = m_{\\text{Ar}}/2 = 3.32 \\times 10^{-26}$ kg이므로:
 
 $$f = \\frac{1}{2\\pi}\\sqrt{\\frac{k}{\\mu}} = \\frac{1}{2\\pi}\\sqrt{\\frac{0.815}{3.32 \\times 10^{-26}}} \\approx 7.9 \\times 10^{11} \\text{ Hz}$$`,
-    createdAt: "2024-05-01",
-    updatedAt: "2024-05-01",
+    createdAt: "2026-05-01",
+    updatedAt: "2026-05-01",
   },
 ];
 
@@ -315,7 +315,7 @@ export const discussions: Discussion[] = [
     problemId: "ipho-2023-1",
     author: "PhysicsStudent42",
     content: "Part (c)에서 $\\omega_c = \\frac{qB}{\\gamma m_0}$이 되는 물리적 직관이 궁금합니다. 왜 상대론적 질량이 커지면 주파수가 줄어드는 건가요?",
-    createdAt: "2024-01-20",
+    createdAt: "2026-01-20",
     parentId: null,
   },
   {
@@ -323,7 +323,7 @@ export const discussions: Discussion[] = [
     problemId: "ipho-2023-1",
     author: "RelativityExpert",
     content: "좋은 질문입니다! 직관적으로, 상대론적 입자는 '더 무거운' 것처럼 행동하므로 같은 힘에 대해 가속이 덜 됩니다. 따라서 원을 한 바퀴 도는 데 더 오래 걸리고, 주파수가 감소합니다. 이것이 싱크로트론에서 주파수를 조절해야 하는 이유입니다.",
-    createdAt: "2024-01-21",
+    createdAt: "2026-01-21",
     parentId: "disc-1",
   },
   {
@@ -331,7 +331,7 @@ export const discussions: Discussion[] = [
     problemId: "kpho-2022-3",
     author: "ThermodynamicsFan",
     content: "효율이 카르노 효율보다 낮은 것은 당연하지만, 구체적으로 이 사이클의 비가역성이 어디서 발생하는지 분석해볼 수 있을까요?",
-    createdAt: "2024-02-05",
+    createdAt: "2026-02-05",
     parentId: null,
   },
   {
@@ -339,7 +339,7 @@ export const discussions: Discussion[] = [
     problemId: "kmo-2023-1",
     author: "NumberTheorist",
     content: "페르마의 소정리를 직접 적용하면 바로 풀리는 문제네요. 그런데 $p = 2, 3$일 때도 성립하는지 확인해보는 것도 좋은 연습이 될 것 같습니다.",
-    createdAt: "2024-03-15",
+    createdAt: "2026-03-15",
     parentId: null,
   },
 ];

@@ -46,7 +46,7 @@ export default function RootLayout({
         <footer className="bg-black text-neutral-500 py-10 mt-20 border-t border-neutral-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-sm font-light tracking-wide">
-              &copy; 2024 Logic of The Cosmos
+              &copy; 2026 Logic of The Cosmos
             </p>
             <p className="text-xs mt-2 text-neutral-600">
               과학 올림피아드 문제 학습 플랫폼
