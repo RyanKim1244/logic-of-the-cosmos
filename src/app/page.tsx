@@ -1,22 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { problems } from "@/data/problems";
+import { problems, discussions } from "@/data/problems";
 import ProblemCard from "@/components/ProblemCard";
 import HeroBackground from "@/components/HeroBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 import CountUp from "@/components/CountUp";
-import { SUBJECT_LABELS, Subject } from "@/types";
 
 export default function Home() {
   const recentProblems = problems.slice(0, 3);
-  const subjectCounts = problems.reduce(
-    (acc, p) => {
-      acc[p.subject] = (acc[p.subject] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const uniqueAuthors = new Set(discussions.map((d) => d.author)).size;
 
   return (
     <div>
@@ -76,13 +69,11 @@ export default function Home() {
           <ScrollReveal>
             <h2 className="text-center text-xs text-neutral-400 uppercase tracking-[0.3em] mb-14">Platform Overview</h2>
           </ScrollReveal>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             {[
-              { label: "전체 문제", value: problems.length },
-              ...(Object.keys(SUBJECT_LABELS) as Subject[]).slice(0, 3).map((subject) => ({
-                label: SUBJECT_LABELS[subject],
-                value: subjectCounts[subject] || 0,
-              })),
+              { label: "총 문제 수", value: problems.length },
+              { label: "토론 댓글 수", value: discussions.length },
+              { label: "참여자 수", value: uniqueAuthors },
             ].map((stat, i) => (
               <ScrollReveal key={stat.label} delay={i * 100}>
                 <div className="p-8 text-center border border-neutral-200 bg-white stat-card">
