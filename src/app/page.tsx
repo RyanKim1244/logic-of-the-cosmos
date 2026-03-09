@@ -21,13 +21,18 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="hero-gradient text-white py-32 md:py-44 relative overflow-hidden">
+      <section className="hero-gradient text-white py-36 md:py-52 relative overflow-hidden">
         <StarField />
+
+        {/* Ambient glow effects */}
+        <div className="hero-glow absolute top-1/4 left-1/4" />
+        <div className="hero-glow absolute bottom-1/4 right-1/4" style={{ animationDelay: "3s" }} />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h1 className="text-5xl md:text-7xl font-extralight mb-8 tracking-tight hero-title">
-            Logic of The Cosmos
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extralight mb-8 tracking-tight hero-title">
+            Logic of The <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-blue-400 bg-clip-text text-transparent">Cosmos</span>
           </h1>
-          <div className="w-20 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-8 hero-line" />
+          <div className="w-24 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent mx-auto mb-8 hero-line" />
           <p className="text-lg md:text-xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
             과학 올림피아드 문제와 풀이를 제공하는 학습 플랫폼
           </p>
@@ -42,27 +47,30 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Decorative orbiting ring */}
+        {/* Decorative orbiting rings */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] orbit-ring" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[550px] md:h-[550px] orbit-ring-2" />
       </section>
 
       {/* Quote Section */}
-      <section className="py-24 bg-white border-b border-neutral-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-28 quote-section border-b border-neutral-100 relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <ScrollReveal>
             <blockquote className="relative">
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-6xl text-neutral-200 font-serif select-none">&ldquo;</span>
-              <p className="text-xl md:text-2xl font-light text-neutral-800 leading-relaxed italic mb-4">
+              <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-8xl text-neutral-200/60 font-serif select-none">&ldquo;</span>
+              <p className="text-xl md:text-2xl font-light text-neutral-800 leading-relaxed italic mb-5">
                 &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
               </p>
-              <p className="text-base md:text-lg text-neutral-600 font-light mb-6">
-                &ldquo;지구는 인류의 요람이지만, 요람에 평생 머무를 순 없습니다.&rdquo;
+              <p className="text-base md:text-lg text-neutral-600 font-light mb-8 leading-relaxed">
+                &ldquo;지구는 인류의 요람이다. 그러나 영원히 요람 속에 머물 수는 없다.&rdquo;
               </p>
-              <div className="w-10 h-px bg-neutral-300 mx-auto mb-4" />
+              <div className="w-12 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-5" />
               <footer className="text-sm text-neutral-400 tracking-wide">
                 <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
-                <span className="mx-2">&middot;</span>
-                콘스탄틴 치올콥스키
+                <span className="mx-2 text-neutral-300">|</span>
+                <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
+                <span className="mx-2 text-neutral-300">|</span>
+                <span className="text-neutral-400 text-xs tracking-widest">1857 – 1935</span>
               </footer>
             </blockquote>
           </ScrollReveal>
