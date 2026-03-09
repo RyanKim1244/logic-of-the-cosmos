@@ -50,7 +50,12 @@ body {
   font-weight: 600;
 }
 
-/* Inline math: stay inline, no line breaks */
+/* Override Tailwind Preflight: svg { display: block } breaks MathJax inline math */
+mjx-container svg {
+  display: inline !important;
+}
+
+/* Inline math: stay inline */
 mjx-container:not([display="true"]) {
   display: inline !important;
 }
@@ -60,6 +65,11 @@ mjx-container[display="true"] {
   display: block !important;
   margin: 1em 0 !important;
   text-align: center;
+}
+
+mjx-container[display="true"] svg {
+  display: block !important;
+  margin: 0 auto;
 }
 
 .MathJax {
