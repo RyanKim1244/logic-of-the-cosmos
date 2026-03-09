@@ -16,11 +16,13 @@ export default function ProblemsPage() {
         selectedTags.length === 0 || selectedTags.some((tag) => problem.tags.includes(tag));
       const matchesSource =
         selectedSources.length === 0 || selectedSources.includes(problem.source);
+      const query = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
-        problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        problem.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        problem.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        problem.title.toLowerCase().includes(query) ||
+        problem.source.toLowerCase().includes(query) ||
+        problem.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+        String(problem.problemNumber).includes(searchQuery);
       return matchesTags && matchesSource && matchesSearch;
     });
   }, [selectedTags, selectedSources, searchQuery]);

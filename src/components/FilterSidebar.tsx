@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { problems } from "@/data/problems";
 
 interface FilterSidebarProps {
@@ -12,6 +12,102 @@ interface FilterSidebarProps {
   onSearchChange: (query: string) => void;
 }
 
+function Dropdown({
+  label,
+  items,
+  selected,
+  onToggle,
+  renderItem,
+}: {
+  label: string;
+  items: string[];
+  selected: string[];
+  onToggle: (item: string) => void;
+  renderItem: (item: string) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = search
+    ? items.filter((item) => item.toLowerCase().includes(search.toLowerCase()))
+    : items;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2.5 border border-neutral-200 text-sm hover:border-neutral-400 transition-colors bg-white"
+      >
+        <span className="text-neutral-500 text-xs uppercase tracking-wider">{label}</span>
+        <div className="flex items-center gap-2">
+          {selected.length > 0 && (
+            <span className="bg-black text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center px-1.5 py-0.5 font-medium">
+              {selected.length}
+            </span>
+          )}
+          <svg className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {open && (
+        <div className="absolute z-20 top-full left-0 right-0 mt-1 border border-neutral-200 bg-white shadow-lg max-h-64 overflow-hidden flex flex-col">
+          {items.length > 6 && (
+            <div className="p-2 border-b border-neutral-100">
+              <input
+                type="text"
+                placeholder="검색..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs border border-neutral-200 focus:border-black focus:outline-none"
+                autoFocus
+              />
+            </div>
+          )}
+          <div className="overflow-y-auto">
+            {filtered.map((item) => {
+              const isSelected = selected.includes(item);
+              return (
+                <button
+                  key={item}
+                  onClick={() => onToggle(item)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs hover:bg-neutral-50 transition-colors ${
+                    isSelected ? "text-black font-medium" : "text-neutral-600"
+                  }`}
+                >
+                  <span className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 ${
+                    isSelected ? "border-black bg-black" : "border-neutral-300"
+                  }`}>
+                    {isSelected && (
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                  {renderItem(item)}
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="px-3 py-3 text-xs text-neutral-400 text-center">결과 없음</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FilterSidebar({
   selectedTags,
   selectedSources,
@@ -20,7 +116,6 @@ export default function FilterSidebar({
   onSourceChange,
   onSearchChange,
 }: FilterSidebarProps) {
-  // Collect all unique tags and sources
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     problems.forEach((p) => p.tags.forEach((t) => tags.add(t)));
@@ -64,71 +159,75 @@ export default function FilterSidebar({
           )}
         </div>
 
-        <div className="p-5">
+        <div className="p-5 space-y-4">
           {/* Search */}
-          <div className="mb-6">
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="제목, 출처, 태그 검색..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors bg-neutral-50 focus:bg-white"
-              />
-            </div>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="번호, 제목 검색..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-10 pr-3 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors bg-neutral-50 focus:bg-white"
+            />
           </div>
 
-          {/* Source Filter */}
-          <div className="mb-6">
-            <h3 className="text-xs font-medium text-neutral-400 mb-3 uppercase tracking-[0.15em]">출처</h3>
-            <div className="space-y-1.5">
-              {allSources.map((source) => {
-                const isSelected = selectedSources.includes(source);
-                return (
-                  <button
-                    key={source}
-                    onClick={() => toggleSource(source)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-all border ${
-                      isSelected
-                        ? "border-black bg-black text-white"
-                        : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
-                    }`}
-                  >
-                    <span className="text-xs font-medium truncate">{source}</span>
-                    <span className={`text-xs ${isSelected ? "text-neutral-300" : "text-neutral-400"}`}>
-                      {problems.filter((p) => p.source === source).length}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Source Dropdown */}
+          <Dropdown
+            label="출처"
+            items={allSources}
+            selected={selectedSources}
+            onToggle={toggleSource}
+            renderItem={(source) => (
+              <span className="flex items-center justify-between w-full">
+                <span className="truncate">{source}</span>
+                <span className="text-neutral-400 shrink-0 ml-2">
+                  {problems.filter((p) => p.source === source).length}
+                </span>
+              </span>
+            )}
+          />
 
-          {/* Tag Filter */}
-          <div className="mb-5">
-            <h3 className="text-xs font-medium text-neutral-400 mb-3 uppercase tracking-[0.15em]">태그</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {allTags.map((tag) => {
-                const isSelected = selectedTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`px-2.5 py-1.5 text-xs transition-all border ${
-                      isSelected
-                        ? "border-black bg-black text-white"
-                        : "border-neutral-200 text-neutral-500 hover:border-neutral-400"
-                    }`}
-                  >
-                    #{tag}
-                  </button>
-                );
-              })}
+          {/* Tag Dropdown */}
+          <Dropdown
+            label="태그"
+            items={allTags}
+            selected={selectedTags}
+            onToggle={toggleTag}
+            renderItem={(tag) => <span>#{tag}</span>}
+          />
+
+          {/* Selected pills */}
+          {(selectedSources.length > 0 || selectedTags.length > 0) && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {selectedSources.map((source) => (
+                <button
+                  key={source}
+                  onClick={() => toggleSource(source)}
+                  className="flex items-center gap-1 px-2 py-1 bg-neutral-100 text-[10px] text-neutral-600 hover:bg-neutral-200 transition-colors"
+                >
+                  {source}
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              ))}
+              {selectedTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className="flex items-center gap-1 px-2 py-1 bg-neutral-100 text-[10px] text-neutral-600 hover:bg-neutral-200 transition-colors"
+                >
+                  #{tag}
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              ))}
             </div>
-          </div>
+          )}
 
           {/* Reset */}
           {activeCount > 0 && (
