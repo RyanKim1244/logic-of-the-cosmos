@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Discussion } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 interface DiscussionSectionProps {
   problemId: string;
@@ -9,11 +10,14 @@ interface DiscussionSectionProps {
 }
 
 export default function DiscussionSection({ problemId, initialDiscussions }: DiscussionSectionProps) {
+  const { user } = useAuth();
   const [discussions, setDiscussions] = useState<Discussion[]>(initialDiscussions);
   const [newComment, setNewComment] = useState("");
-  const [author, setAuthor] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
   const sectionRef = useRef<HTMLDivElement>(null);
+
+  const authorName = user ? user.name : "Guest";
 
   useEffect(() => {
     if (sectionRef.current && window.MathJax?.typesetPromise) {
@@ -21,21 +25,38 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
     }
   }, [discussions]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !author.trim()) return;
+    if (!newComment.trim()) return;
 
     const discussion: Discussion = {
       id: `disc-${Date.now()}`,
       problemId,
-      author: author.trim(),
+      author: authorName,
       content: newComment.trim(),
+      createdAt: new Date().toISOString().split("T")[0],
+      parentId: null,
+    };
+
+    setDiscussions([...discussions, discussion]);
+    setNewComment("");
+  };
+
+  const handleSubmitReply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyContent.trim() || !replyTo) return;
+
+    const discussion: Discussion = {
+      id: `disc-${Date.now()}`,
+      problemId,
+      author: authorName,
+      content: replyContent.trim(),
       createdAt: new Date().toISOString().split("T")[0],
       parentId: replyTo,
     };
 
     setDiscussions([...discussions, discussion]);
-    setNewComment("");
+    setReplyContent("");
     setReplyTo(null);
   };
 
@@ -44,59 +65,106 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
 
   return (
     <div ref={sectionRef} className="mt-10">
-      <h2 className="text-xl font-light text-black mb-6">토론</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-light text-black">토론</h2>
+        <span className="text-xs text-neutral-400">{discussions.length}개의 댓글</span>
+      </div>
+
+      {/* New comment form */}
+      <div className="border border-neutral-200 p-5 mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="w-8 h-8 bg-black text-white flex items-center justify-center text-xs font-medium shrink-0">
+            {authorName.charAt(0).toUpperCase()}
+          </span>
+          <span className="text-sm font-medium text-black">{authorName}</span>
+          {!user && (
+            <span className="text-xs text-neutral-400">(로그인하면 이름으로 표시됩니다)</span>
+          )}
+        </div>
+        <form onSubmit={handleSubmitComment}>
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="의견을 공유하세요... (LaTeX 수식 사용 가능: $...$ 또는 $$...$$)"
+            className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-sm transition-colors bg-neutral-50 focus:bg-white"
+            rows={4}
+          />
+          <div className="flex justify-end mt-3">
+            <button
+              type="submit"
+              disabled={!newComment.trim()}
+              className="px-6 py-2 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              댓글 등록
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Discussion list */}
-      <div className="space-y-4 mb-8">
+      <div className="space-y-4">
         {topLevel.length === 0 && (
           <p className="text-neutral-400 text-center py-8 text-sm">아직 토론이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
         )}
         {topLevel.map((disc) => (
           <div key={disc.id} className="border border-neutral-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-medium text-black text-sm">{disc.author}</span>
-              <span className="text-xs text-neutral-400">{disc.createdAt}</span>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="w-8 h-8 bg-neutral-800 text-white flex items-center justify-center text-xs font-medium shrink-0">
+                {disc.author.charAt(0).toUpperCase()}
+              </span>
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-black text-sm">{disc.author}</span>
+                <span className="text-xs text-neutral-400 ml-2">{disc.createdAt}</span>
+              </div>
             </div>
-            <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-sm leading-relaxed">{disc.content}</div>
-            <button
-              onClick={() => setReplyTo(replyTo === disc.id ? null : disc.id)}
-              className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors"
-            >
-              {replyTo === disc.id ? "취소" : "답글"}
-            </button>
+            <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-sm leading-relaxed pl-11">{disc.content}</div>
+            <div className="pl-11">
+              <button
+                onClick={() => {
+                  setReplyTo(replyTo === disc.id ? null : disc.id);
+                  setReplyContent("");
+                }}
+                className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors"
+              >
+                {replyTo === disc.id ? "취소" : "답글"}
+              </button>
+            </div>
 
             {/* Replies */}
             {getReplies(disc.id).map((reply) => (
-              <div key={reply.id} className="ml-6 mt-4 pl-4 border-l border-neutral-200">
-                <div className="flex items-center justify-between mb-2">
+              <div key={reply.id} className="ml-11 mt-4 pl-4 border-l-2 border-neutral-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 bg-neutral-200 text-neutral-600 flex items-center justify-center text-xs font-medium shrink-0">
+                    {reply.author.charAt(0).toUpperCase()}
+                  </span>
                   <span className="font-medium text-neutral-700 text-sm">{reply.author}</span>
                   <span className="text-xs text-neutral-400">{reply.createdAt}</span>
                 </div>
-                <div className="text-neutral-600 text-sm whitespace-pre-wrap leading-relaxed">{reply.content}</div>
+                <div className="text-neutral-600 text-sm whitespace-pre-wrap leading-relaxed pl-8">{reply.content}</div>
               </div>
             ))}
 
             {/* Reply form */}
             {replyTo === disc.id && (
-              <form onSubmit={handleSubmit} className="ml-6 mt-4 pl-4 border-l border-neutral-200">
+              <form onSubmit={handleSubmitReply} className="ml-11 mt-4 pl-4 border-l-2 border-neutral-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 bg-black text-white flex items-center justify-center text-xs font-medium shrink-0">
+                    {authorName.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="text-sm text-neutral-500">{authorName}</span>
+                </div>
                 <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
                   placeholder="답글을 작성하세요... (LaTeX 수식 사용 가능: $...$)"
-                  className="w-full px-3 py-2 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none resize-none transition-colors"
+                  className="w-full px-3 py-2 border border-neutral-200 text-sm focus:border-black focus:outline-none resize-none transition-colors bg-neutral-50 focus:bg-white"
                   rows={3}
                 />
-                <div className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="이름"
-                    className="px-3 py-1.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
-                  />
+                <div className="flex justify-end mt-2">
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider"
+                    disabled={!replyContent.trim()}
+                    className="px-4 py-1.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     답글 등록
                   </button>
@@ -105,38 +173,6 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
             )}
           </div>
         ))}
-      </div>
-
-      {/* New comment form */}
-      <div className="border border-neutral-200 p-5">
-        <h3 className="font-medium text-black text-sm mb-4">새 댓글 작성</h3>
-        <form onSubmit={handleSubmit}>
-          <textarea
-            value={replyTo ? "" : newComment}
-            onChange={(e) => {
-              setReplyTo(null);
-              setNewComment(e.target.value);
-            }}
-            placeholder="의견을 공유하세요... (LaTeX 수식 사용 가능: $...$ 또는 $$...$$)"
-            className="w-full px-4 py-3 border border-neutral-300 focus:ring-1 focus:ring-black focus:border-black outline-none resize-none text-sm transition-colors"
-            rows={4}
-          />
-          <div className="flex gap-3 mt-3">
-            <input
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="이름"
-              className="px-4 py-2 border border-neutral-300 focus:ring-1 focus:ring-black focus:border-black outline-none text-sm transition-colors"
-            />
-            <button
-              type="submit"
-              className="px-6 py-2 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider"
-            >
-              댓글 등록
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
