@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { problems, discussions } from "@/data/problems";
+import { contests } from "@/data/contests";
 import ProblemCard from "@/components/ProblemCard";
 import HeroBackground from "@/components/HeroBackground";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -10,6 +11,7 @@ import CountUp from "@/components/CountUp";
 export default function Home() {
   const recentProblems = problems.slice(0, 3);
   const uniqueAuthors = new Set(discussions.map((d) => d.author)).size;
+  const topContests = contests.slice(0, 4);
 
   return (
     <div>
@@ -28,14 +30,21 @@ export default function Home() {
           <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-base font-light hero-subtitle-delay">
             올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
           </p>
-          <Link
-            href="/problems"
-            className="inline-block px-10 py-3.5 bg-white text-black font-medium hover:bg-neutral-200 transition-all text-sm tracking-widest uppercase hero-cta hover:tracking-[0.2em]"
-          >
-            문제 풀러 가기
-          </Link>
+          <div className="flex items-center justify-center gap-4 hero-cta">
+            <Link
+              href="/problems"
+              className="inline-block px-10 py-3.5 bg-white text-black font-medium hover:bg-neutral-200 transition-all text-sm tracking-widest uppercase hover:tracking-[0.2em]"
+            >
+              문제 풀러 가기
+            </Link>
+            <Link
+              href="/contests"
+              className="inline-block px-10 py-3.5 border border-neutral-500 text-neutral-300 font-medium hover:border-white hover:text-white transition-all text-sm tracking-widest uppercase"
+            >
+              기출문제
+            </Link>
+          </div>
         </div>
-
       </section>
 
       {/* Quote Section */}
@@ -69,9 +78,10 @@ export default function Home() {
           <ScrollReveal>
             <h2 className="text-center text-xs text-neutral-400 uppercase tracking-[0.3em] mb-14">Platform Overview</h2>
           </ScrollReveal>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { label: "총 문제 수", value: problems.length },
+              { label: "등록 대회", value: contests.length },
               { label: "토론 댓글 수", value: discussions.length },
               { label: "참여자 수", value: uniqueAuthors },
             ].map((stat, i) => (
@@ -84,6 +94,52 @@ export default function Home() {
                 </div>
               </ScrollReveal>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contests Preview */}
+      <section className="py-24 border-b border-neutral-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h2 className="text-2xl font-light text-black mb-1">기출문제 아카이브</h2>
+                <p className="text-sm text-neutral-400">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
+              </div>
+              <Link
+                href="/contests"
+                className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2"
+              >
+                전체 보기
+                <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+              </Link>
+            </div>
+          </ScrollReveal>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {topContests.map((contest, i) => {
+              const count = problems.filter((p) =>
+                p.source.toLowerCase().includes(contest.shortName.toLowerCase())
+              ).length;
+              return (
+                <ScrollReveal key={contest.id} delay={i * 100}>
+                  <Link href={`/contests/${contest.id}`}>
+                    <div className="border border-neutral-200 p-6 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
+                      <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-widest mb-2">
+                        {contest.shortName}
+                      </span>
+                      <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors mb-2 flex-1">
+                        {contest.name}
+                      </h3>
+                      <div className="flex items-center justify-between text-xs text-neutral-400 pt-3 border-t border-neutral-100">
+                        <span>{contest.years[contest.years.length - 1]}–{contest.years[0]}</span>
+                        <span className="font-medium text-neutral-500">{count}문제</span>
+                      </div>
+                    </div>
+                  </Link>
+                </ScrollReveal>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -158,6 +214,91 @@ export default function Home() {
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Quick Links */}
+      <section className="py-24 bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <h2 className="text-2xl font-light text-center text-black mb-14">빠른 탐색</h2>
+          </ScrollReveal>
+          <div className="grid md:grid-cols-3 gap-6">
+            <ScrollReveal delay={0}>
+              <Link href="/problems" className="block">
+                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group">
+                  <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
+                    <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">?</span>
+                  </div>
+                  <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.
+                  </p>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">
+                    {problems.length}개의 문제 &rarr;
+                  </span>
+                </div>
+              </Link>
+            </ScrollReveal>
+            <ScrollReveal delay={100}>
+              <Link href="/contests" className="block">
+                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group">
+                  <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
+                    <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">#</span>
+                  </div>
+                  <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.
+                  </p>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">
+                    {contests.length}개의 대회 &rarr;
+                  </span>
+                </div>
+              </Link>
+            </ScrollReveal>
+            <ScrollReveal delay={200}>
+              <Link href="/community" className="block">
+                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group">
+                  <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
+                    <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">&gt;</span>
+                  </div>
+                  <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">커뮤니티</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    자유 토론과 질문을 통해 다른 학습자들과 소통하세요.
+                  </p>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">
+                    토론 참여하기 &rarr;
+                  </span>
+                </div>
+              </Link>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-24 border-t border-neutral-200">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <ScrollReveal>
+            <h2 className="text-2xl md:text-3xl font-light text-black mb-4">과학의 경계를 넓혀보세요</h2>
+            <p className="text-neutral-400 text-sm mb-10 max-w-lg mx-auto">
+              수천 개의 문제와 풀이, 활발한 토론이 기다리고 있습니다. 지금 바로 시작하세요.
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <Link
+                href="/problems"
+                className="px-8 py-3 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors"
+              >
+                문제 풀기
+              </Link>
+              <Link
+                href="/login"
+                className="px-8 py-3 border border-neutral-300 text-neutral-700 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
+              >
+                계정 만들기
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
     </div>

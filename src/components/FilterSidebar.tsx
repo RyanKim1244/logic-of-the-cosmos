@@ -148,7 +148,7 @@ export default function FilterSidebar({
 
   return (
     <aside className="w-full lg:w-72 shrink-0">
-      <div className="border border-neutral-200 sticky top-20 overflow-hidden">
+      <div className="border border-neutral-200 sticky top-20">
         {/* Header */}
         <div className="px-5 py-4 bg-black text-white flex items-center justify-between">
           <span className="text-xs font-medium uppercase tracking-[0.2em]">필터</span>
