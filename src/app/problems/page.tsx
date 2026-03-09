@@ -4,27 +4,26 @@ import { useState, useMemo } from "react";
 import { problems } from "@/data/problems";
 import ProblemCard from "@/components/ProblemCard";
 import FilterSidebar from "@/components/FilterSidebar";
-import { Subject, Difficulty } from "@/types";
 
 export default function ProblemsPage() {
-  const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<Difficulty[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredProblems = useMemo(() => {
     return problems.filter((problem) => {
-      const matchesSubject =
-        selectedSubjects.length === 0 || selectedSubjects.includes(problem.subject);
-      const matchesDifficulty =
-        selectedDifficulties.length === 0 || selectedDifficulties.includes(problem.difficulty);
+      const matchesTags =
+        selectedTags.length === 0 || selectedTags.some((tag) => problem.tags.includes(tag));
+      const matchesSource =
+        selectedSources.length === 0 || selectedSources.includes(problem.source);
       const matchesSearch =
         !searchQuery ||
         problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         problem.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
         problem.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesSubject && matchesDifficulty && matchesSearch;
+      return matchesTags && matchesSource && matchesSearch;
     });
-  }, [selectedSubjects, selectedDifficulties, searchQuery]);
+  }, [selectedTags, selectedSources, searchQuery]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -32,11 +31,11 @@ export default function ProblemsPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         <FilterSidebar
-          selectedSubjects={selectedSubjects}
-          selectedDifficulties={selectedDifficulties}
+          selectedTags={selectedTags}
+          selectedSources={selectedSources}
           searchQuery={searchQuery}
-          onSubjectChange={setSelectedSubjects}
-          onDifficultyChange={setSelectedDifficulties}
+          onTagChange={setSelectedTags}
+          onSourceChange={setSelectedSources}
           onSearchChange={setSearchQuery}
         />
 

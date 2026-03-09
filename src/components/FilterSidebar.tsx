@@ -1,56 +1,55 @@
 "use client";
 
-import { Subject, Difficulty, SUBJECT_LABELS, DIFFICULTY_LABELS } from "@/types";
+import { useMemo } from "react";
+import { problems } from "@/data/problems";
 
 interface FilterSidebarProps {
-  selectedSubjects: Subject[];
-  selectedDifficulties: Difficulty[];
+  selectedTags: string[];
+  selectedSources: string[];
   searchQuery: string;
-  onSubjectChange: (subjects: Subject[]) => void;
-  onDifficultyChange: (difficulties: Difficulty[]) => void;
+  onTagChange: (tags: string[]) => void;
+  onSourceChange: (sources: string[]) => void;
   onSearchChange: (query: string) => void;
 }
 
-const SUBJECT_ICONS: Record<Subject, string> = {
-  physics: "⚛",
-  chemistry: "⚗",
-  biology: "🧬",
-  math: "∑",
-  "earth-science": "🌍",
-};
-
-const DIFFICULTY_DOTS: Record<Difficulty, string> = {
-  easy: "bg-emerald-400",
-  medium: "bg-amber-400",
-  hard: "bg-orange-500",
-  olympiad: "bg-red-500",
-};
-
 export default function FilterSidebar({
-  selectedSubjects,
-  selectedDifficulties,
+  selectedTags,
+  selectedSources,
   searchQuery,
-  onSubjectChange,
-  onDifficultyChange,
+  onTagChange,
+  onSourceChange,
   onSearchChange,
 }: FilterSidebarProps) {
-  const toggleSubject = (subject: Subject) => {
-    if (selectedSubjects.includes(subject)) {
-      onSubjectChange(selectedSubjects.filter((s) => s !== subject));
+  // Collect all unique tags and sources
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    problems.forEach((p) => p.tags.forEach((t) => tags.add(t)));
+    return Array.from(tags).sort();
+  }, []);
+
+  const allSources = useMemo(() => {
+    const sources = new Set<string>();
+    problems.forEach((p) => sources.add(p.source));
+    return Array.from(sources).sort();
+  }, []);
+
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      onTagChange(selectedTags.filter((t) => t !== tag));
     } else {
-      onSubjectChange([...selectedSubjects, subject]);
+      onTagChange([...selectedTags, tag]);
     }
   };
 
-  const toggleDifficulty = (difficulty: Difficulty) => {
-    if (selectedDifficulties.includes(difficulty)) {
-      onDifficultyChange(selectedDifficulties.filter((d) => d !== difficulty));
+  const toggleSource = (source: string) => {
+    if (selectedSources.includes(source)) {
+      onSourceChange(selectedSources.filter((s) => s !== source));
     } else {
-      onDifficultyChange([...selectedDifficulties, difficulty]);
+      onSourceChange([...selectedSources, source]);
     }
   };
 
-  const activeCount = selectedSubjects.length + selectedDifficulties.length + (searchQuery ? 1 : 0);
+  const activeCount = selectedTags.length + selectedSources.length + (searchQuery ? 1 : 0);
 
   return (
     <aside className="w-full lg:w-72 shrink-0">
@@ -74,7 +73,7 @@ export default function FilterSidebar({
               </svg>
               <input
                 type="text"
-                placeholder="문제 제목, 출처, 태그..."
+                placeholder="제목, 출처, 태그 검색..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="w-full pl-10 pr-3 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors bg-neutral-50 focus:bg-white"
@@ -82,48 +81,49 @@ export default function FilterSidebar({
             </div>
           </div>
 
-          {/* Subject Filter */}
+          {/* Source Filter */}
           <div className="mb-6">
-            <h3 className="text-xs font-medium text-neutral-400 mb-3 uppercase tracking-[0.15em]">과목</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {(Object.keys(SUBJECT_LABELS) as Subject[]).map((subject) => {
-                const isSelected = selectedSubjects.includes(subject);
+            <h3 className="text-xs font-medium text-neutral-400 mb-3 uppercase tracking-[0.15em]">출처</h3>
+            <div className="space-y-1.5">
+              {allSources.map((source) => {
+                const isSelected = selectedSources.includes(source);
                 return (
                   <button
-                    key={subject}
-                    onClick={() => toggleSubject(subject)}
-                    className={`flex items-center gap-2 px-3 py-2.5 text-sm transition-all border ${
+                    key={source}
+                    onClick={() => toggleSource(source)}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-all border ${
                       isSelected
                         ? "border-black bg-black text-white"
                         : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
                     }`}
                   >
-                    <span className="text-xs">{SUBJECT_ICONS[subject]}</span>
-                    <span className="text-xs font-medium">{SUBJECT_LABELS[subject]}</span>
+                    <span className="text-xs font-medium truncate">{source}</span>
+                    <span className={`text-xs ${isSelected ? "text-neutral-300" : "text-neutral-400"}`}>
+                      {problems.filter((p) => p.source === source).length}
+                    </span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Difficulty Filter */}
+          {/* Tag Filter */}
           <div className="mb-5">
-            <h3 className="text-xs font-medium text-neutral-400 mb-3 uppercase tracking-[0.15em]">난이도</h3>
-            <div className="space-y-1.5">
-              {(Object.keys(DIFFICULTY_LABELS) as Difficulty[]).map((difficulty) => {
-                const isSelected = selectedDifficulties.includes(difficulty);
+            <h3 className="text-xs font-medium text-neutral-400 mb-3 uppercase tracking-[0.15em]">태그</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {allTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
                 return (
                   <button
-                    key={difficulty}
-                    onClick={() => toggleDifficulty(difficulty)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-all border ${
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`px-2.5 py-1.5 text-xs transition-all border ${
                       isSelected
-                        ? "border-black bg-neutral-900 text-white"
-                        : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
+                        ? "border-black bg-black text-white"
+                        : "border-neutral-200 text-neutral-500 hover:border-neutral-400"
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${DIFFICULTY_DOTS[difficulty]}`} />
-                    <span className="text-xs font-medium">{DIFFICULTY_LABELS[difficulty]}</span>
+                    #{tag}
                   </button>
                 );
               })}
@@ -134,8 +134,8 @@ export default function FilterSidebar({
           {activeCount > 0 && (
             <button
               onClick={() => {
-                onSubjectChange([]);
-                onDifficultyChange([]);
+                onTagChange([]);
+                onSourceChange([]);
                 onSearchChange("");
               }}
               className="w-full text-xs text-neutral-400 hover:text-black font-medium py-2.5 border border-neutral-200 hover:border-black transition-all uppercase tracking-widest"
