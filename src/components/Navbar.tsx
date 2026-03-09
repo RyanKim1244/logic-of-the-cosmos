@@ -23,6 +23,12 @@ export default function Navbar() {
               문제 목록
             </Link>
             <Link
+              href="/community"
+              className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
+            >
+              커뮤니티
+            </Link>
+            <Link
               href="/admin"
               className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
             >

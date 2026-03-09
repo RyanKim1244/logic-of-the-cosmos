@@ -25,6 +25,26 @@ export interface Discussion {
   parentId: string | null;
 }
 
+export interface Topic {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  tags: string[];
+  createdAt: string;
+  upvotes: number;
+}
+
+export interface TopicComment {
+  id: string;
+  topicId: string;
+  author: string;
+  content: string;
+  createdAt: string;
+  parentId: string | null;
+  upvotes: number;
+}
+
 export const SUBJECT_LABELS: Record<Subject, string> = {
   physics: "물리학",
   chemistry: "화학",
