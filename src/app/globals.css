@@ -13,6 +13,11 @@ body {
     sans-serif;
 }
 
+::selection {
+  background-color: #000;
+  color: #fff;
+}
+
 .latex-content p {
   margin-bottom: 1rem;
   line-height: 1.8;
@@ -20,7 +25,7 @@ body {
 
 .latex-content strong {
   font-weight: 700;
-  color: #1e2a5e;
+  color: #000;
 }
 
 .latex-content em {
@@ -35,13 +40,13 @@ body {
 
 .latex-table th,
 .latex-table td {
-  border: 1px solid #d1d5db;
+  border: 1px solid #d4d4d4;
   padding: 0.5rem 1rem;
   text-align: left;
 }
 
 .latex-table th {
-  background-color: #f3f4f6;
+  background-color: #f5f5f5;
   font-weight: 600;
 }
 
@@ -49,17 +54,14 @@ body {
   font-size: 1.1em !important;
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Hero gradient */
 .hero-gradient {
-  background: linear-gradient(135deg, #1e2a5e 0%, #364fc7 50%, #4c6ef5 100%);
+  background: linear-gradient(160deg, #000 0%, #171717 40%, #262626 100%);
 }
 
-/* Problem card hover effect */
 .problem-card-hover {
   transition: all 0.2s ease-in-out;
 }

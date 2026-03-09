@@ -27,8 +27,8 @@ export default function ProblemsPage() {
   }, [selectedSubjects, selectedDifficulties, searchQuery]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">문제 목록</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-3xl font-light text-black mb-10">문제 목록</h1>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <FilterSidebar
@@ -42,13 +42,13 @@ export default function ProblemsPage() {
 
         <div className="flex-1">
           {filteredProblems.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
-              <p className="text-lg">검색 결과가 없습니다.</p>
+            <div className="text-center py-20 text-neutral-400">
+              <p className="text-base">검색 결과가 없습니다.</p>
               <p className="text-sm mt-2">필터를 조정해 보세요.</p>
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">
                 {filteredProblems.length}개의 문제
               </p>
               <div className="grid md:grid-cols-2 gap-5">

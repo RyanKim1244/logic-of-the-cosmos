@@ -38,15 +38,15 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
       </head>
-      <body className="bg-gray-50 text-gray-900 min-h-screen">
+      <body className="bg-white text-neutral-900 min-h-screen">
         <Navbar />
         <main>{children}</main>
-        <footer className="bg-cosmos-950 text-cosmos-200 py-8 mt-16">
+        <footer className="bg-black text-neutral-500 py-10 mt-20 border-t border-neutral-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="text-sm">
-              &copy; 2024 Logic of The Cosmos. All rights reserved.
+            <p className="text-sm font-light tracking-wide">
+              &copy; 2024 Logic of The Cosmos
             </p>
-            <p className="text-xs mt-2 text-cosmos-400">
+            <p className="text-xs mt-2 text-neutral-600">
               과학 올림피아드 문제 학습 플랫폼
             </p>
           </div>

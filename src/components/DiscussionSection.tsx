@@ -44,46 +44,46 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
 
   return (
     <div ref={sectionRef} className="mt-10">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">토론</h2>
+      <h2 className="text-xl font-light text-black mb-6">토론</h2>
 
       {/* Discussion list */}
-      <div className="space-y-6 mb-8">
+      <div className="space-y-4 mb-8">
         {topLevel.length === 0 && (
-          <p className="text-gray-500 text-center py-8">아직 토론이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
+          <p className="text-neutral-400 text-center py-8 text-sm">아직 토론이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
         )}
         {topLevel.map((disc) => (
-          <div key={disc.id} className="border border-gray-200 rounded-lg p-5 bg-white">
+          <div key={disc.id} className="border border-neutral-200 p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="font-semibold text-cosmos-700">{disc.author}</span>
-              <span className="text-xs text-gray-400">{disc.createdAt}</span>
+              <span className="font-medium text-black text-sm">{disc.author}</span>
+              <span className="text-xs text-neutral-400">{disc.createdAt}</span>
             </div>
-            <div className="text-gray-700 mb-3 whitespace-pre-wrap">{disc.content}</div>
+            <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-sm leading-relaxed">{disc.content}</div>
             <button
               onClick={() => setReplyTo(replyTo === disc.id ? null : disc.id)}
-              className="text-sm text-cosmos-600 hover:text-cosmos-800 font-medium"
+              className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors"
             >
               {replyTo === disc.id ? "취소" : "답글"}
             </button>
 
             {/* Replies */}
             {getReplies(disc.id).map((reply) => (
-              <div key={reply.id} className="ml-6 mt-4 pl-4 border-l-2 border-cosmos-200">
+              <div key={reply.id} className="ml-6 mt-4 pl-4 border-l border-neutral-200">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-cosmos-600 text-sm">{reply.author}</span>
-                  <span className="text-xs text-gray-400">{reply.createdAt}</span>
+                  <span className="font-medium text-neutral-700 text-sm">{reply.author}</span>
+                  <span className="text-xs text-neutral-400">{reply.createdAt}</span>
                 </div>
-                <div className="text-gray-700 text-sm whitespace-pre-wrap">{reply.content}</div>
+                <div className="text-neutral-600 text-sm whitespace-pre-wrap leading-relaxed">{reply.content}</div>
               </div>
             ))}
 
             {/* Reply form */}
             {replyTo === disc.id && (
-              <form onSubmit={handleSubmit} className="ml-6 mt-4 pl-4 border-l-2 border-cosmos-200">
+              <form onSubmit={handleSubmit} className="ml-6 mt-4 pl-4 border-l border-neutral-200">
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="답글을 작성하세요... (LaTeX 수식 사용 가능: $...$)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none resize-none"
+                  className="w-full px-3 py-2 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none resize-none transition-colors"
                   rows={3}
                 />
                 <div className="flex gap-2 mt-2">
@@ -92,11 +92,11 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
                     placeholder="이름"
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                    className="px-3 py-1.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-cosmos-600 text-white rounded-lg text-sm font-medium hover:bg-cosmos-700 transition-colors"
+                    className="px-4 py-1.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider"
                   >
                     답글 등록
                   </button>
@@ -108,8 +108,8 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
       </div>
 
       {/* New comment form */}
-      <div className="border border-gray-200 rounded-lg p-5 bg-white">
-        <h3 className="font-semibold text-gray-900 mb-4">새 댓글 작성</h3>
+      <div className="border border-neutral-200 p-5">
+        <h3 className="font-medium text-black text-sm mb-4">새 댓글 작성</h3>
         <form onSubmit={handleSubmit}>
           <textarea
             value={replyTo ? "" : newComment}
@@ -118,7 +118,7 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
               setNewComment(e.target.value);
             }}
             placeholder="의견을 공유하세요... (LaTeX 수식 사용 가능: $...$ 또는 $$...$$)"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none resize-none"
+            className="w-full px-4 py-3 border border-neutral-300 focus:ring-1 focus:ring-black focus:border-black outline-none resize-none text-sm transition-colors"
             rows={4}
           />
           <div className="flex gap-3 mt-3">
@@ -127,11 +127,11 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               placeholder="이름"
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+              className="px-4 py-2 border border-neutral-300 focus:ring-1 focus:ring-black focus:border-black outline-none text-sm transition-colors"
             />
             <button
               type="submit"
-              className="px-6 py-2 bg-cosmos-600 text-white rounded-lg font-medium hover:bg-cosmos-700 transition-colors"
+              className="px-6 py-2 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider"
             >
               댓글 등록
             </button>

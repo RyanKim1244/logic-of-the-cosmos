@@ -12,50 +12,104 @@ import {
   SUBJECT_COLORS,
 } from "@/types";
 
+type FormData = {
+  title: string;
+  source: string;
+  year: number;
+  subject: Subject;
+  difficulty: Difficulty;
+  tags: string;
+  content: string;
+  officialSolution: string;
+};
+
+const emptyForm: FormData = {
+  title: "",
+  source: "",
+  year: new Date().getFullYear(),
+  subject: "physics",
+  difficulty: "medium",
+  tags: "",
+  content: "",
+  officialSolution: "",
+};
+
 export default function AdminPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    source: "",
-    year: new Date().getFullYear(),
-    subject: "physics" as Subject,
-    difficulty: "medium" as Difficulty,
-    tags: "",
-    content: "",
-    officialSolution: "",
-  });
-  const [previewMode, setPreviewMode] = useState(false);
+  const [mode, setMode] = useState<"none" | "add" | "edit">("none");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>(emptyForm);
   const [allProblems, setAllProblems] = useState<Problem[]>(problems);
+
+  const openAddForm = () => {
+    setFormData(emptyForm);
+    setEditingId(null);
+    setMode("add");
+  };
+
+  const openEditForm = (problem: Problem) => {
+    setFormData({
+      title: problem.title,
+      source: problem.source,
+      year: problem.year,
+      subject: problem.subject,
+      difficulty: problem.difficulty,
+      tags: problem.tags.join(", "),
+      content: problem.content,
+      officialSolution: problem.officialSolution,
+    });
+    setEditingId(problem.id);
+    setMode("edit");
+  };
+
+  const closeForm = () => {
+    setMode("none");
+    setEditingId(null);
+    setFormData(emptyForm);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newProblem: Problem = {
-      id: `custom-${Date.now()}`,
-      title: formData.title,
-      source: formData.source,
-      year: formData.year,
-      subject: formData.subject,
-      difficulty: formData.difficulty,
-      tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      content: formData.content,
-      officialSolution: formData.officialSolution,
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
+    const tags = formData.tags.split(",").map((t) => t.trim()).filter(Boolean);
+    const now = new Date().toISOString().split("T")[0];
 
-    setAllProblems([newProblem, ...allProblems]);
-    setFormData({
-      title: "",
-      source: "",
-      year: new Date().getFullYear(),
-      subject: "physics",
-      difficulty: "medium",
-      tags: "",
-      content: "",
-      officialSolution: "",
-    });
-    setShowForm(false);
+    if (mode === "edit" && editingId) {
+      setAllProblems(
+        allProblems.map((p) =>
+          p.id === editingId
+            ? {
+                ...p,
+                title: formData.title,
+                source: formData.source,
+                year: formData.year,
+                subject: formData.subject,
+                difficulty: formData.difficulty,
+                tags,
+                content: formData.content,
+                officialSolution: formData.officialSolution,
+                updatedAt: now,
+              }
+            : p
+        )
+      );
+    } else {
+      const newProblem: Problem = {
+        id: `custom-${Date.now()}`,
+        title: formData.title,
+        source: formData.source,
+        year: formData.year,
+        subject: formData.subject,
+        difficulty: formData.difficulty,
+        tags,
+        content: formData.content,
+        officialSolution: formData.officialSolution,
+        createdAt: now,
+        updatedAt: now,
+      };
+      setAllProblems([newProblem, ...allProblems]);
+    }
+
+    closeForm();
   };
 
   const handleDelete = (id: string) => {
@@ -65,42 +119,44 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">관리자 패널</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-3xl font-light text-black">관리자 패널</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-5 py-2.5 bg-cosmos-600 text-white rounded-lg font-medium hover:bg-cosmos-700 transition-colors"
+          onClick={mode === "none" ? openAddForm : closeForm}
+          className="px-5 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider"
         >
-          {showForm ? "취소" : "+ 새 문제 추가"}
+          {mode !== "none" ? "취소" : "+ 새 문제 추가"}
         </button>
       </div>
 
-      {/* Add Problem Form */}
-      {showForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">새 문제 추가</h2>
+      {/* Add / Edit Problem Form */}
+      {mode !== "none" && (
+        <div className="border border-neutral-200 p-8 mb-8">
+          <h2 className="text-lg font-light text-black mb-6">
+            {mode === "edit" ? "문제 수정" : "새 문제 추가"}
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">제목</label>
                 <input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
                   placeholder="문제 제목"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">출처</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">출처</label>
                 <input
                   type="text"
                   required
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
                   placeholder="예: IPhO 2023, KPhO 2022"
                 />
               </div>
@@ -108,21 +164,21 @@ export default function AdminPage() {
 
             <div className="grid md:grid-cols-3 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">연도</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">연도</label>
                 <input
                   type="number"
                   required
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">과목</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">과목</label>
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value as Subject })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors bg-white"
                 >
                   {(Object.keys(SUBJECT_LABELS) as Subject[]).map((s) => (
                     <option key={s} value={s}>{SUBJECT_LABELS[s]}</option>
@@ -130,11 +186,11 @@ export default function AdminPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">난이도</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">난이도</label>
                 <select
                   value={formData.difficulty}
                   onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as Difficulty })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors bg-white"
                 >
                   {(Object.keys(DIFFICULTY_LABELS) as Difficulty[]).map((d) => (
                     <option key={d} value={d}>{DIFFICULTY_LABELS[d]}</option>
@@ -144,50 +200,41 @@ export default function AdminPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">
                 태그 (쉼표로 구분)
               </label>
               <input
                 type="text"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
                 placeholder="예: electromagnetism, special-relativity"
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  문제 내용 (LaTeX 지원)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode(!previewMode)}
-                  className="text-xs text-cosmos-600 hover:text-cosmos-800"
-                >
-                  {previewMode ? "편집" : "미리보기"}
-                </button>
-              </div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">
+                문제 내용 (LaTeX 지원)
+              </label>
               <textarea
                 required
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none font-mono text-sm resize-none"
+                className="w-full px-4 py-3 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none font-mono resize-none transition-colors"
                 rows={10}
-                placeholder="LaTeX 수식을 포함한 문제 내용을 입력하세요.&#10;인라인 수식: $E = mc^2$&#10;블록 수식: $$\int_0^\infty e^{-x} dx = 1$$"
+                placeholder={"LaTeX 수식을 포함한 문제 내용을 입력하세요.\n인라인 수식: $E = mc^2$\n블록 수식: $$\\int_0^\\infty e^{-x} dx = 1$$"}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">
                 공식 풀이 (LaTeX 지원)
               </label>
               <textarea
                 required
                 value={formData.officialSolution}
                 onChange={(e) => setFormData({ ...formData, officialSolution: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cosmos-500 focus:border-transparent outline-none font-mono text-sm resize-none"
+                className="w-full px-4 py-3 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none font-mono resize-none transition-colors"
                 rows={10}
                 placeholder="공식 풀이를 입력하세요..."
               />
@@ -196,14 +243,14 @@ export default function AdminPage() {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-cosmos-600 text-white rounded-lg font-medium hover:bg-cosmos-700 transition-colors"
+                className="px-6 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider"
               >
-                문제 등록
+                {mode === "edit" ? "수정 완료" : "문제 등록"}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
-                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                onClick={closeForm}
+                className="px-6 py-2.5 border border-neutral-300 text-neutral-700 text-xs font-medium hover:border-black hover:text-black transition-colors uppercase tracking-wider"
               >
                 취소
               </button>
@@ -213,31 +260,39 @@ export default function AdminPage() {
       )}
 
       {/* Problem List */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="font-semibold text-gray-700">등록된 문제 ({allProblems.length})</h2>
+      <div className="border border-neutral-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
+          <h2 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">등록된 문제 ({allProblems.length})</h2>
         </div>
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-neutral-200">
           {allProblems.map((problem) => (
-            <div key={problem.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div key={problem.id} className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${SUBJECT_COLORS[problem.subject]}`}>
+                  <span className={`px-2 py-0.5 text-xs font-medium ${SUBJECT_COLORS[problem.subject]}`}>
                     {SUBJECT_LABELS[problem.subject]}
                   </span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${DIFFICULTY_COLORS[problem.difficulty]}`}>
+                  <span className={`px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLORS[problem.difficulty]}`}>
                     {DIFFICULTY_LABELS[problem.difficulty]}
                   </span>
                 </div>
-                <h3 className="font-medium text-gray-900 truncate">{problem.title}</h3>
-                <p className="text-sm text-gray-500">{problem.source} ({problem.year})</p>
+                <h3 className="font-medium text-black text-sm truncate">{problem.title}</h3>
+                <p className="text-xs text-neutral-400">{problem.source} ({problem.year})</p>
               </div>
-              <button
-                onClick={() => handleDelete(problem.id)}
-                className="ml-4 px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                삭제
-              </button>
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={() => openEditForm(problem)}
+                  className="px-3 py-1.5 text-xs text-neutral-500 hover:text-black hover:bg-neutral-100 transition-colors uppercase tracking-wider"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={() => handleDelete(problem.id)}
+                  className="px-3 py-1.5 text-xs text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors uppercase tracking-wider"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
           ))}
         </div>

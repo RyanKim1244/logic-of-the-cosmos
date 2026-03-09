@@ -5,13 +5,13 @@ export type Subject = "physics" | "chemistry" | "biology" | "math" | "earth-scie
 export interface Problem {
   id: string;
   title: string;
-  source: string; // e.g., "IPhO 2023", "KPhO 2022", "서울대 기출 2024"
+  source: string;
   year: number;
   subject: Subject;
   difficulty: Difficulty;
   tags: string[];
-  content: string; // LaTeX-enabled markdown
-  officialSolution: string; // LaTeX-enabled markdown
+  content: string;
+  officialSolution: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,7 +22,7 @@ export interface Discussion {
   author: string;
   content: string;
   createdAt: string;
-  parentId: string | null; // for threaded replies
+  parentId: string | null;
 }
 
 export const SUBJECT_LABELS: Record<Subject, string> = {
@@ -41,16 +41,16 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 };
 
 export const DIFFICULTY_COLORS: Record<Difficulty, string> = {
-  easy: "bg-green-100 text-green-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  hard: "bg-orange-100 text-orange-800",
-  olympiad: "bg-red-100 text-red-800",
+  easy: "bg-neutral-200 text-neutral-700",
+  medium: "bg-neutral-300 text-neutral-800",
+  hard: "bg-neutral-700 text-neutral-100",
+  olympiad: "bg-black text-white",
 };
 
 export const SUBJECT_COLORS: Record<Subject, string> = {
-  physics: "bg-blue-100 text-blue-800",
-  chemistry: "bg-purple-100 text-purple-800",
-  biology: "bg-emerald-100 text-emerald-800",
-  math: "bg-indigo-100 text-indigo-800",
-  "earth-science": "bg-amber-100 text-amber-800",
+  physics: "bg-neutral-100 text-neutral-800 border border-neutral-300",
+  chemistry: "bg-neutral-100 text-neutral-800 border border-neutral-300",
+  biology: "bg-neutral-100 text-neutral-800 border border-neutral-300",
+  math: "bg-neutral-100 text-neutral-800 border border-neutral-300",
+  "earth-science": "bg-neutral-100 text-neutral-800 border border-neutral-300",
 };
