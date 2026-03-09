@@ -90,24 +90,14 @@ export default function ContestDetailPage({
 
               <div className="grid md:grid-cols-2 gap-4">
                 {yearProblems.map((problem) => (
-                  <Link key={problem.id} href={`/problems/${problem.id}`}>
-                    <div className="border border-neutral-200 p-5 hover:border-black transition-all duration-200 bg-white group">
-                      <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors mb-2 line-clamp-2">
+                  <Link key={problem.id} href={`/problems/${problem.id}`} className="block h-full">
+                    <div className="border border-neutral-200 p-5 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
+                      <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 flex-1">
                         {problem.title}
                       </h3>
-                      <p className="text-xs text-neutral-400 mb-3">
+                      <p className="text-xs text-neutral-400 mt-2">
                         {problem.source}
                       </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {problem.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-xs text-neutral-400">
-                            #{tag}
-                          </span>
-                        ))}
-                        {problem.tags.length > 3 && (
-                          <span className="text-xs text-neutral-300">+{problem.tags.length - 3}</span>
-                        )}
-                      </div>
                     </div>
                   </Link>
                 ))}
