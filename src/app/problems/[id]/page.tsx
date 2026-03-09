@@ -3,12 +3,6 @@
 import { useState, use } from "react";
 import Link from "next/link";
 import { problems, discussions } from "@/data/problems";
-import {
-  DIFFICULTY_LABELS,
-  DIFFICULTY_COLORS,
-  SUBJECT_LABELS,
-  SUBJECT_COLORS,
-} from "@/types";
 import LatexRenderer from "@/components/LatexRenderer";
 import DiscussionSection from "@/components/DiscussionSection";
 
@@ -46,15 +40,6 @@ export default function ProblemDetailPage({
 
       {/* Problem Header */}
       <div className="border border-neutral-200 p-8 mb-6">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className={`px-2.5 py-0.5 text-xs font-medium ${SUBJECT_COLORS[problem.subject]}`}>
-            {SUBJECT_LABELS[problem.subject]}
-          </span>
-          <span className={`px-2.5 py-0.5 text-xs font-medium ${DIFFICULTY_COLORS[problem.difficulty]}`}>
-            {DIFFICULTY_LABELS[problem.difficulty]}
-          </span>
-        </div>
-
         <h1 className="text-2xl font-light text-black mb-3">{problem.title}</h1>
         <p className="text-neutral-400 mb-6 text-sm">
           {problem.source} &middot; {problem.year}

@@ -6,8 +6,6 @@ export const problems: Problem[] = [
     title: "Relativistic Particle in Magnetic Field",
     source: "IPhO 2023",
     year: 2023,
-    subject: "physics",
-    difficulty: "olympiad",
     tags: ["electromagnetism", "special-relativity", "charged-particles"],
     content: `A charged particle with rest mass $m_0$ and charge $q$ enters a uniform magnetic field $\\vec{B} = B\\hat{z}$ with an initial velocity $\\vec{v_0} = v_0 \\hat{x}$, where $v_0 = 0.8c$.
 
@@ -55,8 +53,6 @@ The relativistic cyclotron frequency is reduced by a factor of $\\gamma$.`,
     title: "열역학적 엔진의 효율",
     source: "KPhO 2022",
     year: 2022,
-    subject: "physics",
-    difficulty: "hard",
     tags: ["thermodynamics", "carnot-cycle", "entropy"],
     content: `이상 기체 $n$ 몰이 다음과 같은 순환 과정을 거친다:
 
@@ -101,8 +97,6 @@ $$\\eta = \\frac{W}{Q_{\\text{in}}} = \\frac{2P_2 V_1}{\\frac{21}{2}P_2 V_1} = \
     title: "Coordination Chemistry of Transition Metals",
     source: "IChO 2023",
     year: 2023,
-    subject: "chemistry",
-    difficulty: "olympiad",
     tags: ["coordination-chemistry", "crystal-field-theory", "spectroscopy"],
     content: `A transition metal complex $[\\text{Co}(\\text{NH}_3)_6]^{3+}$ absorbs light at $\\lambda = 475 \\text{ nm}$.
 
@@ -142,8 +136,6 @@ For low-spin $d^6$: $t_{2g}^6 e_g^0$ — all six electrons are paired in the $t_
     title: "정수론: 소수의 성질",
     source: "KMO 2023",
     year: 2023,
-    subject: "math",
-    difficulty: "olympiad",
     tags: ["number-theory", "primes", "modular-arithmetic"],
     content: `$p$가 5 이상의 소수일 때, 다음을 증명하시오.
 
@@ -169,8 +161,6 @@ $\\blacksquare$`,
     title: "Gene Expression and Regulation",
     source: "IBO 2022",
     year: 2022,
-    subject: "biology",
-    difficulty: "hard",
     tags: ["molecular-biology", "gene-regulation", "lac-operon"],
     content: `The *lac* operon in *E. coli* is a classic model of gene regulation.
 
@@ -219,8 +209,6 @@ The repressor cannot bind, so the operon is always partially active regardless o
     title: "양자역학: 무한 퍼텐셜 우물",
     source: "서울대 물리학과 기출",
     year: 2023,
-    subject: "physics",
-    difficulty: "hard",
     tags: ["quantum-mechanics", "schrodinger-equation", "energy-levels"],
     content: `폭이 $L$인 1차원 무한 퍼텐셜 우물에 질량 $m$인 입자가 갇혀 있다.
 

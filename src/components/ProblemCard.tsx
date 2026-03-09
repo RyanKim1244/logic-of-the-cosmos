@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Problem, DIFFICULTY_LABELS, DIFFICULTY_COLORS, SUBJECT_LABELS, SUBJECT_COLORS } from "@/types";
+import { Problem } from "@/types";
 
 export default function ProblemCard({ problem }: { problem: Problem }) {
   return (
@@ -12,15 +12,6 @@ export default function ProblemCard({ problem }: { problem: Problem }) {
         </div>
 
         <p className="text-xs text-neutral-400 mb-4 tracking-wide">{problem.source} &middot; {problem.year}</p>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className={`px-2 py-0.5 text-xs font-medium ${SUBJECT_COLORS[problem.subject]}`}>
-            {SUBJECT_LABELS[problem.subject]}
-          </span>
-          <span className={`px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLORS[problem.difficulty]}`}>
-            {DIFFICULTY_LABELS[problem.difficulty]}
-          </span>
-        </div>
 
         <div className="flex flex-wrap gap-1.5">
           {problem.tags.slice(0, 3).map((tag) => (

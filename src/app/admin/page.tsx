@@ -2,22 +2,12 @@
 
 import { useState } from "react";
 import { problems } from "@/data/problems";
-import {
-  Problem,
-  Subject,
-  Difficulty,
-  SUBJECT_LABELS,
-  DIFFICULTY_LABELS,
-  DIFFICULTY_COLORS,
-  SUBJECT_COLORS,
-} from "@/types";
+import { Problem } from "@/types";
 
 type FormData = {
   title: string;
   source: string;
   year: number;
-  subject: Subject;
-  difficulty: Difficulty;
   tags: string;
   content: string;
   officialSolution: string;
@@ -27,8 +17,6 @@ const emptyForm: FormData = {
   title: "",
   source: "",
   year: new Date().getFullYear(),
-  subject: "physics",
-  difficulty: "medium",
   tags: "",
   content: "",
   officialSolution: "",
@@ -51,8 +39,6 @@ export default function AdminPage() {
       title: problem.title,
       source: problem.source,
       year: problem.year,
-      subject: problem.subject,
-      difficulty: problem.difficulty,
       tags: problem.tags.join(", "),
       content: problem.content,
       officialSolution: problem.officialSolution,
@@ -82,8 +68,6 @@ export default function AdminPage() {
                 title: formData.title,
                 source: formData.source,
                 year: formData.year,
-                subject: formData.subject,
-                difficulty: formData.difficulty,
                 tags,
                 content: formData.content,
                 officialSolution: formData.officialSolution,
@@ -98,8 +82,6 @@ export default function AdminPage() {
         title: formData.title,
         source: formData.source,
         year: formData.year,
-        subject: formData.subject,
-        difficulty: formData.difficulty,
         tags,
         content: formData.content,
         officialSolution: formData.officialSolution,
@@ -162,7 +144,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-5">
+            <div className="grid md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">연도</label>
                 <input
@@ -174,42 +156,17 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">과목</label>
-                <select
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value as Subject })}
-                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors bg-white"
-                >
-                  {(Object.keys(SUBJECT_LABELS) as Subject[]).map((s) => (
-                    <option key={s} value={s}>{SUBJECT_LABELS[s]}</option>
-                  ))}
-                </select>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">
+                  태그 (쉼표로 구분)
+                </label>
+                <input
+                  type="text"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
+                  placeholder="예: electromagnetism, special-relativity"
+                />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">난이도</label>
-                <select
-                  value={formData.difficulty}
-                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as Difficulty })}
-                  className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors bg-white"
-                >
-                  {(Object.keys(DIFFICULTY_LABELS) as Difficulty[]).map((d) => (
-                    <option key={d} value={d}>{DIFFICULTY_LABELS[d]}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">
-                태그 (쉼표로 구분)
-              </label>
-              <input
-                type="text"
-                value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
-                placeholder="예: electromagnetism, special-relativity"
-              />
             </div>
 
             <div>
@@ -268,16 +225,13 @@ export default function AdminPage() {
           {allProblems.map((problem) => (
             <div key={problem.id} className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`px-2 py-0.5 text-xs font-medium ${SUBJECT_COLORS[problem.subject]}`}>
-                    {SUBJECT_LABELS[problem.subject]}
-                  </span>
-                  <span className={`px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLORS[problem.difficulty]}`}>
-                    {DIFFICULTY_LABELS[problem.difficulty]}
-                  </span>
-                </div>
                 <h3 className="font-medium text-black text-sm truncate">{problem.title}</h3>
-                <p className="text-xs text-neutral-400">{problem.source} ({problem.year})</p>
+                <p className="text-xs text-neutral-400 mt-1">{problem.source} ({problem.year})</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {problem.tags.slice(0, 4).map((tag) => (
+                    <span key={tag} className="text-xs text-neutral-400">#{tag}</span>
+                  ))}
+                </div>
               </div>
               <div className="flex items-center gap-2 ml-4">
                 <button

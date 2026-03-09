@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { problems } from "@/data/problems";
-import { SUBJECT_LABELS, DIFFICULTY_LABELS } from "@/types";
 
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
@@ -155,11 +154,7 @@ export default function ProfilePage() {
               <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{p.title}</span>
-                  <div className="flex gap-2 text-xs text-neutral-400">
-                    <span>{SUBJECT_LABELS[p.subject]}</span>
-                    <span>&middot;</span>
-                    <span>{DIFFICULTY_LABELS[p.difficulty]}</span>
-                  </div>
+                  <span className="text-xs text-neutral-400">{p.source}</span>
                 </div>
               </Link>
             ))}
@@ -183,11 +178,7 @@ export default function ProfilePage() {
               <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{p.title}</span>
-                  <div className="flex gap-2 text-xs text-neutral-400">
-                    <span>{SUBJECT_LABELS[p.subject]}</span>
-                    <span>&middot;</span>
-                    <span>{DIFFICULTY_LABELS[p.difficulty]}</span>
-                  </div>
+                  <span className="text-xs text-neutral-400">{p.source}</span>
                 </div>
               </Link>
             ))}
