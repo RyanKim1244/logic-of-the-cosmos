@@ -90,17 +90,15 @@ export default function ProblemDetailPage({
           </button>
         </div>
 
-        {showSolution && (
-          <div className="border-t border-neutral-100 pt-6">
-            <LatexRenderer content={problem.officialSolution} />
-          </div>
-        )}
-
         {!showSolution && (
           <p className="text-neutral-400 text-sm">
             먼저 직접 풀어본 후 풀이를 확인하세요!
           </p>
         )}
+
+        <div className={showSolution ? "border-t border-neutral-100 pt-6" : "hidden"}>
+          <LatexRenderer content={problem.officialSolution} />
+        </div>
       </div>
 
       {/* Discussion Section */}

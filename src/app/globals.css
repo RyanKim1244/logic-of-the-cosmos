@@ -50,6 +50,18 @@ body {
   font-weight: 600;
 }
 
+/* Inline math: stay inline, no line breaks */
+mjx-container:not([display="true"]) {
+  display: inline !important;
+}
+
+/* Display math: block with spacing */
+mjx-container[display="true"] {
+  display: block !important;
+  margin: 1em 0 !important;
+  text-align: center;
+}
+
 .MathJax {
   font-size: 1.1em !important;
 }
