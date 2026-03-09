@@ -30,10 +30,10 @@ export default function Home() {
           </h1>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent mx-auto mb-8 hero-line" />
           <p className="text-lg md:text-xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
-            과학 올림피아드 문제와 풀이를 제공하는 학습 플랫폼
+            과학의 모든 영역을 탐구하는 거대한 토론의 장
           </p>
           <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-sm font-light hero-subtitle-delay">
-            IPhO, IChO, IBO, KPhO, KMO 기출문제부터 대학 기출문제까지
+            올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
           </p>
           <Link
             href="/problems"
@@ -131,25 +131,25 @@ export default function Home() {
       <section className="py-24 bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <h2 className="text-2xl font-light text-center mb-4">플랫폼 특징</h2>
-            <p className="text-neutral-500 text-sm text-center mb-16">체계적인 학습을 위한 핵심 기능</p>
+            <h2 className="text-2xl font-light text-center mb-4">열린 과학 토론의 장</h2>
+            <p className="text-neutral-500 text-sm text-center mb-16">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
+                icon: "\u221E",
+                title: "경계 없는 탐구",
+                desc: "중등 올림피아드부터 대학원 연구 문제까지, 물리·화학·생물·수학·지구과학 전 분야를 다룹니다.",
+              },
+              {
+                icon: "\u21CC",
+                title: "실시간 토론",
+                desc: "각 문제마다 토론 스레드가 열립니다. 풀이를 공유하고, 다른 접근법을 제시하며 깊이 있는 대화를 나누세요.",
+              },
+              {
                 icon: "\u03A3",
-                title: "수식 렌더링",
-                desc: "LaTeX 기반의 정교한 수식 렌더링으로 복잡한 과학 문제를 명확하게 표현합니다.",
-              },
-              {
-                icon: "#",
-                title: "태그 기반 분류",
-                desc: "과목, 난이도, 주제별 태그로 원하는 문제를 빠르게 찾을 수 있습니다.",
-              },
-              {
-                icon: "\u00B6",
-                title: "커뮤니티 토론",
-                desc: "각 문제별 토론 페이지에서 풀이 방법을 공유하고 질문할 수 있습니다.",
+                title: "LaTeX 수식 지원",
+                desc: "수학적 논증을 정확하게 표현할 수 있습니다. 토론과 풀이에서 자유롭게 LaTeX 수식을 사용하세요.",
               },
             ].map((feature, i) => (
               <ScrollReveal key={feature.title} delay={i * 150}>
