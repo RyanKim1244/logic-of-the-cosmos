@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-white text-neutral-900 min-h-screen">
+        <AuthProvider>
         <Navbar />
         <main>{children}</main>
         <footer className="bg-black text-neutral-500 py-10 mt-20 border-t border-neutral-800">
@@ -51,6 +53,7 @@ export default function RootLayout({
             </p>
           </div>
         </footer>
+        </AuthProvider>
       </body>
     </html>
   );

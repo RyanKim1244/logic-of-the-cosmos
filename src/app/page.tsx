@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { problems } from "@/data/problems";
 import ProblemCard from "@/components/ProblemCard";
-import StarField from "@/components/StarField";
+import HeroBackground from "@/components/HeroBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 import CountUp from "@/components/CountUp";
 import { SUBJECT_LABELS, Subject } from "@/types";
@@ -22,11 +22,7 @@ export default function Home() {
     <div>
       {/* Hero Section */}
       <section className="hero-gradient text-white py-36 md:py-52 relative overflow-hidden">
-        <StarField />
-
-        {/* Ambient glow effects */}
-        <div className="hero-glow absolute top-1/4 left-1/4" />
-        <div className="hero-glow absolute bottom-1/4 right-1/4" style={{ animationDelay: "3s" }} />
+        <HeroBackground />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-extralight mb-8 tracking-tight hero-title">
@@ -47,9 +43,6 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Decorative orbiting rings */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] orbit-ring" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[550px] md:h-[550px] orbit-ring-2" />
       </section>
 
       {/* Quote Section */}
