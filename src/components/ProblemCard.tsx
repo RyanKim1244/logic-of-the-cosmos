@@ -5,9 +5,12 @@ export default function ProblemCard({ problem }: { problem: Problem }) {
   return (
     <Link href={`/problems/${problem.id}`} className="block h-full">
       <div className="border border-neutral-200 p-6 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
-        <h3 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 flex-1">
-          {problem.title}
-        </h3>
+        <div className="flex items-start gap-3 flex-1">
+          <span className="text-xs text-neutral-300 font-mono shrink-0 mt-0.5">#{problem.problemNumber}</span>
+          <h3 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2">
+            {problem.title}
+          </h3>
+        </div>
 
         <p className="text-xs text-neutral-400 mt-3 tracking-wide">{problem.source} &middot; {problem.year}</p>
       </div>

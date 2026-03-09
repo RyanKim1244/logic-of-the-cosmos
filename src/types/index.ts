@@ -1,5 +1,6 @@
 export interface Problem {
   id: string;
+  problemNumber: number;
   title: string;
   source: string;
   year: number;

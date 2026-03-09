@@ -96,8 +96,10 @@ export default function AdminPage() {
         )
       );
     } else {
+      const maxNumber = allProblems.reduce((max, p) => Math.max(max, p.problemNumber), 999);
       const newProblem: Problem = {
         id: `custom-${Date.now()}`,
+        problemNumber: maxNumber + 1,
         title: problemForm.title,
         source: problemForm.source,
         year: problemForm.year,

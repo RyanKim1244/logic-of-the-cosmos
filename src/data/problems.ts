@@ -3,6 +3,7 @@ import { Problem, Discussion } from "@/types";
 export const problems: Problem[] = [
   {
     id: "ipho-2023-1",
+    problemNumber: 1000,
     title: "Relativistic Particle in Magnetic Field",
     source: "IPhO 2023",
     year: 2023,
@@ -50,6 +51,7 @@ The relativistic cyclotron frequency is reduced by a factor of $\\gamma$.`,
   },
   {
     id: "kpho-2022-3",
+    problemNumber: 1001,
     title: "열역학적 엔진의 효율",
     source: "KPhO 2022",
     year: 2022,
@@ -94,6 +96,7 @@ $$\\eta = \\frac{W}{Q_{\\text{in}}} = \\frac{2P_2 V_1}{\\frac{21}{2}P_2 V_1} = \
   },
   {
     id: "icho-2023-2",
+    problemNumber: 1002,
     title: "Coordination Chemistry of Transition Metals",
     source: "IChO 2023",
     year: 2023,
@@ -133,6 +136,7 @@ For low-spin $d^6$: $t_{2g}^6 e_g^0$ — all six electrons are paired in the $t_
   },
   {
     id: "kmo-2023-1",
+    problemNumber: 1003,
     title: "정수론: 소수의 성질",
     source: "KMO 2023",
     year: 2023,
@@ -158,6 +162,7 @@ $\\blacksquare$`,
   },
   {
     id: "ibo-2022-1",
+    problemNumber: 1004,
     title: "Gene Expression and Regulation",
     source: "IBO 2022",
     year: 2022,
@@ -206,6 +211,7 @@ The repressor cannot bind, so the operon is always partially active regardless o
   },
   {
     id: "snu-physics-2023",
+    problemNumber: 1005,
     title: "양자역학: 무한 퍼텐셜 우물",
     source: "서울대 물리학과 기출",
     year: 2023,
@@ -253,6 +259,7 @@ $$\\Delta x \\to \\frac{L}{\\sqrt{12}} = \\frac{L}{2\\sqrt{3}}$$
   },
   {
     id: "kpho-2023-5",
+    problemNumber: 1006,
     title: "레너드-존스 퍼텐셜과 분자 간 상호작용",
     source: "KPhO 2023",
     year: 2023,

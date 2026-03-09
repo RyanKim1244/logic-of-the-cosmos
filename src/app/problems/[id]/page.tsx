@@ -40,7 +40,8 @@ export default function ProblemDetailPage({
 
       {/* Problem Header */}
       <div className="border border-neutral-200 p-8 mb-6">
-        <h1 className="text-2xl font-light text-black mb-3">{problem.title}</h1>
+        <span className="text-xs text-neutral-300 font-mono">#{problem.problemNumber}</span>
+        <h1 className="text-2xl font-light text-black mt-1 mb-3">{problem.title}</h1>
         <p className="text-neutral-400 mb-6 text-sm">
           {problem.source} &middot; {problem.year}
         </p>

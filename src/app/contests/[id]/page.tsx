@@ -92,9 +92,12 @@ export default function ContestDetailPage({
                 {yearProblems.map((problem) => (
                   <Link key={problem.id} href={`/problems/${problem.id}`} className="block h-full">
                     <div className="border border-neutral-200 p-5 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
-                      <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 flex-1">
-                        {problem.title}
-                      </h3>
+                      <div className="flex items-start gap-2.5 flex-1">
+                        <span className="text-xs text-neutral-300 font-mono shrink-0 mt-0.5">#{problem.problemNumber}</span>
+                        <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2">
+                          {problem.title}
+                        </h3>
+                      </div>
                       <p className="text-xs text-neutral-400 mt-2">
                         {problem.source}
                       </p>
