@@ -23,6 +23,12 @@ export default function Navbar() {
               문제 목록
             </Link>
             <Link
+              href="/contests"
+              className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
+            >
+              기출문제
+            </Link>
+            <Link
               href="/community"
               className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
             >

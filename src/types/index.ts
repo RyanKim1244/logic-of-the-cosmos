@@ -29,6 +29,15 @@ export interface Topic {
   upvotes: number;
 }
 
+export interface Contest {
+  id: string;
+  name: string;
+  shortName: string;
+  description: string;
+  website?: string;
+  years: number[];
+}
+
 export interface TopicComment {
   id: string;
   topicId: string;
