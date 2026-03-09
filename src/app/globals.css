@@ -91,3 +91,95 @@ html {
 .problem-card-hover:hover {
   transform: translateY(-2px);
 }
+
+/* Hero animations */
+.hero-title {
+  animation: heroFadeUp 1s ease-out both;
+}
+
+.hero-line {
+  animation: heroLineExpand 1.2s ease-out 0.3s both;
+}
+
+.hero-subtitle {
+  animation: heroFadeUp 1s ease-out 0.5s both;
+}
+
+.hero-subtitle-delay {
+  animation: heroFadeUp 1s ease-out 0.7s both;
+}
+
+.hero-cta {
+  animation: heroFadeUp 1s ease-out 0.9s both;
+}
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroLineExpand {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* Orbiting ring */
+.orbit-ring {
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 50%;
+  animation: orbitSpin 60s linear infinite;
+  pointer-events: none;
+}
+
+.orbit-ring::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+
+@keyframes orbitSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Stat cards */
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Feature cards */
+.feature-card {
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
