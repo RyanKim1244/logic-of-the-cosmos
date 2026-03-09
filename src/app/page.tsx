@@ -22,10 +22,10 @@ export default function Home() {
             Logic of The <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-blue-400 bg-clip-text text-transparent">Cosmos</span>
           </h1>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent mx-auto mb-8 hero-line" />
-          <p className="text-lg md:text-xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
+          <p className="text-xl md:text-2xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
             과학의 모든 영역을 탐구하는 거대한 토론의 장
           </p>
-          <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-sm font-light hero-subtitle-delay">
+          <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-base font-light hero-subtitle-delay">
             올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
           </p>
           <Link

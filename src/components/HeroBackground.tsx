@@ -153,15 +153,15 @@ export default function HeroBackground() {
       </defs>
 
       {/* Shooting star */}
-      <line x1="0" y1="0" x2="60" y2="25" stroke="url(#shootingStar)" strokeWidth="1.5" opacity="0">
+      <line x1="0" y1="0" x2="-60" y2="25" stroke="url(#shootingStar)" strokeWidth="1.5" opacity="0">
         <animate attributeName="opacity" values="0;0;0;0;0.8;0" dur="8s" repeatCount="indefinite" />
-        <animateTransform attributeName="transform" type="translate" values="100,50;400,175" dur="8s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="translate" values="400,50;100,175" dur="8s" repeatCount="indefinite" />
       </line>
 
       <defs>
-        <linearGradient id="shootingStar" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        <linearGradient id="shootingStar" x1="100%" y1="0%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="white" stopOpacity="0" />
+          <stop offset="100%" stopColor="white" stopOpacity="0.8" />
         </linearGradient>
       </defs>
     </svg>
