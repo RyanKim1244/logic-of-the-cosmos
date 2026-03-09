@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="350" viewBox="0 0 500 350">
+  <rect width="500" height="350" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <!-- Axes -->
+  <line x1="80" y1="290" x2="450" y2="290" stroke="#404040" stroke-width="1.5"/>
+  <line x1="80" y1="290" x2="80" y2="30" stroke="#404040" stroke-width="1.5"/>
+  <polygon points="450,290 442,285 442,295" fill="#404040"/>
+  <polygon points="80,30 75,38 85,38" fill="#404040"/>
+  <text x="455" y="295" font-family="serif" font-size="16" fill="#404040" font-style="italic">r</text>
+  <text x="55" y="25" font-family="serif" font-size="16" fill="#404040" font-style="italic">U(r)</text>
+  <!-- Zero line -->
+  <line x1="80" y1="180" x2="440" y2="180" stroke="#d4d4d4" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="442" y="184" font-family="serif" font-size="11" fill="#a3a3a3">0</text>
+  <!-- Lennard-Jones curve -->
+  <path d="M 105,30 C 108,80 110,140 115,200 C 118,230 125,260 135,272 C 145,278 155,275 170,260 C 185,245 200,225 220,210 C 250,190 290,182 330,180 C 370,179 410,180 440,180"
+        fill="none" stroke="#171717" stroke-width="2"/>
+  <!-- Minimum point -->
+  <circle cx="155" cy="276" r="3" fill="#171717"/>
+  <line x1="155" y1="276" x2="155" y2="290" stroke="#737373" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="145" y="308" font-family="serif" font-size="13" fill="#525252" font-style="italic">r₀</text>
+  <!-- Epsilon marker -->
+  <line x1="80" y1="276" x2="155" y2="276" stroke="#737373" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="45" y="280" font-family="serif" font-size="13" fill="#525252">−ε</text>
+  <!-- Sigma marker -->
+  <circle cx="118" cy="180" r="3" fill="#404040"/>
+  <line x1="118" y1="180" x2="118" y2="290" stroke="#737373" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="112" y="308" font-family="serif" font-size="13" fill="#525252" font-style="italic">σ</text>
+  <!-- Labels -->
+  <text x="280" y="170" font-family="serif" font-size="14" fill="#525252">인력 영역</text>
+  <text x="95" y="110" font-family="serif" font-size="14" fill="#525252">척력</text>
+</svg>

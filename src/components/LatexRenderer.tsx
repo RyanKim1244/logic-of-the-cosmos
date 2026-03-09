@@ -29,6 +29,17 @@ function formatContent(text: string): string {
     return `%%MATHBLOCK${mathBlocks.length - 1}%%`;
   });
 
+  // Images: ![alt](url) or ![alt](url "caption")
+  html = html.replace(
+    /!\[([^\]]*)\]\(([^)"]+)(?:\s+"([^"]*)")?\)/g,
+    (_, alt, src, caption) => {
+      const captionHtml = caption
+        ? `<figcaption class="text-xs text-neutral-400 mt-2 text-center">${caption}</figcaption>`
+        : "";
+      return `<figure class="my-4"><img src="${src}" alt="${alt}" class="max-w-full h-auto border border-neutral-200" />${captionHtml}</figure>`;
+    }
+  );
+
   // Bold
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   // Italic

@@ -212,6 +212,8 @@ The repressor cannot bind, so the operon is always partially active regardless o
     tags: ["quantum-mechanics", "schrodinger-equation", "energy-levels"],
     content: `폭이 $L$인 1차원 무한 퍼텐셜 우물에 질량 $m$인 입자가 갇혀 있다.
 
+![무한 퍼텐셜 우물](/images/infinite-potential-well.svg "그림 1. 무한 퍼텐셜 우물과 에너지 준위")
+
 $$V(x) = \\begin{cases} 0 & 0 < x < L \\\\ \\infty & \\text{otherwise} \\end{cases}$$
 
 (a) 시간에 무관한 슈뢰딩거 방정식을 풀어 에너지 고유값 $E_n$과 정규화된 파동함수 $\\psi_n(x)$를 구하시오.
@@ -248,6 +250,55 @@ $$\\Delta x \\to \\frac{L}{\\sqrt{12}} = \\frac{L}{2\\sqrt{3}}$$
 이는 고전역학에서 $[0, L]$ 구간에 균일하게 분포된 입자의 위치 표준편차와 정확히 일치한다 (대응원리).`,
     createdAt: "2024-04-01",
     updatedAt: "2024-04-01",
+  },
+  {
+    id: "kpho-2023-5",
+    title: "레너드-존스 퍼텐셜과 분자 간 상호작용",
+    source: "KPhO 2023",
+    year: 2023,
+    tags: ["molecular-physics", "potential-energy", "lennard-jones"],
+    content: `두 중성 원자 사이의 상호작용은 레너드-존스 퍼텐셜로 기술된다:
+
+$$U(r) = 4\\varepsilon \\left[ \\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^{6} \\right]$$
+
+여기서 $r$은 두 원자 사이의 거리, $\\varepsilon$은 퍼텐셜 우물의 깊이, $\\sigma$는 $U(\\sigma) = 0$을 만족하는 거리이다.
+
+![레너드-존스 퍼텐셜](/images/lennard-jones-potential.svg "그림 1. 레너드-존스 퍼텐셜 곡선")
+
+(a) 평형 거리 $r_0$ (퍼텐셜이 최소인 거리)를 $\\sigma$로 표현하시오.
+
+(b) 평형 위치 근방에서 유효 스프링 상수 $k$를 $\\varepsilon$과 $\\sigma$로 표현하시오.
+
+(c) 아르곤 원자 ($\\varepsilon = 1.654 \\times 10^{-21}$ J, $\\sigma = 3.405 \\times 10^{-10}$ m)에 대해 $r_0$와 진동 주파수를 계산하시오.`,
+    officialSolution: `**(a)** 평형 거리에서 $\\frac{dU}{dr} = 0$:
+
+$$\\frac{dU}{dr} = 4\\varepsilon \\left[ -12\\frac{\\sigma^{12}}{r^{13}} + 6\\frac{\\sigma^{6}}{r^{7}} \\right] = 0$$
+
+$$12\\frac{\\sigma^{12}}{r_0^{13}} = 6\\frac{\\sigma^{6}}{r_0^{7}}$$
+
+$$r_0^6 = 2\\sigma^6 \\implies r_0 = 2^{1/6}\\sigma \\approx 1.122\\sigma$$
+
+**(b)** 유효 스프링 상수:
+
+$$k = \\frac{d^2U}{dr^2}\\bigg|_{r=r_0}$$
+
+$$\\frac{d^2U}{dr^2} = 4\\varepsilon \\left[ 156\\frac{\\sigma^{12}}{r^{14}} - 42\\frac{\\sigma^{6}}{r^{8}} \\right]$$
+
+$r = r_0 = 2^{1/6}\\sigma$를 대입하면:
+
+$$k = 4\\varepsilon \\left[ \\frac{156}{4\\sigma^2} - \\frac{42}{2^{4/3}\\sigma^2} \\right] = \\frac{72\\varepsilon}{2^{1/3}\\sigma^2} = \\frac{36 \\cdot 2^{2/3} \\varepsilon}{\\sigma^2}$$
+
+**(c)** 아르곤의 경우:
+
+$$r_0 = 2^{1/6} \\times 3.405 \\times 10^{-10} = 3.822 \\times 10^{-10} \\text{ m}$$
+
+$$k = \\frac{36 \\cdot 2^{2/3} \\times 1.654 \\times 10^{-21}}{(3.405 \\times 10^{-10})^2} \\approx 0.815 \\text{ N/m}$$
+
+아르곤의 환산 질량 $\\mu = m_{\\text{Ar}}/2 = 3.32 \\times 10^{-26}$ kg이므로:
+
+$$f = \\frac{1}{2\\pi}\\sqrt{\\frac{k}{\\mu}} = \\frac{1}{2\\pi}\\sqrt{\\frac{0.815}{3.32 \\times 10^{-26}}} \\approx 7.9 \\times 10^{11} \\text{ Hz}$$`,
+    createdAt: "2024-05-01",
+    updatedAt: "2024-05-01",
   },
 ];
 

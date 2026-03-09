@@ -179,7 +179,7 @@ export default function AdminPage() {
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 className="w-full px-4 py-3 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none font-mono resize-none transition-colors"
                 rows={10}
-                placeholder={"LaTeX 수식을 포함한 문제 내용을 입력하세요.\n인라인 수식: $E = mc^2$\n블록 수식: $$\\int_0^\\infty e^{-x} dx = 1$$"}
+                placeholder={"LaTeX 수식을 포함한 문제 내용을 입력하세요.\n인라인 수식: $E = mc^2$\n블록 수식: $$\\int_0^\\infty e^{-x} dx = 1$$\n이미지 삽입: ![설명](/images/파일명.svg \"캡션\")"}
               />
             </div>
 
