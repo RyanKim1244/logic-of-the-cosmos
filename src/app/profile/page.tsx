@@ -49,14 +49,14 @@ function CollapsibleSection({
               <span className="text-xs text-neutral-400">{count}개</span>
             </div>
             <svg
-              className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              className={`w-4 h-4 text-neutral-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           {isOpen && (
-            <div className="px-6 pb-5 space-y-2">
+            <div className="px-6 pb-5 space-y-2 animate-fade-slide-up">
               {items.map((p) => (
                 <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
                   <div className="flex justify-between items-center">

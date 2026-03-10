@@ -132,18 +132,18 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
 
       {/* Submit form */}
       {isWriting && (
-        <form onSubmit={handleSubmit} className="border border-neutral-200 p-5 mb-6">
+        <form onSubmit={handleSubmit} className="border border-neutral-200 p-5 mb-6 animate-fade-slide-up">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-8 h-8 bg-black text-white flex items-center justify-center text-xs font-medium shrink-0">
               {user?.name.charAt(0).toUpperCase()}
             </span>
-            <span className="text-sm font-medium text-black">{user?.name}</span>
+            <span className="text-xs font-medium text-black">{user?.name}</span>
           </div>
           <textarea
             value={newSolution}
             onChange={(e) => setNewSolution(e.target.value)}
             placeholder={"나만의 풀이를 작성하세요. LaTeX 수식을 사용할 수 있습니다.\n인라인: $E = mc^2$\n블록: $$\\int_0^\\infty e^{-x} dx = 1$$"}
-            className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-sm transition-colors bg-neutral-50 focus:bg-white font-mono"
+            className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-xs transition-colors bg-neutral-50 focus:bg-white font-mono"
             rows={8}
           />
           <div className="flex justify-end gap-2 mt-3">
@@ -167,7 +167,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
 
       {/* Solutions list */}
       {solutions.length === 0 && !isWriting ? (
-        <p className="text-neutral-400 text-center py-8 text-sm">
+        <p className="text-neutral-400 text-center py-8 text-xs">
           아직 공유된 풀이가 없습니다. {user ? "첫 번째 풀이를 작성해보세요!" : "로그인 후 풀이를 작성할 수 있습니다."}
         </p>
       ) : (
@@ -186,69 +186,73 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                       {solution.author_name.charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
-                      <span className="font-medium text-black text-sm">{solution.author_name}</span>
+                      <span className="font-medium text-black text-xs">{solution.author_name}</span>
                       {solution.author_id === user?.id && (
                         <span className="ml-2 text-[10px] text-blue-500 font-medium uppercase tracking-wider">내 풀이</span>
                       )}
                       <span className="text-xs text-neutral-400 ml-2">{formatDate(solution.created_at)}</span>
                     </div>
                   </div>
-                  <svg className={`w-4 h-4 text-neutral-400 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 text-neutral-400 shrink-0 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
-                {isExpanded && (
-                  <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-                    {solution.author_id === user?.id && editingId !== solution.id && (
-                      <div className="flex items-center gap-2 mb-3 pl-11">
-                        <button
-                          onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
-                          className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDelete(solution.id)}
-                          className="text-xs text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-wider"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    )}
+                <div className="animate-expand" data-collapsed={!isExpanded}>
+                  <div className="animate-expand-inner">
+                    {isExpanded && (
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6 animate-fade-slide-up">
+                        {solution.author_id === user?.id && editingId !== solution.id && (
+                          <div className="flex items-center gap-2 mb-3 pl-11">
+                            <button
+                              onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
+                              className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleDelete(solution.id)}
+                              className="text-xs text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-wider"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        )}
 
-                    {editingId === solution.id ? (
-                      <form onSubmit={handleEdit}>
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-sm transition-colors font-mono"
-                          rows={8}
-                        />
-                        <div className="flex justify-end gap-2 mt-3">
-                          <button
-                            type="button"
-                            onClick={() => { setEditingId(null); setEditContent(""); }}
-                            className="px-4 py-1.5 border border-neutral-300 text-neutral-500 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
-                          >
-                            취소
-                          </button>
-                          <button
-                            type="submit"
-                            disabled={!editContent.trim()}
-                            className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30"
-                          >
-                            수정 완료
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div className="pl-11">
-                        <LatexRenderer content={solution.content} />
+                        {editingId === solution.id ? (
+                          <form onSubmit={handleEdit} className="animate-fade-slide-up">
+                            <textarea
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-xs transition-colors font-mono"
+                              rows={8}
+                            />
+                            <div className="flex justify-end gap-2 mt-3">
+                              <button
+                                type="button"
+                                onClick={() => { setEditingId(null); setEditContent(""); }}
+                                className="px-4 py-1.5 border border-neutral-300 text-neutral-500 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
+                              >
+                                취소
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={!editContent.trim()}
+                                className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30"
+                              >
+                                수정 완료
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="pl-11">
+                            <LatexRenderer content={solution.content} />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
