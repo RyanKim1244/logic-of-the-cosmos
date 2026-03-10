@@ -162,6 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .update(updates)
       .eq("id", user.id);
     if (!error) {
+      // Sync name change across all existing comments
+      if (updates.name && updates.name !== user.name) {
+        await Promise.all([
+          supabase.from("discussions").update({ author_name: updates.name }).eq("author_id", user.id),
+          supabase.from("topic_comments").update({ author_name: updates.name }).eq("author_id", user.id),
+          supabase.from("topics").update({ author_name: updates.name }).eq("author_id", user.id),
+        ]);
+      }
       setUser({ ...user, ...updates });
     }
   };
