@@ -93,7 +93,7 @@ export default function ProblemDetailPage({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* Breadcrumb */}
       <nav className="mb-8">
         <Link href="/problems" className="text-neutral-400 hover:text-black text-xs uppercase tracking-wider transition-colors">
@@ -102,7 +102,7 @@ export default function ProblemDetailPage({
       </nav>
 
       {/* Problem Header */}
-      <div className={`border p-8 mb-6 relative ${isSolved ? "border-emerald-300 bg-emerald-50/30" : "border-neutral-200"}`}>
+      <div className={`border p-5 sm:p-8 mb-6 relative ${isSolved ? "border-emerald-300 bg-emerald-50/30" : "border-neutral-200"}`}>
         {isSolved && (
           <div className="absolute top-4 right-4 flex items-center gap-1.5 solved-badge">
             <span className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
@@ -115,7 +115,7 @@ export default function ProblemDetailPage({
         )}
 
         <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
-        <h1 className="text-2xl font-light text-black mt-1 mb-3">{problem.title}</h1>
+        <h1 className="text-xl sm:text-2xl font-light text-black mt-1 mb-3 pr-16 sm:pr-0">{problem.title}</h1>
         <div className="flex items-center gap-3 text-sm text-neutral-400 mb-4">
           <span>{problem.source} &middot; {problem.year}</span>
           {solvedCount > 0 && (
@@ -138,10 +138,10 @@ export default function ProblemDetailPage({
         </div>
 
         {user && (
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-6 flex-wrap">
             <button
               onClick={() => toggleSolved(id)}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
                 isSolved ? "bg-emerald-500 text-white hover:bg-emerald-600" : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
               }`}
             >
@@ -152,7 +152,7 @@ export default function ProblemDetailPage({
             </button>
             <button
               onClick={() => toggleBookmark(id)}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
                 isBookmarked ? "bg-amber-500 text-white hover:bg-amber-600" : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
               }`}
             >
@@ -189,12 +189,12 @@ export default function ProblemDetailPage({
       </div>
 
       {/* User Solutions Section */}
-      <div className="border border-neutral-200 p-8 mb-6">
+      <div className="border border-neutral-200 p-5 sm:p-8 mb-6">
         <SolutionSection problemId={id} />
       </div>
 
       {/* Discussion Section */}
-      <div className="border border-neutral-200 p-8">
+      <div className="border border-neutral-200 p-5 sm:p-8">
         <DiscussionSection problemId={id} />
       </div>
     </div>
