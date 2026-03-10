@@ -112,7 +112,7 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-neutral-800 px-4 py-4 space-y-4">
+          <div className="md:hidden border-t border-neutral-800 px-4 py-4 flex flex-col space-y-4">
             {navLinks}
             <div className="pt-3 border-t border-neutral-800">
               {loading ? (
