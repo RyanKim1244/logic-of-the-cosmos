@@ -127,6 +127,14 @@ create table if not exists solution_upvotes (
   primary key (user_id, solution_id)
 );
 
+-- 12. User Stats (프로필 통계 사전 집계)
+create table if not exists user_stats (
+  user_id uuid references profiles(id) on delete cascade primary key,
+  solved_count int not null default 0,
+  solution_count int not null default 0,
+  discussion_count int not null default 0
+);
+
 -- ============================================
 -- Row Level Security (RLS) 정책
 -- ============================================
@@ -226,6 +234,10 @@ alter table solution_upvotes enable row level security;
 create policy "Anyone can view solution upvotes" on solution_upvotes for select using (true);
 create policy "Users can insert solution upvotes" on solution_upvotes for insert with check (user_id = auth.uid());
 create policy "Users can delete solution upvotes" on solution_upvotes for delete using (user_id = auth.uid());
+
+-- User Stats (공개 읽기 전용 — 트리거로만 쓰기)
+alter table user_stats enable row level security;
+create policy "Anyone can view user stats" on user_stats for select using (true);
 
 -- ============================================
 -- 인덱스
