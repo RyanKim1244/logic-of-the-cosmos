@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 import HeroBackground from "@/components/HeroBackground";
@@ -17,6 +18,7 @@ interface ContestPreview {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   const [recentProblems, setRecentProblems] = useState<Problem[]>([]);
   const [topContests, setTopContests] = useState<ContestPreview[]>([]);
   const [stats, setStats] = useState({ problems: 0, contests: 0, discussions: 0, authors: 0 });
@@ -288,7 +290,9 @@ export default function Home() {
             <p className="text-neutral-400 text-sm mb-10 max-w-lg mx-auto">수천 개의 문제와 풀이, 활발한 토론이 기다리고 있습니다. 지금 바로 시작하세요.</p>
             <div className="flex items-center justify-center gap-4">
               <Link href="/problems" className="px-8 py-3 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">문제 풀기</Link>
-              <Link href="/login" className="px-8 py-3 border border-neutral-300 text-neutral-700 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors">계정 만들기</Link>
+              {!user && (
+                <Link href="/login" className="px-8 py-3 border border-neutral-300 text-neutral-700 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors">계정 만들기</Link>
+              )}
             </div>
           </ScrollReveal>
         </div>
