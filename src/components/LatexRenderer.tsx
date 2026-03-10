@@ -41,9 +41,16 @@ function formatContent(text: string): string {
     }
   );
 
-  // Bold
+  // LaTeX text commands (outside math mode)
+  html = html.replace(/\\section\{([^}]+)\}/g, '<h2 class="text-lg font-bold mt-6 mb-2">$1</h2>');
+  html = html.replace(/\\subsection\{([^}]+)\}/g, '<h3 class="text-base font-semibold mt-4 mb-1">$1</h3>');
+  html = html.replace(/\\textbf\{([^}]+)\}/g, "<strong>$1</strong>");
+  html = html.replace(/\\textit\{([^}]+)\}/g, "<em>$1</em>");
+  html = html.replace(/\\underline\{([^}]+)\}/g, '<u>$1</u>');
+  html = html.replace(/\\emph\{([^}]+)\}/g, "<em>$1</em>");
+
+  // Markdown bold/italic
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  // Italic
   html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
 
   // Tables
@@ -119,7 +126,7 @@ function LatexRendererInner({ content }: { content: string }) {
     <div
       ref={containerRef}
       className="latex-content prose prose-sm max-w-none"
-      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatContent(content), { ADD_TAGS: ["figure", "figcaption"], ADD_ATTR: ["class"] }) }}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatContent(content), { ADD_TAGS: ["figure", "figcaption", "u"], ADD_ATTR: ["class"] }) }}
     />
   );
 }
