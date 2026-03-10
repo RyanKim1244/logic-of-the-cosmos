@@ -118,21 +118,29 @@ export default function ProfilePage() {
       const allProblemIds = [...new Set([...currentUser.bookmarkedProblems, ...currentUser.solvedProblems])];
 
       // All queries in parallel — no waterfall
-      const [statsRes, detailsRes, historyRes] = await Promise.allSettled([
+      const [statsRes, detailsRes, historyRes, heatmapRes] = await Promise.allSettled([
+        // 1. Stats (single row)
         withRetry(() => withTimeout(
           supabase.from("user_stats").select("solution_count, discussion_count").eq("user_id", currentUser.id).single(),
           4000, sig
         ), 1, 500, sig),
+        // 2. Problem details for bookmarks + solved (one combined query)
         allProblemIds.length > 0
           ? withRetry(() => withTimeout(
               supabase.from("problems").select("id, title, source").in("id", allProblemIds),
               6000, sig
             ), 1, 1000, sig)
           : Promise.resolve({ data: [] as ProblemSummary[], error: null }),
+        // 3. Solve history (for timeline display)
         withRetry(() => withTimeout(
           supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
           6000, sig
         ), 1, 1000, sig),
+        // 4. Heatmap — server-side aggregation via RPC (returns ~180 rows max instead of N)
+        withTimeout(
+          supabase.rpc("get_solve_heatmap", { p_user_id: currentUser.id, p_days: 183 }),
+          4000, sig
+        ),
       ]);
 
       if (sig.aborted) return;
@@ -162,12 +170,32 @@ export default function ProfilePage() {
         setCache("profile_details", true);
       }
 
-      // Process solve history + merge with problem details (already fetched)
+      // Process heatmap — prefer server-aggregated RPC, fallback to raw history
+      let heatmapDates: string[] | null = null;
+      if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
+        // RPC returns [{solve_date, solve_count}] — expand to individual date strings for heatmap
+        const rpcData = heatmapRes.value.data as { solve_date: string; solve_count: number }[];
+        const expanded: string[] = [];
+        for (const row of rpcData) {
+          for (let i = 0; i < row.solve_count; i++) {
+            expanded.push(row.solve_date);
+          }
+        }
+        heatmapDates = expanded;
+        setSolvedDates(expanded);
+        setCache("profile_dates", expanded);
+      }
+
+      // Process solve history + merge with problem details
       if (historyRes.status === "fulfilled" && historyRes.value.data) {
         const solveData = historyRes.value.data as { problem_id: string; created_at: string }[];
-        const dates = solveData.map((s) => s.created_at);
-        setSolvedDates(dates);
-        setCache("profile_dates", dates);
+
+        // Fallback: if RPC failed, use raw history dates for heatmap
+        if (!heatmapDates) {
+          const dates = solveData.map((s) => s.created_at);
+          setSolvedDates(dates);
+          setCache("profile_dates", dates);
+        }
 
         if (detailMap) {
           const history: SolveRecord[] = solveData
