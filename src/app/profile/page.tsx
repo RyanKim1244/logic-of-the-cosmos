@@ -90,13 +90,37 @@ export default function ProfilePage() {
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
   const [solutionCount, setSolutionCount] = useState(0);
   const [discussionCount, setDiscussionCount] = useState(0);
+
+  // Restore cached stats immediately so numbers appear without waiting for queries
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const cached = sessionStorage.getItem(`profile_stats_${user.id}`);
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (data.solutionCount != null) setSolutionCount(data.solutionCount);
+        if (data.discussionCount != null) setDiscussionCount(data.discussionCount);
+        if (data.solvedDates) setSolvedDates(data.solvedDates);
+        if (data.solveHistory) setSolveHistory(data.solveHistory);
+      }
+    } catch { /* ignore corrupted cache */ }
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     const controller = new AbortController();
     const sig = controller.signal;
+    const cacheKey = `profile_stats_${user.id}`;
+
+    // Helper: merge partial update into sessionStorage cache
+    function updateCache(patch: Record<string, unknown>) {
+      try {
+        const prev = JSON.parse(sessionStorage.getItem(cacheKey) || "{}");
+        sessionStorage.setItem(cacheKey, JSON.stringify({ ...prev, ...patch }));
+      } catch { /* ignore */ }
+    }
 
     // Each query fires independently and updates state as it resolves.
-    // This prevents one slow query from blocking all stats.
 
     // Bookmarked problems (for list display)
     if (user.bookmarkedProblems.length > 0) {
@@ -114,12 +138,12 @@ export default function ProfilePage() {
 
     // Solution count
     withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).eq("is_solution", true), 6000, sig), 1, 1000, sig)
-      .then((res) => { if (!sig.aborted && res.count != null) setSolutionCount(res.count); })
+      .then((res) => { if (!sig.aborted && res.count != null) { setSolutionCount(res.count); updateCache({ solutionCount: res.count }); } })
       .catch(() => {});
 
     // Discussion count
     withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).or("is_solution.is.null,is_solution.eq.false"), 6000, sig), 1, 1000, sig)
-      .then((res) => { if (!sig.aborted && res.count != null) setDiscussionCount(res.count); })
+      .then((res) => { if (!sig.aborted && res.count != null) { setDiscussionCount(res.count); updateCache({ discussionCount: res.count }); } })
       .catch(() => {});
 
     // Solve history + problem details (chained: history first, then details)
@@ -127,7 +151,9 @@ export default function ProfilePage() {
       .then(async (res) => {
         if (sig.aborted || !res.data) return;
         const solveData = res.data as { problem_id: string; created_at: string }[];
-        setSolvedDates(solveData.map((s) => s.created_at));
+        const dates = solveData.map((s) => s.created_at);
+        setSolvedDates(dates);
+        updateCache({ solvedDates: dates });
 
         const problemIds = solveData.map((s) => s.problem_id);
         if (problemIds.length === 0) return;
@@ -146,6 +172,7 @@ export default function ProfilePage() {
           })
           .filter((r): r is SolveRecord => r !== null);
         setSolveHistory(history);
+        updateCache({ solveHistory: history });
       })
       .catch(() => {});
 
