@@ -107,6 +107,7 @@ export default function CommunityContent({
 
     function handleVisibility() {
       if (document.visibilityState === "visible") {
+        controller.abort();
         controller = new AbortController();
         fetchTopics(controller.signal);
       }

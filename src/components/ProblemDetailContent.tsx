@@ -66,6 +66,7 @@ export default function ProblemDetailContent({
 
     function handleVisibility() {
       if (document.visibilityState === "visible") {
+        controller.abort();
         controller = new AbortController();
         fetchProblem(controller.signal);
         fetchSolvedCount(controller.signal);

@@ -93,7 +93,11 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
 
   useEffect(() => {
     if (sectionRef.current && window.MathJax?.typesetPromise) {
-      window.MathJax.typesetPromise([sectionRef.current]).catch(console.error);
+      const el = sectionRef.current;
+      if (window.MathJax.typesetClear) {
+        window.MathJax.typesetClear([el]);
+      }
+      window.MathJax.typesetPromise([el]).catch(console.error);
     }
   }, [solutions]);
 
