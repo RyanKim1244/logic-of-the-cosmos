@@ -17,7 +17,7 @@ export default function ProblemsPage() {
   const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>({});
   const PER_PAGE = 20;
 
-  const fetchProblems = async (retries = 2) => {
+  const fetchProblems = async (retries = 1) => {
     setError(null);
     setLoading(true);
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -26,7 +26,7 @@ export default function ProblemsPage() {
           supabase.from("problems").select("*").order("problem_number", { ascending: true })
         );
         if (fetchError) {
-          if (attempt < retries) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
+          if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
           setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
           break;
         }
@@ -46,7 +46,7 @@ export default function ProblemsPage() {
         }
         break;
       } catch (e) {
-        if (attempt < retries) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
+        if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
         setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       }
     }

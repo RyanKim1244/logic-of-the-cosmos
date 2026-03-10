@@ -19,6 +19,7 @@ export default function ProblemDetailPage({
   const [showSolution, setShowSolution] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [solvedCount, setSolvedCount] = useState(0);
   const isSolved = user?.solvedProblems.includes(id) ?? false;
   const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
@@ -26,14 +27,16 @@ export default function ProblemDetailPage({
   useEffect(() => {
     async function fetchProblem() {
       try {
-        const { data } = await withTimeout(
+        const { data, error: fetchError } = await withTimeout(
           supabase
             .from("problems")
             .select("*")
             .eq("id", id)
             .single()
         );
-        if (data) {
+        if (fetchError) {
+          setError(`문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
+        } else if (data) {
           setProblem({
             id: data.id,
             problemNumber: data.problem_number,
@@ -47,8 +50,8 @@ export default function ProblemDetailPage({
             updatedAt: data.updated_at,
           });
         }
-      } catch {
-        // timeout or network error
+      } catch (e) {
+        setError(`문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       } finally {
         setLoading(false);
       }
@@ -74,6 +77,15 @@ export default function ProblemDetailPage({
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
         <p className="text-neutral-400 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <p className="text-red-500 text-sm mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
       </div>
     );
   }

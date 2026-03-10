@@ -17,31 +17,40 @@ export default function ContestsPage() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [problemCounts, setProblemCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const { data: contestsData, error: fetchError } = await withTimeout(supabase.from("contests").select("*"));
+      if (fetchError) {
+        setError(`기출문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
+        setLoading(false);
+        return;
+      }
+      if (contestsData) {
+        setContests(contestsData);
+
+        const { data: problems } = await withTimeout(supabase.from("problems").select("source"));
+        if (problems) {
+          const counts: Record<string, number> = {};
+          for (const contest of contestsData) {
+            counts[contest.id] = problems.filter((p) =>
+              p.source.toLowerCase().includes(contest.short_name.toLowerCase())
+            ).length;
+          }
+          setProblemCounts(counts);
+        }
+      }
+    } catch (e) {
+      setError(`기출문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: contestsData } = await withTimeout(supabase.from("contests").select("*"));
-        if (contestsData) {
-          setContests(contestsData);
-
-          const { data: problems } = await withTimeout(supabase.from("problems").select("source"));
-          if (problems) {
-            const counts: Record<string, number> = {};
-            for (const contest of contestsData) {
-              counts[contest.id] = problems.filter((p) =>
-                p.source.toLowerCase().includes(contest.short_name.toLowerCase())
-              ).length;
-            }
-            setProblemCounts(counts);
-          }
-        }
-      } catch {
-        // timeout or network error
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchData();
   }, []);
 
@@ -49,6 +58,17 @@ export default function ContestsPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <p className="text-neutral-400 text-center py-20 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-20">
+          <p className="text-red-500 text-sm mb-4">{error}</p>
+          <button onClick={() => fetchData()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+        </div>
       </div>
     );
   }
