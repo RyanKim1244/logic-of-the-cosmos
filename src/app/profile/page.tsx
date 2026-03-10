@@ -1,26 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { problems } from "@/data/problems";
+import { supabase } from "@/lib/supabase";
+
+interface ProblemSummary {
+  id: string;
+  title: string;
+  source: string;
+}
 
 export default function ProfilePage() {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, loading: authLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [bookmarkedProblems, setBookmarkedProblems] = useState<ProblemSummary[]>([]);
+  const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>([]);
+
+  useEffect(() => {
+    async function fetchProblems() {
+      if (!user) return;
+
+      if (user.bookmarkedProblems.length > 0) {
+        const { data } = await supabase
+          .from("problems")
+          .select("id, title, source")
+          .in("id", user.bookmarkedProblems);
+        if (data) setBookmarkedProblems(data);
+      }
+
+      if (user.solvedProblems.length > 0) {
+        const { data } = await supabase
+          .from("problems")
+          .select("id, title, source")
+          .in("id", user.solvedProblems);
+        if (data) setSolvedProblems(data);
+      }
+    }
+    fetchProblems();
+  }, [user]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <p className="text-neutral-400 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
         <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
-        <Link
-          href="/login"
-          className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors"
-        >
+        <Link href="/login" className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors">
           로그인
         </Link>
       </div>
@@ -33,11 +69,8 @@ export default function ProfilePage() {
     day: "numeric",
   });
 
-  const bookmarkedProblems = problems.filter((p) => user.bookmarkedProblems.includes(p.id));
-  const solvedProblems = problems.filter((p) => user.solvedProblems.includes(p.id));
-
-  const handleSaveProfile = () => {
-    updateProfile({ name: editName, bio: editBio });
+  const handleSaveProfile = async () => {
+    await updateProfile({ name: editName, bio: editBio });
     setIsEditing(false);
   };
 
@@ -59,40 +92,17 @@ export default function ProfilePage() {
             <div>
               {isEditing ? (
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="block text-xl font-light border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none"
-                  />
-                  <textarea
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    placeholder="자기소개를 입력하세요"
-                    rows={2}
-                    className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none"
-                  />
+                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="block text-xl font-light border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none" />
+                  <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="자기소개를 입력하세요" rows={2} className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none" />
                   <div className="flex gap-2">
-                    <button
-                      onClick={handleSaveProfile}
-                      className="px-4 py-1.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
-                    >
-                      저장
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors"
-                    >
-                      취소
-                    </button>
+                    <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors">저장</button>
+                    <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">취소</button>
                   </div>
                 </div>
               ) : (
                 <>
                   <h1 className="text-2xl font-light mb-1">{user.name}</h1>
-                  {user.bio && (
-                    <p className="text-sm text-neutral-500 mb-2">{user.bio}</p>
-                  )}
+                  {user.bio && <p className="text-sm text-neutral-500 mb-2">{user.bio}</p>}
                   <p className="text-xs text-neutral-400">{user.email}</p>
                   <p className="text-xs text-neutral-400 mt-1">가입일: {joinDate}</p>
                 </>
@@ -102,21 +112,8 @@ export default function ProfilePage() {
 
           {!isEditing && (
             <div className="flex gap-2">
-              <button
-                onClick={startEdit}
-                className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors"
-              >
-                편집
-              </button>
-              <button
-                onClick={() => {
-                  logout();
-                  router.push("/");
-                }}
-                className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
-              >
-                로그아웃
-              </button>
+              <button onClick={startEdit} className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">편집</button>
+              <button onClick={async () => { await logout(); router.push("/"); }} className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors">로그아웃</button>
             </div>
           )}
         </div>
@@ -144,9 +141,7 @@ export default function ProfilePage() {
         {bookmarkedProblems.length === 0 ? (
           <div className="border border-neutral-200 p-8 text-center">
             <p className="text-neutral-400 text-sm">아직 북마크한 문제가 없습니다.</p>
-            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">
-              문제 목록 보기 &rarr;
-            </Link>
+            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 목록 보기 &rarr;</Link>
           </div>
         ) : (
           <div className="space-y-2">
@@ -168,9 +163,7 @@ export default function ProfilePage() {
         {solvedProblems.length === 0 ? (
           <div className="border border-neutral-200 p-8 text-center">
             <p className="text-neutral-400 text-sm">아직 풀이를 완료한 문제가 없습니다.</p>
-            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">
-              문제 풀러 가기 &rarr;
-            </Link>
+            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 풀러 가기 &rarr;</Link>
           </div>
         ) : (
           <div className="space-y-2">
