@@ -18,24 +18,53 @@ interface ContestPreview {
   years: number[];
 }
 
+// localStorage keys for instant home data restoration on refresh
+const HOME_CACHE_KEY = "lotc_home_cache";
+
+interface HomeCache {
+  problems: Problem[];
+  contests: ContestPreview[];
+  stats: { problems: number; contests: number; discussions: number; authors: number };
+  counts: Record<string, number>;
+}
+
+function saveHomeCache(data: HomeCache) {
+  try { localStorage.setItem(HOME_CACHE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+}
+
+function loadHomeCache(): HomeCache | null {
+  try {
+    const raw = localStorage.getItem(HOME_CACHE_KEY);
+    return raw ? JSON.parse(raw) as HomeCache : null;
+  } catch { return null; }
+}
+
 export default function Home() {
   const { user } = useAuth();
   const [recentProblems, setRecentProblems] = useState<Problem[]>([]);
   const [topContests, setTopContests] = useState<ContestPreview[]>([]);
-  const [stats, setStats] = useState({ problems: 0, contests: 0, discussions: 0, authors: 0 });
+  const [stats, setStats] = useState<{ problems: number; contests: number; discussions: number; authors: number } | null>(null);
   const [problemCounts, setProblemCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     let controller = new AbortController();
 
+    // Instantly restore from localStorage (zero network)
+    const localCache = loadHomeCache();
+    if (localCache) {
+      setRecentProblems(localCache.problems);
+      setTopContests(localCache.contests);
+      setStats(localCache.stats);
+      setProblemCounts(localCache.counts);
+    }
+
     async function fetchData() {
-      // Serve stale cache immediately (if available), then revalidate in background
+      // Serve stale in-memory cache (for SPA navigation)
       const cachedProblems = getCached<Problem[]>("homeRecentProblems", true);
       const cachedContests = getCached<ContestPreview[]>("homeContests", true);
-      const cachedStats = getCached<typeof stats>("homeStats", true);
+      const cachedStats = getCached<{ problems: number; contests: number; discussions: number; authors: number }>("homeStats", true);
       const cachedCounts = getCached<Record<string, number>>("homeProblemCounts", true);
 
-      // Show cached data immediately
       if (cachedProblems) setRecentProblems(cachedProblems);
       if (cachedContests) setTopContests(cachedContests);
       if (cachedStats) setStats(cachedStats);
@@ -101,6 +130,7 @@ export default function Home() {
         }
 
         // Problem counts per contest
+        let newCounts: Record<string, number> = {};
         if (contestsRes?.data && contestsRes.data.length > 0) {
           try {
             const { data: allProblems } = await withTimeout(
@@ -108,17 +138,32 @@ export default function Home() {
             );
             if (controller.signal.aborted) return;
             if (allProblems && allProblems.length > 0) {
-              const counts: Record<string, number> = {};
               for (const c of contestsRes.data) {
-                counts[c.id] = allProblems.filter((p: { source: string }) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
+                newCounts[c.id] = allProblems.filter((p: { source: string }) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
               }
-              setProblemCounts(counts);
-              setCache("homeProblemCounts", counts);
+              setProblemCounts(newCounts);
+              setCache("homeProblemCounts", newCounts);
             }
           } catch {
             // Problem counts are non-critical; skip silently
           }
         }
+
+        // Persist to localStorage for instant restore on next refresh
+        const mappedProblems = problemsRes?.data && problemsRes.data.length > 0
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? (problemsRes.data as any[]).map((p) => ({
+              id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
+              year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
+              createdAt: p.created_at, updatedAt: p.updated_at,
+            }))
+          : undefined;
+        saveHomeCache({
+          problems: mappedProblems || localCache?.problems || [],
+          contests: contestsRes?.data && contestsRes.data.length > 0 ? contestsRes.data : localCache?.contests || [],
+          stats: newStats.problems > 0 || newStats.contests > 0 || newStats.discussions > 0 ? newStats : localCache?.stats || { problems: 0, contests: 0, discussions: 0, authors: 0 },
+          counts: Object.keys(newCounts).length > 0 ? newCounts : localCache?.counts || {},
+        });
       } catch {
         // On fetch failure, keep existing state — never reset to empty
       }
@@ -197,15 +242,15 @@ export default function Home() {
           </ScrollReveal>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "총 문제 수", value: stats.problems },
-              { label: "등록 대회", value: stats.contests },
-              { label: "토론 댓글 수", value: stats.discussions },
-              { label: "참여자 수", value: stats.authors },
+              { label: "총 문제 수", value: stats?.problems ?? null },
+              { label: "등록 대회", value: stats?.contests ?? null },
+              { label: "토론 댓글 수", value: stats?.discussions ?? null },
+              { label: "참여자 수", value: stats?.authors ?? null },
             ].map((stat, i) => (
               <ScrollReveal key={stat.label} delay={i * 100}>
                 <div className="p-8 text-center border border-neutral-200 bg-white stat-card">
                   <div className="text-4xl md:text-5xl font-extralight text-black">
-                    <CountUp target={stat.value} />
+                    {stat.value !== null ? <CountUp target={stat.value} /> : <span className="inline-block w-12 h-10 bg-neutral-100 animate-pulse rounded" />}
                   </div>
                   <div className="text-xs text-neutral-400 mt-3 uppercase tracking-[0.2em]">{stat.label}</div>
                 </div>
@@ -316,7 +361,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
                   <p className="text-xs text-neutral-400 leading-relaxed">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{stats.problems}개의 문제 &rarr;</span>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{stats?.problems ?? "—"}개의 문제 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -328,7 +373,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
                   <p className="text-xs text-neutral-400 leading-relaxed">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{stats.contests}개의 대회 &rarr;</span>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{stats?.contests ?? "—"}개의 대회 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
