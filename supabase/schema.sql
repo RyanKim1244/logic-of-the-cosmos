@@ -30,7 +30,7 @@ create or replace trigger on_auth_user_created
 -- 2. Problems
 create table if not exists problems (
   id text primary key,
-  problem_number serial,
+  problem_number serial NOT NULL,
   title text not null,
   source text not null,
   year int not null,
@@ -40,6 +40,9 @@ create table if not exists problems (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- problem_number 시퀀스를 1000부터 시작
+ALTER SEQUENCE problems_problem_number_seq RESTART WITH 1000;
 
 -- 3. Discussions (문제 토론)
 create table if not exists discussions (
