@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 interface Discussion {
@@ -28,15 +28,18 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
   const authorName = user ? user.name : "Guest";
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchDiscussions() {
-      const { data } = await supabase
-        .from("discussions")
-        .select("*")
-        .eq("problem_id", problemId)
-        .order("created_at", { ascending: true });
-      if (data) setDiscussions(data);
+      try {
+        const { data } = await withTimeout(
+          supabase.from("discussions").select("*").eq("problem_id", problemId).order("created_at", { ascending: true }),
+          5000, controller.signal
+        );
+        if (!controller.signal.aborted && data) setDiscussions(data);
+      } catch { /* ignore */ }
     }
     fetchDiscussions();
+    return () => controller.abort();
   }, [problemId]);
 
   useEffect(() => {

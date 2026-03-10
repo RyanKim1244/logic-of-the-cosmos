@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout } from "@/lib/supabase";
+import { getCached, setCache } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
@@ -25,55 +26,73 @@ export default function Home() {
   const [problemCounts, setProblemCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch recent problems
-        const { data: problemsData } = await withTimeout(
-          supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3)
-        );
+    const controller = new AbortController();
 
-        if (problemsData) {
-          setRecentProblems(problemsData.map((p) => ({
+    async function fetchData() {
+      // Check cache first
+      const cachedProblems = getCached<Problem[]>("homeRecentProblems");
+      const cachedContests = getCached<ContestPreview[]>("homeContests");
+      const cachedStats = getCached<typeof stats>("homeStats");
+      const cachedCounts = getCached<Record<string, number>>("homeProblemCounts");
+      if (cachedProblems && cachedContests && cachedStats && cachedCounts) {
+        setRecentProblems(cachedProblems);
+        setTopContests(cachedContests);
+        setStats(cachedStats);
+        setProblemCounts(cachedCounts);
+        return;
+      }
+
+      try {
+        const sig = controller.signal;
+
+        // Fetch everything in parallel
+        const [problemsRes, contestsRes, problemCountRes, contestCountRes, discussionCountRes, authorDataRes] = await Promise.all([
+          withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 5000, sig),
+          withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 5000, sig),
+          withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), 5000, sig),
+          withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), 5000, sig),
+          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), 5000, sig),
+          withTimeout(supabase.from("discussions").select("author_name"), 5000, sig),
+        ]);
+
+        if (controller.signal.aborted) return;
+
+        if (problemsRes.data) {
+          const mapped = problemsRes.data.map((p) => ({
             id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
             year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
             createdAt: p.created_at, updatedAt: p.updated_at,
-          })));
+          }));
+          setRecentProblems(mapped);
+          setCache("homeRecentProblems", mapped);
         }
 
-        // Fetch contests
-        const { data: contestsData } = await withTimeout(
-          supabase.from("contests").select("id, name, short_name, years").limit(4)
-        );
-        if (contestsData) setTopContests(contestsData);
-
-        // Fetch stats in parallel
-        const [problemCountRes, contestCountRes, discussionCountRes, authorDataRes] = await Promise.all([
-          withTimeout(supabase.from("problems").select("*", { count: "exact", head: true })),
-          withTimeout(supabase.from("contests").select("*", { count: "exact", head: true })),
-          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true })),
-          withTimeout(supabase.from("discussions").select("author_name")),
-        ]);
+        if (contestsRes.data) setTopContests(contestsRes.data);
+        setCache("homeContests", contestsRes.data);
 
         const uniqueAuthors = authorDataRes.data ? new Set(authorDataRes.data.map((d) => d.author_name)).size : 0;
-
-        setStats({
+        const newStats = {
           problems: problemCountRes.count || 0,
           contests: contestCountRes.count || 0,
           discussions: discussionCountRes.count || 0,
           authors: uniqueAuthors,
-        });
+        };
+        setStats(newStats);
+        setCache("homeStats", newStats);
 
         // Problem counts per contest
-        if (contestsData) {
+        if (contestsRes.data) {
           const { data: allProblems } = await withTimeout(
-            supabase.from("problems").select("source")
+            supabase.from("problems").select("source"), 5000, sig
           );
+          if (controller.signal.aborted) return;
           if (allProblems) {
             const counts: Record<string, number> = {};
-            for (const c of contestsData) {
+            for (const c of contestsRes.data) {
               counts[c.id] = allProblems.filter((p) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
             }
             setProblemCounts(counts);
+            setCache("homeProblemCounts", counts);
           }
         }
       } catch {
@@ -81,6 +100,7 @@ export default function Home() {
       }
     }
     fetchData();
+    return () => controller.abort();
   }, []);
 
   return (

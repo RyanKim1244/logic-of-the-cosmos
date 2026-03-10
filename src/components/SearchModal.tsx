@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 
 interface SearchResult {
   type: "problem" | "topic";
@@ -41,42 +41,53 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
     return () => document.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
 
+  const searchControllerRef = useRef<AbortController | null>(null);
+
   const search = useCallback(async (q: string) => {
+    // Abort previous search request
+    searchControllerRef.current?.abort();
+
     if (!q.trim()) {
       setResults([]);
       return;
     }
     setSearching(true);
+    const controller = new AbortController();
+    searchControllerRef.current = controller;
     const searchTerm = `%${q}%`;
 
-    const [problemsRes, topicsRes] = await Promise.all([
-      supabase
-        .from("problems")
-        .select("id, title, source, year")
-        .or(`title.ilike.${searchTerm},source.ilike.${searchTerm},content.ilike.${searchTerm}`)
-        .limit(5),
-      supabase
-        .from("topics")
-        .select("id, title, author_name")
-        .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
-        .limit(3),
-    ]);
+    try {
+      const [problemsRes, topicsRes] = await Promise.all([
+        withTimeout(
+          supabase.from("problems").select("id, title, source, year")
+            .or(`title.ilike.${searchTerm},source.ilike.${searchTerm},content.ilike.${searchTerm}`)
+            .limit(5),
+          3000, controller.signal
+        ),
+        withTimeout(
+          supabase.from("topics").select("id, title, author_name")
+            .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
+            .limit(3),
+          3000, controller.signal
+        ),
+      ]);
 
-    const items: SearchResult[] = [];
+      if (controller.signal.aborted) return;
 
-    if (problemsRes.data) {
-      for (const p of problemsRes.data) {
-        items.push({ type: "problem", id: p.id, title: p.title, subtitle: `${p.source} · ${p.year}` });
+      const items: SearchResult[] = [];
+      if (problemsRes.data) {
+        for (const p of problemsRes.data) {
+          items.push({ type: "problem", id: p.id, title: p.title, subtitle: `${p.source} · ${p.year}` });
+        }
       }
-    }
-    if (topicsRes.data) {
-      for (const t of topicsRes.data) {
-        items.push({ type: "topic", id: t.id, title: t.title, subtitle: `커뮤니티 · ${t.author_name}` });
+      if (topicsRes.data) {
+        for (const t of topicsRes.data) {
+          items.push({ type: "topic", id: t.id, title: t.title, subtitle: `커뮤니티 · ${t.author_name}` });
+        }
       }
-    }
-
-    setResults(items);
-    setSelectedIndex(0);
+      setResults(items);
+      setSelectedIndex(0);
+    } catch { /* aborted or timeout */ }
     setSearching(false);
   }, []);
 

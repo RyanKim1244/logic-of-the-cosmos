@@ -20,7 +20,7 @@ export default function ContestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = async (signal?: AbortSignal) => {
     setError(null);
     setLoading(true);
 
@@ -34,7 +34,10 @@ export default function ContestsPage() {
     }
 
     try {
-      const { data: contestsData, error: fetchError } = await withTimeout(supabase.from("contests").select("*"));
+      const { data: contestsData, error: fetchError } = await withTimeout(
+        supabase.from("contests").select("*"), 5000, signal
+      );
+      if (signal?.aborted) return;
       if (fetchError) {
         setError(`기출문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
         setLoading(false);
@@ -44,7 +47,10 @@ export default function ContestsPage() {
         setContests(contestsData);
         setCache("contests", contestsData);
 
-        const { data: problems } = await withTimeout(supabase.from("problems").select("source"));
+        const { data: problems } = await withTimeout(
+          supabase.from("problems").select("source"), 5000, signal
+        );
+        if (signal?.aborted) return;
         if (problems) {
           const counts: Record<string, number> = {};
           for (const contest of contestsData) {
@@ -57,6 +63,7 @@ export default function ContestsPage() {
         }
       }
     } catch (e) {
+      if (signal?.aborted) return;
       setError(`기출문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
     } finally {
       setLoading(false);
@@ -64,7 +71,9 @@ export default function ContestsPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
   }, []);
 
   if (loading) {

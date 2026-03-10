@@ -33,6 +33,7 @@ export default function CommunityPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchTopics() {
       const cachedTopics = getCached<Topic[]>("communityTopics");
       const cachedCounts = getCached<Record<string, number>>("communityCommentCounts");
@@ -45,12 +46,11 @@ export default function CommunityPage() {
 
       try {
         const { data: topics, error: fetchError } = await withTimeout(
-          supabase
-            .from("topics")
-            .select("*")
-            .order("created_at", { ascending: false })
+          supabase.from("topics").select("*").order("created_at", { ascending: false }),
+          5000, controller.signal
         );
 
+        if (controller.signal.aborted) return;
         if (fetchError) {
           setError("토픽을 불러오는 데 실패했습니다.");
           setLoadingTopics(false);
@@ -61,15 +61,13 @@ export default function CommunityPage() {
           setAllTopics(topics);
           setCache("communityTopics", topics);
 
-          // Fetch all comment counts in a single query instead of N+1
           const topicIds = topics.map((t) => t.id);
           if (topicIds.length > 0) {
             const { data: comments } = await withTimeout(
-              supabase
-                .from("topic_comments")
-                .select("topic_id")
-                .in("topic_id", topicIds)
+              supabase.from("topic_comments").select("topic_id").in("topic_id", topicIds),
+              5000, controller.signal
             );
+            if (controller.signal.aborted) return;
             const counts: Record<string, number> = {};
             if (comments) {
               for (const c of comments) {
@@ -81,11 +79,13 @@ export default function CommunityPage() {
           }
         }
       } catch {
+        if (controller.signal.aborted) return;
         setError("토픽을 불러오는 데 실패했습니다.");
       }
       setLoadingTopics(false);
     }
     fetchTopics();
+    return () => controller.abort();
   }, []);
 
   const filteredTopics = useMemo(() => {

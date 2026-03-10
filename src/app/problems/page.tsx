@@ -31,7 +31,7 @@ export default function ProblemsPage() {
     updatedAt: p.updated_at as string,
   });
 
-  const fetchProblems = async (retries = 1) => {
+  const fetchProblems = async (signal?: AbortSignal) => {
     setError(null);
     setLoading(true);
 
@@ -42,38 +42,36 @@ export default function ProblemsPage() {
       return;
     }
 
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const { data, error: fetchError } = await withTimeout(
-          supabase.from("problems").select("*").order("problem_number", { ascending: true })
-        );
-        if (fetchError) {
-          if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
-          setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
-          break;
-        }
-        if (data) {
-          const mapped = data.map(mapProblem);
-          setProblems(mapped);
-          setCache("problems", mapped);
-        }
-        break;
-      } catch (e) {
-        if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
-        setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+    try {
+      const { data, error: fetchError } = await withTimeout(
+        supabase.from("problems").select("*").order("problem_number", { ascending: true }),
+        5000, signal
+      );
+      if (fetchError) {
+        setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
+      } else if (data) {
+        const mapped = data.map(mapProblem);
+        setProblems(mapped);
+        setCache("problems", mapped);
       }
+    } catch (e) {
+      if (signal?.aborted) return;
+      setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
     }
     setLoading(false);
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchSolvedCounts() {
       const cached = getCached<Record<string, number>>("solvedCounts");
       if (cached) { setSolvedCounts(cached); return; }
       try {
         const { data } = await withTimeout(
-          supabase.from("user_solved_problems").select("problem_id")
+          supabase.from("user_solved_problems").select("problem_id"),
+          5000, controller.signal
         );
+        if (controller.signal.aborted) return;
         if (data) {
           const counts: Record<string, number> = {};
           for (const row of data) {
@@ -84,8 +82,9 @@ export default function ProblemsPage() {
         }
       } catch { /* ignore */ }
     }
-    fetchProblems();
+    fetchProblems(controller.signal);
     fetchSolvedCounts();
+    return () => controller.abort();
   }, []);
 
   const filteredProblems = useMemo(() => {

@@ -25,32 +25,25 @@ export default function ProblemDetailPage({
   const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchProblem() {
       try {
         const { data, error: fetchError } = await withTimeout(
-          supabase
-            .from("problems")
-            .select("*")
-            .eq("id", id)
-            .single()
+          supabase.from("problems").select("*").eq("id", id).single(),
+          5000, controller.signal
         );
+        if (controller.signal.aborted) return;
         if (fetchError) {
           setError(`문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
         } else if (data) {
           setProblem({
-            id: data.id,
-            problemNumber: data.problem_number,
-            title: data.title,
-            source: data.source,
-            year: data.year,
-            tags: data.tags,
-            content: data.content,
-            officialSolution: data.official_solution,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
+            id: data.id, problemNumber: data.problem_number, title: data.title,
+            source: data.source, year: data.year, tags: data.tags, content: data.content,
+            officialSolution: data.official_solution, createdAt: data.created_at, updatedAt: data.updated_at,
           });
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
         setError(`문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       } finally {
         setLoading(false);
@@ -59,18 +52,16 @@ export default function ProblemDetailPage({
     async function fetchSolvedCount() {
       try {
         const { count } = await withTimeout(
-          supabase
-            .from("user_solved_problems")
-            .select("*", { count: "exact", head: true })
-            .eq("problem_id", id)
+          supabase.from("user_solved_problems").select("*", { count: "exact", head: true }).eq("problem_id", id),
+          5000, controller.signal
         );
+        if (controller.signal.aborted) return;
         if (count !== null) setSolvedCount(count);
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
     }
     fetchProblem();
     fetchSolvedCount();
+    return () => controller.abort();
   }, [id]);
 
   if (loading) {
