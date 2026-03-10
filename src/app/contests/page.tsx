@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
-import { getCached, setCache } from "@/lib/cache";
+import { getCached, setCache, isCacheStale } from "@/lib/cache";
 
 interface Contest {
   id: string;
@@ -20,17 +20,19 @@ export default function ContestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async (signal?: AbortSignal) => {
-    setError(null);
-    setLoading(true);
+  const fetchData = async (signal?: AbortSignal, isBackground = false) => {
+    if (!isBackground) setError(null);
 
-    const cachedContests = getCached<Contest[]>("contests");
-    const cachedCounts = getCached<Record<string, number>>("contestProblemCounts");
+    // Show stale cache immediately
+    const cachedContests = getCached<Contest[]>("contests", true);
+    const cachedCounts = getCached<Record<string, number>>("contestProblemCounts", true);
+    if (cachedContests) setContests(cachedContests);
+    if (cachedCounts) setProblemCounts(cachedCounts);
     if (cachedContests && cachedCounts) {
-      setContests(cachedContests);
-      setProblemCounts(cachedCounts);
       setLoading(false);
-      return;
+      if (!isCacheStale("contests") && !isCacheStale("contestProblemCounts")) return;
+    } else if (!isBackground) {
+      setLoading(true);
     }
 
     try {
@@ -40,11 +42,11 @@ export default function ContestsPage() {
       );
       if (signal?.aborted) return;
       if (fetchError) {
-        setError(`기출문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
+        if (contests.length === 0) setError(`기출문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
         setLoading(false);
         return;
       }
-      if (contestsData) {
+      if (contestsData && contestsData.length > 0) {
         setContests(contestsData);
         setCache("contests", contestsData);
 
@@ -65,16 +67,28 @@ export default function ContestsPage() {
       }
     } catch (e) {
       if (signal?.aborted) return;
-      setError(`기출문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+      if (contests.length === 0) setError(`기출문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const controller = new AbortController();
+    let controller = new AbortController();
     fetchData(controller.signal);
-    return () => controller.abort();
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller = new AbortController();
+        fetchData(controller.signal, true);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   if (loading) {

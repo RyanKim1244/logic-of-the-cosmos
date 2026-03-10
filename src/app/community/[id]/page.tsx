@@ -46,11 +46,9 @@ export default function TopicDetailPage() {
   const authorName = user ? user.name : "Guest";
 
   useEffect(() => {
-    const controller = new AbortController();
-    async function fetchData() {
+    let controller = new AbortController();
+    async function fetchData(sig: AbortSignal) {
       try {
-        const sig = controller.signal;
-
         // Fetch topic and comments in parallel with retry
         const [{ data: topicData }, { data: commentsData }] = await Promise.all([
           withRetry(() => withTimeout(supabase.from("topics").select("*").eq("id", id).single(), 8000, sig), 1, 1000, sig),
@@ -58,7 +56,7 @@ export default function TopicDetailPage() {
         ]);
 
         if (sig.aborted) return;
-        if (topicData) setTopic(topicData);
+        if (topicData) { setTopic(topicData); setError(null); }
         if (commentsData) setComments(commentsData);
 
         // Check user's upvote status in parallel
@@ -74,14 +72,26 @@ export default function TopicDetailPage() {
           }
         }
       } catch (e) {
-        if (controller.signal.aborted) return;
-        setError(`토픽을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        if (sig.aborted) return;
+        if (!topic) setError(`토픽을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       } finally {
         setLoading(false);
       }
     }
-    fetchData();
-    return () => controller.abort();
+    fetchData(controller.signal);
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller = new AbortController();
+        fetchData(controller.signal);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [id, user]);
 
   useEffect(() => {

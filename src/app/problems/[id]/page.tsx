@@ -25,43 +25,63 @@ export default function ProblemDetailPage({
   const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
 
   useEffect(() => {
-    const controller = new AbortController();
-    async function fetchProblem() {
+    let controller = new AbortController();
+    async function fetchProblem(sig: AbortSignal) {
       try {
         const { data, error: fetchError } = await withRetry(
-          () => withTimeout(supabase.from("problems").select("*").eq("id", id).single(), 8000, controller.signal),
-          1, 1000, controller.signal
+          () => withTimeout(supabase.from("problems").select("*").eq("id", id).single(), 8000, sig),
+          1, 1000, sig
         );
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (fetchError) {
-          setError(`문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
+          // Only show error if we have no existing problem data
+          if (!problem) {
+            setError(`문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
+          }
         } else if (data) {
           setProblem({
             id: data.id, problemNumber: data.problem_number, title: data.title,
             source: data.source, year: data.year, tags: data.tags, content: data.content,
             officialSolution: data.official_solution, createdAt: data.created_at, updatedAt: data.updated_at,
           });
+          setError(null);
         }
       } catch (e) {
-        if (controller.signal.aborted) return;
-        setError(`문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        if (sig.aborted) return;
+        if (!problem) {
+          setError(`문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        }
       } finally {
         setLoading(false);
       }
     }
-    async function fetchSolvedCount() {
+    async function fetchSolvedCount(sig: AbortSignal) {
       try {
         const { count } = await withTimeout(
           supabase.from("user_solved_problems").select("*", { count: "exact", head: true }).eq("problem_id", id),
-          5000, controller.signal
+          5000, sig
         );
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (count !== null) setSolvedCount(count);
       } catch { /* ignore */ }
     }
-    fetchProblem();
-    fetchSolvedCount();
-    return () => controller.abort();
+    fetchProblem(controller.signal);
+    fetchSolvedCount(controller.signal);
+
+    // Re-fetch when tab becomes visible
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller = new AbortController();
+        fetchProblem(controller.signal);
+        fetchSolvedCount(controller.signal);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [id]);
 
   if (loading) {
