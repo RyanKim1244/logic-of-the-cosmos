@@ -127,27 +127,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // When the tab becomes visible again after being idle, proactively
-    // refresh the session so stale tokens don't cause silent failures.
+    // --- Session keepalive ---
+    // Supabase access tokens expire after ~1 hour by default.
+    // Proactively refresh every 4 minutes so they never go stale,
+    // even if the user leaves the tab open without navigating.
+    const KEEPALIVE_MS = 4 * 60 * 1000;
+    const keepalive = setInterval(() => {
+      if (!isMounted) return;
+      supabase.auth.getUser().catch(() => {});
+    }, KEEPALIVE_MS);
+
+    // When the tab becomes visible again after being idle, immediately
+    // refresh the session and re-sync profile data.
     function handleVisibilityChange() {
-      if (document.visibilityState === "visible" && isMounted) {
-        supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-          if (authUser && isMounted) {
-            fetchProfile(authUser).then((profile) => {
-              if (profile && isMounted) setUser(profile);
-            }).catch(() => { /* keep existing user */ });
-          } else if (!authUser && isMounted) {
-            // Session truly expired — clear user
-            setUser(null);
-          }
-        }).catch(() => { /* network hiccup — keep existing user */ });
-      }
+      if (document.visibilityState !== "visible" || !isMounted) return;
+      supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+        if (!isMounted) return;
+        if (authUser) {
+          fetchProfile(authUser).then((profile) => {
+            if (profile && isMounted) setUser(profile);
+          }).catch(() => { /* keep existing user */ });
+        } else {
+          // Session truly expired — clear user
+          setUser(null);
+        }
+      }).catch(() => { /* network hiccup — keep existing user */ });
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       isMounted = false;
       clearTimeout(timeout);
+      clearInterval(keepalive);
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
