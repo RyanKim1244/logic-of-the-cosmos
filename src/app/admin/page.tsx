@@ -131,8 +131,12 @@ export default function AdminPage() {
       ));
     } else {
       const id = `custom-${Date.now()}`;
+      const maxNum = allProblems.length > 0
+        ? Math.max(...allProblems.map((p) => p.problem_number || 0))
+        : 999;
+      const nextNumber = Math.max(maxNum + 1, 1000);
       const { data, error } = await supabase.from("problems").insert({
-        id, title: problemForm.title, source: problemForm.source, year: problemForm.year,
+        id, problem_number: nextNumber, title: problemForm.title, source: problemForm.source, year: problemForm.year,
         tags, content: problemForm.content, official_solution: problemForm.officialSolution,
       }).select().single();
 
