@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { type MultiLangContent, LANG_LABELS, getLangLabel } from "@/lib/multilang";
 
 interface MultiLangEditorProps {
@@ -18,11 +18,15 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
   const langs = Object.keys(value).length > 0 ? Object.keys(value) : ["ko"];
   const [activeLang, setActiveLang] = useState(langs[0]);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
 
   // Ensure activeLang exists in value
-  if (!langs.includes(activeLang) && langs.length > 0) {
-    setActiveLang(langs[0]);
-  }
+  useEffect(() => {
+    if (!langs.includes(activeLang) && langs.length > 0) {
+      setActiveLang(langs[0]);
+    }
+  }, [langs, activeLang]);
 
   const addLanguage = (code: string) => {
     if (!value[code]) {
@@ -30,6 +34,7 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
       setActiveLang(code);
     }
     setShowLangMenu(false);
+    setMenuPos(null);
   };
 
   const removeLanguage = (code: string) => {
@@ -52,7 +57,7 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
       <label className={labelClass}>{label}</label>
 
       {/* Language tabs */}
-      <div className="flex items-center gap-0 mb-0 border border-neutral-300 border-b-0 bg-neutral-50 overflow-x-auto">
+      <div className="flex items-center flex-wrap gap-0 mb-0 border border-neutral-300 border-b-0 bg-neutral-50">
         {langs.map((lang) => (
           <button
             key={lang}
@@ -78,19 +83,29 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
         ))}
 
         {/* Add language button */}
-        <div className="relative ml-1">
+        <div className="ml-1">
           <button
+            ref={addBtnRef}
             type="button"
-            onClick={() => setShowLangMenu(!showLangMenu)}
+            onClick={() => {
+              if (showLangMenu) {
+                setShowLangMenu(false);
+                setMenuPos(null);
+              } else if (addBtnRef.current) {
+                const rect = addBtnRef.current.getBoundingClientRect();
+                setMenuPos({ top: rect.bottom + 4, left: rect.left });
+                setShowLangMenu(true);
+              }
+            }}
             className="px-3 py-2 text-xs text-neutral-400 hover:text-black transition-colors"
             title="언어 추가"
           >
             + 언어
           </button>
-          {showLangMenu && unusedLangs.length > 0 && (
+          {showLangMenu && unusedLangs.length > 0 && menuPos && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowLangMenu(false)} />
-              <div className="absolute top-full left-0 mt-1 bg-white border border-neutral-200 shadow-lg z-20 min-w-[140px]">
+              <div className="fixed inset-0 z-10" onClick={() => { setShowLangMenu(false); setMenuPos(null); }} />
+              <div className="fixed bg-white border border-neutral-200 shadow-lg z-20 min-w-[140px]" style={{ top: menuPos.top, left: menuPos.left }}>
                 {unusedLangs.map((code) => (
                   <button
                     key={code}
