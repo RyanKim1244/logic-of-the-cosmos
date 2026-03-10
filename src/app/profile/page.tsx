@@ -90,71 +90,65 @@ export default function ProfilePage() {
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
   const [solutionCount, setSolutionCount] = useState(0);
   const [discussionCount, setDiscussionCount] = useState(0);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
   useEffect(() => {
+    if (!user) return;
     const controller = new AbortController();
-    async function fetchProblems() {
-      if (!user) return;
-      const sig = controller.signal;
+    const sig = controller.signal;
 
-      try {
-        // Fetch bookmarked and solved in parallel with retry
-        const [bookmarkedRes, solvedRes, solveHistoryRes, solutionCountRes, discussionCountRes] = await Promise.all([
-          user.bookmarkedProblems.length > 0
-            ? withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 8000, sig), 1, 1000, sig)
-            : Promise.resolve({ data: null, error: null }),
-          user.solvedProblems.length > 0
-            ? withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 8000, sig), 1, 1000, sig)
-            : Promise.resolve({ data: null, error: null }),
-          withRetry(() => withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 8000, sig), 1, 1000, sig),
-          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).eq("is_solution", true), 8000, sig), 1, 1000, sig),
-          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).or("is_solution.is.null,is_solution.eq.false"), 8000, sig), 1, 1000, sig),
-        ]);
+    // Each query fires independently and updates state as it resolves.
+    // This prevents one slow query from blocking all stats.
 
-        if (sig.aborted) return;
-
-        if (bookmarkedRes.error) { setFetchError("북마크 데이터를 불러오는 데 실패했습니다."); return; }
-        if (bookmarkedRes.data) setBookmarkedProblems(bookmarkedRes.data);
-
-        if (solvedRes.error) { setFetchError("풀이 데이터를 불러오는 데 실패했습니다."); return; }
-        if (solvedRes.data) setSolvedProblems(solvedRes.data);
-
-        if (solutionCountRes.count !== null) setSolutionCount(solutionCountRes.count);
-        if (discussionCountRes.count !== null) setDiscussionCount(discussionCountRes.count);
-
-        if (solveHistoryRes.error) { setFetchError("풀이 기록을 불러오는 데 실패했습니다."); return; }
-
-        const solveData = solveHistoryRes.data;
-        if (solveData) {
-          setSolvedDates(solveData.map((s: { created_at: string }) => s.created_at));
-
-          const problemIds = solveData.map((s: { problem_id: string }) => s.problem_id);
-          if (problemIds.length > 0) {
-            const { data: problemDetails } = await withTimeout(
-              supabase.from("problems").select("id, title, source").in("id", problemIds), 5000, sig
-            );
-            if (sig.aborted) return;
-
-            if (problemDetails) {
-              const detailMap = new Map(problemDetails.map((p) => [p.id, p]));
-              const history: SolveRecord[] = solveData
-                .map((s: { problem_id: string; created_at: string }) => {
-                  const detail = detailMap.get(s.problem_id);
-                  if (!detail) return null;
-                  return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
-                })
-                .filter((r: SolveRecord | null): r is SolveRecord => r !== null);
-              setSolveHistory(history);
-            }
-          }
-        }
-      } catch {
-        if (sig.aborted) return;
-        setFetchError("프로필 데이터를 불러오는 데 실패했습니다.");
-      }
+    // Bookmarked problems (for list display)
+    if (user.bookmarkedProblems.length > 0) {
+      withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 6000, sig), 1, 1000, sig)
+        .then((res) => { if (!sig.aborted && res.data) setBookmarkedProblems(res.data); })
+        .catch(() => {});
     }
-    fetchProblems();
+
+    // Solved problems (for list display)
+    if (user.solvedProblems.length > 0) {
+      withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 6000, sig), 1, 1000, sig)
+        .then((res) => { if (!sig.aborted && res.data) setSolvedProblems(res.data); })
+        .catch(() => {});
+    }
+
+    // Solution count
+    withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).eq("is_solution", true), 6000, sig), 1, 1000, sig)
+      .then((res) => { if (!sig.aborted && res.count != null) setSolutionCount(res.count); })
+      .catch(() => {});
+
+    // Discussion count
+    withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).or("is_solution.is.null,is_solution.eq.false"), 6000, sig), 1, 1000, sig)
+      .then((res) => { if (!sig.aborted && res.count != null) setDiscussionCount(res.count); })
+      .catch(() => {});
+
+    // Solve history + problem details (chained: history first, then details)
+    withRetry(() => withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 6000, sig), 1, 1000, sig)
+      .then(async (res) => {
+        if (sig.aborted || !res.data) return;
+        const solveData = res.data as { problem_id: string; created_at: string }[];
+        setSolvedDates(solveData.map((s) => s.created_at));
+
+        const problemIds = solveData.map((s) => s.problem_id);
+        if (problemIds.length === 0) return;
+
+        const { data: problemDetails } = await withTimeout(
+          supabase.from("problems").select("id, title, source").in("id", problemIds), 5000, sig
+        );
+        if (sig.aborted || !problemDetails) return;
+
+        const detailMap = new Map(problemDetails.map((p) => [p.id, p]));
+        const history: SolveRecord[] = solveData
+          .map((s) => {
+            const detail = detailMap.get(s.problem_id);
+            if (!detail) return null;
+            return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
+          })
+          .filter((r): r is SolveRecord => r !== null);
+        setSolveHistory(history);
+      })
+      .catch(() => {});
+
     return () => controller.abort();
   }, [user]);
 
@@ -162,15 +156,6 @@ export default function ProfilePage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <p className="text-neutral-400 text-sm">로딩 중...</p>
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
-        <p className="text-red-500 text-sm mb-4">{fetchError}</p>
-        <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
       </div>
     );
   }
@@ -257,7 +242,7 @@ export default function ProfilePage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="border border-neutral-200 p-6 text-center">
-          <div className="text-3xl font-extralight">{solvedProblems.length}</div>
+          <div className="text-3xl font-extralight">{user.solvedProblems.length}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
