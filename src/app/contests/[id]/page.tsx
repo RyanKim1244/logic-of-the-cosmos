@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 
 interface Contest {
   id: string;
@@ -93,9 +93,9 @@ export default function ContestDetailPage({
     const controller = new AbortController();
     async function fetchData() {
       try {
-        const { data: contestData, error: fetchError } = await withTimeout(
-          supabase.from("contests").select("*").eq("id", id).single(),
-          5000, controller.signal
+        const { data: contestData, error: fetchError } = await withRetry(
+          () => withTimeout(supabase.from("contests").select("*").eq("id", id).single(), 8000, controller.signal),
+          1, 1000, controller.signal
         );
 
         if (controller.signal.aborted) return;

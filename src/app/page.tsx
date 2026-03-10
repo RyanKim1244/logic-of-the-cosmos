@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
@@ -45,54 +45,70 @@ export default function Home() {
       try {
         const sig = controller.signal;
 
-        // Fetch everything in parallel
-        const [problemsRes, contestsRes, problemCountRes, contestCountRes, discussionCountRes, authorDataRes] = await Promise.all([
-          withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 5000, sig),
-          withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 5000, sig),
-          withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), 5000, sig),
-          withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), 5000, sig),
-          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), 5000, sig),
-          withTimeout(supabase.from("discussions").select("author_name"), 5000, sig),
+        // Fetch everything in parallel — use allSettled so one failure
+        // doesn't prevent the rest of the page from rendering.
+        const results = await Promise.allSettled([
+          withRetry(() => withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 8000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 8000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), 8000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), 8000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), 8000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("discussions").select("author_name"), 8000, sig), 1, 800, sig),
         ]);
 
         if (controller.signal.aborted) return;
 
-        if (problemsRes.data) {
-          const mapped = problemsRes.data.map((p) => ({
+        const problemsRes = results[0].status === "fulfilled" ? results[0].value : null;
+        const contestsRes = results[1].status === "fulfilled" ? results[1].value : null;
+        const problemCountRes = results[2].status === "fulfilled" ? results[2].value : null;
+        const contestCountRes = results[3].status === "fulfilled" ? results[3].value : null;
+        const discussionCountRes = results[4].status === "fulfilled" ? results[4].value : null;
+        const authorDataRes = results[5].status === "fulfilled" ? results[5].value : null;
+
+        if (problemsRes?.data) {
+          /* eslint-disable @typescript-eslint/no-explicit-any */
+          const mapped: Problem[] = (problemsRes.data as any[]).map((p) => ({
             id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
             year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
             createdAt: p.created_at, updatedAt: p.updated_at,
           }));
+          /* eslint-enable @typescript-eslint/no-explicit-any */
           setRecentProblems(mapped);
           setCache("homeRecentProblems", mapped);
         }
 
-        if (contestsRes.data) setTopContests(contestsRes.data);
-        setCache("homeContests", contestsRes.data);
+        if (contestsRes?.data) {
+          setTopContests(contestsRes.data);
+          setCache("homeContests", contestsRes.data);
+        }
 
-        const uniqueAuthors = authorDataRes.data ? new Set(authorDataRes.data.map((d) => d.author_name)).size : 0;
+        const uniqueAuthors = authorDataRes?.data ? new Set(authorDataRes.data.map((d: { author_name: string }) => d.author_name)).size : 0;
         const newStats = {
-          problems: problemCountRes.count || 0,
-          contests: contestCountRes.count || 0,
-          discussions: discussionCountRes.count || 0,
+          problems: problemCountRes?.count || 0,
+          contests: contestCountRes?.count || 0,
+          discussions: discussionCountRes?.count || 0,
           authors: uniqueAuthors,
         };
         setStats(newStats);
         setCache("homeStats", newStats);
 
         // Problem counts per contest
-        if (contestsRes.data) {
-          const { data: allProblems } = await withTimeout(
-            supabase.from("problems").select("source"), 5000, sig
-          );
-          if (controller.signal.aborted) return;
-          if (allProblems) {
-            const counts: Record<string, number> = {};
-            for (const c of contestsRes.data) {
-              counts[c.id] = allProblems.filter((p) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
+        if (contestsRes?.data) {
+          try {
+            const { data: allProblems } = await withTimeout(
+              supabase.from("problems").select("source"), 8000, sig
+            );
+            if (controller.signal.aborted) return;
+            if (allProblems) {
+              const counts: Record<string, number> = {};
+              for (const c of contestsRes.data) {
+                counts[c.id] = allProblems.filter((p: { source: string }) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
+              }
+              setProblemCounts(counts);
+              setCache("homeProblemCounts", counts);
             }
-            setProblemCounts(counts);
-            setCache("homeProblemCounts", counts);
+          } catch {
+            // Problem counts are non-critical; skip silently
           }
         }
       } catch {

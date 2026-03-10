@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -28,9 +28,9 @@ export default function ProblemDetailPage({
     const controller = new AbortController();
     async function fetchProblem() {
       try {
-        const { data, error: fetchError } = await withTimeout(
-          supabase.from("problems").select("*").eq("id", id).single(),
-          5000, controller.signal
+        const { data, error: fetchError } = await withRetry(
+          () => withTimeout(supabase.from("problems").select("*").eq("id", id).single(), 8000, controller.signal),
+          1, 1000, controller.signal
         );
         if (controller.signal.aborted) return;
         if (fetchError) {

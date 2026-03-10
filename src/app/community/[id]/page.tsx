@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 interface Topic {
@@ -51,10 +51,10 @@ export default function TopicDetailPage() {
       try {
         const sig = controller.signal;
 
-        // Fetch topic and comments in parallel
+        // Fetch topic and comments in parallel with retry
         const [{ data: topicData }, { data: commentsData }] = await Promise.all([
-          withTimeout(supabase.from("topics").select("*").eq("id", id).single(), 5000, sig),
-          withTimeout(supabase.from("topic_comments").select("*").eq("topic_id", id).order("created_at", { ascending: true }), 5000, sig),
+          withRetry(() => withTimeout(supabase.from("topics").select("*").eq("id", id).single(), 8000, sig), 1, 1000, sig),
+          withRetry(() => withTimeout(supabase.from("topic_comments").select("*").eq("topic_id", id).order("created_at", { ascending: true }), 8000, sig), 1, 1000, sig),
         ]);
 
         if (sig.aborted) return;

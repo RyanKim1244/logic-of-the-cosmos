@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
@@ -49,9 +49,11 @@ export default function ProblemsPage() {
     }
 
     try {
-      const { data, error: fetchError } = await withTimeout(
-        supabase.from("problems").select("*").order("problem_number", { ascending: true }),
-        5000, signal
+      const { data, error: fetchError } = await withRetry(
+        () => withTimeout(
+          supabase.from("problems").select("*").order("problem_number", { ascending: true }),
+          8000, signal
+        ), 1, 1000, signal
       );
       if (fetchError) {
         setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
