@@ -77,6 +77,7 @@ export default function AdminPage() {
   const [contestForm, setContestForm] = useState<ContestFormData>(emptyContestForm);
   const [allContests, setAllContests] = useState<ContestRow[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -111,6 +112,7 @@ export default function AdminPage() {
 
   const handleProblemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     const tags = problemForm.tags.split(",").map((t) => t.trim()).filter(Boolean);
     const now = new Date().toISOString();
 
@@ -120,11 +122,13 @@ export default function AdminPage() {
         tags, content: problemForm.content, official_solution: problemForm.officialSolution, updated_at: now,
       }).eq("id", editingProblemId);
 
-      if (!error) {
-        setAllProblems(allProblems.map((p) =>
-          p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, content: problemForm.content, official_solution: problemForm.officialSolution, updated_at: now } : p
-        ));
+      if (error) {
+        setSubmitError(`문제 수정 실패: ${error.message}`);
+        return;
       }
+      setAllProblems(allProblems.map((p) =>
+        p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, content: problemForm.content, official_solution: problemForm.officialSolution, updated_at: now } : p
+      ));
     } else {
       const id = `custom-${Date.now()}`;
       const { data, error } = await supabase.from("problems").insert({
@@ -132,7 +136,11 @@ export default function AdminPage() {
         tags, content: problemForm.content, official_solution: problemForm.officialSolution,
       }).select().single();
 
-      if (!error && data) {
+      if (error) {
+        setSubmitError(`문제 등록 실패: ${error.message}`);
+        return;
+      }
+      if (data) {
         setAllProblems([data, ...allProblems]);
       }
     }
@@ -156,6 +164,7 @@ export default function AdminPage() {
 
   const handleContestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     const years = contestForm.years.split(",").map((y) => parseInt(y.trim())).filter((y) => !isNaN(y)).sort((a, b) => b - a);
 
     if (contestMode === "edit" && editingContestId) {
@@ -164,11 +173,13 @@ export default function AdminPage() {
         website: contestForm.website || null, years,
       }).eq("id", editingContestId);
 
-      if (!error) {
-        setAllContests(allContests.map((c) =>
-          c.id === editingContestId ? { ...c, name: contestForm.name, short_name: contestForm.shortName, description: contestForm.description, website: contestForm.website || null, years } : c
-        ));
+      if (error) {
+        setSubmitError(`대회 수정 실패: ${error.message}`);
+        return;
       }
+      setAllContests(allContests.map((c) =>
+        c.id === editingContestId ? { ...c, name: contestForm.name, short_name: contestForm.shortName, description: contestForm.description, website: contestForm.website || null, years } : c
+      ));
     } else {
       const id = contestForm.shortName.toLowerCase().replace(/\s+/g, "-");
       const { data, error } = await supabase.from("contests").insert({
@@ -176,7 +187,11 @@ export default function AdminPage() {
         description: contestForm.description, website: contestForm.website || null, years,
       }).select().single();
 
-      if (!error && data) {
+      if (error) {
+        setSubmitError(`대회 등록 실패: ${error.message}`);
+        return;
+      }
+      if (data) {
         setAllContests([...allContests, data]);
       }
     }
@@ -242,6 +257,12 @@ export default function AdminPage() {
               {problemMode !== "none" ? "취소" : "+ 새 문제 추가"}
             </button>
           </div>
+
+          {submitError && (
+            <div className="border border-red-200 bg-red-50 p-4 mb-6">
+              <p className="text-red-600 text-sm">{submitError}</p>
+            </div>
+          )}
 
           {problemMode !== "none" && (
             <div className="border border-neutral-200 p-8 mb-8">

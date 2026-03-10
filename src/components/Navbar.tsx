@@ -60,7 +60,7 @@ export default function Navbar() {
               >
                 커뮤니티
               </Link>
-              {user?.email === "simcitybuilditchannel@gmail.com" && (
+              {user?.is_admin && (
                 <Link
                   href="/admin"
                   className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
