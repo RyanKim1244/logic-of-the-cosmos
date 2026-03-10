@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout } from "@/lib/supabase";
+import { getCached, setCache } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 
 interface Topic {
@@ -33,6 +34,15 @@ export default function CommunityPage() {
 
   useEffect(() => {
     async function fetchTopics() {
+      const cachedTopics = getCached<Topic[]>("communityTopics");
+      const cachedCounts = getCached<Record<string, number>>("communityCommentCounts");
+      if (cachedTopics && cachedCounts) {
+        setAllTopics(cachedTopics);
+        setCommentCounts(cachedCounts);
+        setLoadingTopics(false);
+        return;
+      }
+
       try {
         const { data: topics, error: fetchError } = await withTimeout(
           supabase
@@ -49,6 +59,7 @@ export default function CommunityPage() {
 
         if (topics) {
           setAllTopics(topics);
+          setCache("communityTopics", topics);
 
           // Fetch all comment counts in a single query instead of N+1
           const topicIds = topics.map((t) => t.id);
@@ -66,6 +77,7 @@ export default function CommunityPage() {
               }
             }
             setCommentCounts(counts);
+            setCache("communityCommentCounts", counts);
           }
         }
       } catch {

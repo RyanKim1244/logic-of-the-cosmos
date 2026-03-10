@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout } from "@/lib/supabase";
+import { getCached, setCache } from "@/lib/cache";
 
 interface Contest {
   id: string;
@@ -22,6 +23,16 @@ export default function ContestsPage() {
   const fetchData = async () => {
     setError(null);
     setLoading(true);
+
+    const cachedContests = getCached<Contest[]>("contests");
+    const cachedCounts = getCached<Record<string, number>>("contestProblemCounts");
+    if (cachedContests && cachedCounts) {
+      setContests(cachedContests);
+      setProblemCounts(cachedCounts);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: contestsData, error: fetchError } = await withTimeout(supabase.from("contests").select("*"));
       if (fetchError) {
@@ -31,6 +42,7 @@ export default function ContestsPage() {
       }
       if (contestsData) {
         setContests(contestsData);
+        setCache("contests", contestsData);
 
         const { data: problems } = await withTimeout(supabase.from("problems").select("source"));
         if (problems) {
@@ -41,6 +53,7 @@ export default function ContestsPage() {
             ).length;
           }
           setProblemCounts(counts);
+          setCache("contestProblemCounts", counts);
         }
       }
     } catch (e) {
