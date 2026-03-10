@@ -3,7 +3,7 @@ export default function Logo({ size = 28, className = "" }: { size?: number; cla
     <svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox="-5 -5 110 110"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
