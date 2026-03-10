@@ -3,6 +3,7 @@
 import { useState, use } from "react";
 import Link from "next/link";
 import { problems, discussions } from "@/data/problems";
+import { useAuth } from "@/context/AuthContext";
 import LatexRenderer from "@/components/LatexRenderer";
 import DiscussionSection from "@/components/DiscussionSection";
 
@@ -12,7 +13,10 @@ export default function ProblemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { user, toggleSolved, toggleBookmark } = useAuth();
   const [showSolution, setShowSolution] = useState(false);
+  const isSolved = user?.solvedProblems.includes(id) ?? false;
+  const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
 
   const problem = problems.find((p) => p.id === id);
 
@@ -39,20 +43,64 @@ export default function ProblemDetailPage({
       </nav>
 
       {/* Problem Header */}
-      <div className="border border-neutral-200 p-8 mb-6">
+      <div className={`border p-8 mb-6 relative ${isSolved ? "border-emerald-300 bg-emerald-50/30" : "border-neutral-200"}`}>
+        {/* Solved badge */}
+        {isSolved && (
+          <div className="absolute top-4 right-4 flex items-center gap-1.5 solved-badge">
+            <span className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <span className="text-xs font-medium text-emerald-600 uppercase tracking-wider">풀이 완료</span>
+          </div>
+        )}
+
         <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
         <h1 className="text-2xl font-light text-black mt-1 mb-3">{problem.title}</h1>
-        <p className="text-neutral-400 mb-6 text-sm">
+        <p className="text-neutral-400 mb-4 text-sm">
           {problem.source} &middot; {problem.year}
         </p>
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4">
           {problem.tags.map((tag) => (
             <span key={tag} className="px-2 py-0.5 text-neutral-400 text-xs">
               #{tag}
             </span>
           ))}
         </div>
+
+        {/* Action buttons */}
+        {user && (
+          <div className="flex items-center gap-3 mb-6">
+            <button
+              onClick={() => toggleSolved(id)}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
+                isSolved
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {isSolved ? "풀이 완료!" : "풀이 완료 표시"}
+            </button>
+            <button
+              onClick={() => toggleBookmark(id)}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
+                isBookmarked
+                  ? "bg-amber-500 text-white hover:bg-amber-600"
+                  : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
+              }`}
+            >
+              <svg className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              {isBookmarked ? "북마크됨" : "북마크"}
+            </button>
+          </div>
+        )}
 
         {/* Problem Content */}
         <div className="border-t border-neutral-100 pt-6">

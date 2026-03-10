@@ -18,6 +18,8 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => { success: boolean; error?: string };
   logout: () => void;
   updateProfile: (updates: Partial<Pick<User, "name" | "bio">>) => void;
+  toggleSolved: (problemId: string) => void;
+  toggleBookmark: (problemId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -100,8 +102,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const toggleSolved = (problemId: string) => {
+    if (!user) return;
+    const solved = user.solvedProblems.includes(problemId)
+      ? user.solvedProblems.filter((id) => id !== problemId)
+      : [...user.solvedProblems, problemId];
+    const updated = { ...user, solvedProblems: solved };
+    setUser(updated);
+
+    const users = getUsers();
+    if (users[user.email]) {
+      users[user.email].user = updated;
+      saveUsers(users);
+    }
+  };
+
+  const toggleBookmark = (problemId: string) => {
+    if (!user) return;
+    const bookmarked = user.bookmarkedProblems.includes(problemId)
+      ? user.bookmarkedProblems.filter((id) => id !== problemId)
+      : [...user.bookmarkedProblems, problemId];
+    const updated = { ...user, bookmarkedProblems: bookmarked };
+    setUser(updated);
+
+    const users = getUsers();
+    if (users[user.email]) {
+      users[user.email].user = updated;
+      saveUsers(users);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, toggleSolved, toggleBookmark }}>
       {children}
     </AuthContext.Provider>
   );
