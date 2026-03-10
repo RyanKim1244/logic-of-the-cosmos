@@ -2,6 +2,9 @@ import { createServerSupabase } from "@/lib/supabase-server";
 import HomeContent from "@/components/HomeContent";
 import { Problem } from "@/types";
 
+// ISR: regenerate this page in the background every 60 seconds
+export const revalidate = 60;
+
 interface ContestPreview {
   id: string;
   name: string;

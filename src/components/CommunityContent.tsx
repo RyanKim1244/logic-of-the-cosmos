@@ -102,6 +102,9 @@ export default function CommunityContent({
       setLoadingTopics(false);
     }
 
+    // Refresh on mount (stale-while-revalidate)
+    fetchTopics(controller.signal);
+
     function handleVisibility() {
       if (document.visibilityState === "visible") {
         controller = new AbortController();

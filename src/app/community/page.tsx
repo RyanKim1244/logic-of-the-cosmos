@@ -1,6 +1,8 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import CommunityContent from "@/components/CommunityContent";
 
+export const revalidate = 60;
+
 export default async function CommunityPage() {
   const supabase = createServerSupabase();
 
