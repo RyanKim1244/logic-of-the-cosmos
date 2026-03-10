@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { supabase, withRetry } from "@/lib/supabase";
 
 type Tab = "problems" | "contests";
 
@@ -79,28 +79,44 @@ export default function AdminPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: problems, error: pErr } = await supabase.from("problems").select("*").order("problem_number");
-        if (pErr) {
-          setFetchError("문제 데이터를 불러오는 데 실패했습니다.");
-          return;
-        }
-        if (problems) setAllProblems(problems);
+  const fetchData = useCallback(async () => {
+    setFetchError(null);
+    try {
+      const [pRes, cRes] = await Promise.allSettled([
+        withRetry(async () => supabase.from("problems").select("*").order("problem_number")),
+        withRetry(async () => supabase.from("contests").select("*")),
+      ]);
 
-        const { data: contests, error: cErr } = await supabase.from("contests").select("*");
-        if (cErr) {
-          setFetchError("대회 데이터를 불러오는 데 실패했습니다.");
-          return;
-        }
-        if (contests) setAllContests(contests);
-      } catch {
-        setFetchError("데이터를 불러오는 데 실패했습니다.");
+      if (pRes.status === "fulfilled" && !pRes.value.error && pRes.value.data) {
+        setAllProblems(pRes.value.data);
+      } else {
+        setFetchError("문제 데이터를 불러오는 데 실패했습니다.");
+      }
+
+      if (cRes.status === "fulfilled" && !cRes.value.error && cRes.value.data) {
+        setAllContests(cRes.value.data);
+      } else if (!fetchError) {
+        setFetchError("대회 데이터를 불러오는 데 실패했습니다.");
+      }
+    } catch {
+      setFetchError("데이터를 불러오는 데 실패했습니다.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.is_admin) fetchData();
+  }, [user, fetchData]);
+
+  // Re-fetch when tab becomes visible (handles stale data after idle)
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible" && user?.is_admin) {
+        fetchData();
       }
     }
-    if (user?.is_admin) fetchData();
-  }, [user]);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [user, fetchData]);
 
   // Problem handlers
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
@@ -220,11 +236,11 @@ export default function AdminPage() {
     );
   }
 
-  if (fetchError) {
+  if (fetchError && allProblems.length === 0 && allContests.length === 0) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <p className="text-red-500 text-sm mb-4">{fetchError}</p>
-        <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+        <button onClick={fetchData} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
       </div>
     );
   }
