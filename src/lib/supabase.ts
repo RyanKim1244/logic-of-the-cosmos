@@ -1,9 +1,16 @@
+import { createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Browser client that uses cookies for session persistence.
+ * This ensures sessions survive page refreshes in Next.js.
+ */
+export const supabase = typeof window !== "undefined"
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  : createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Wraps a Supabase query with a timeout and optional external AbortSignal.

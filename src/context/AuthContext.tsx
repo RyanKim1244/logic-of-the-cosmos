@@ -89,7 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        // Skip INITIAL_SESSION — getSession() above handles initialization.
+        // Processing it here causes a race condition that clears the user.
+        if (event === "INITIAL_SESSION") return;
+
         try {
           if (session?.user) {
             const profile = await fetchProfile(session.user);
