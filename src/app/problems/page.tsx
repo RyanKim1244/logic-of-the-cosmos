@@ -14,6 +14,7 @@ export default function ProblemsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>({});
   const PER_PAGE = 20;
 
   useEffect(() => {
@@ -47,7 +48,20 @@ export default function ProblemsPage() {
       }
       setLoading(false);
     }
+    async function fetchSolvedCounts() {
+      const { data } = await supabase
+        .from("user_solved_problems")
+        .select("problem_id");
+      if (data) {
+        const counts: Record<string, number> = {};
+        for (const row of data) {
+          counts[row.problem_id] = (counts[row.problem_id] || 0) + 1;
+        }
+        setSolvedCounts(counts);
+      }
+    }
     fetchProblems();
+    fetchSolvedCounts();
   }, []);
 
   const filteredProblems = useMemo(() => {
@@ -129,7 +143,7 @@ export default function ProblemsPage() {
               <div className="grid md:grid-cols-2 gap-5">
                 {paginatedProblems.map((problem) => (
                   <div key={problem.id} className="problem-card-hover">
-                    <ProblemCard problem={problem} />
+                    <ProblemCard problem={problem} solvedCount={solvedCounts[problem.id] || 0} />
                   </div>
                 ))}
               </div>

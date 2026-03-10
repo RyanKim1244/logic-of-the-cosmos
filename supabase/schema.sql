@@ -203,3 +203,14 @@ create index if not exists idx_discussions_problem_id on discussions(problem_id)
 create index if not exists idx_topic_comments_topic_id on topic_comments(topic_id);
 create index if not exists idx_problems_source on problems(source);
 create index if not exists idx_problems_year on problems(year);
+create index if not exists idx_user_solved_problem_id on user_solved_problems(problem_id);
+
+-- ============================================
+-- 마이그레이션 (기존 DB에 적용)
+-- ============================================
+
+-- 풀이 제출 기능: discussions 테이블에 is_solution 컬럼 추가
+alter table discussions add column if not exists is_solution boolean default false;
+
+-- 풀이 수 통계: 누구나 문제별 풀이 수를 조회할 수 있도록 허용
+create policy "Anyone can count solved problems" on user_solved_problems for select using (true);

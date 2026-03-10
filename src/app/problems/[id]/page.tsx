@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import LatexRenderer from "@/components/LatexRenderer";
 import DiscussionSection from "@/components/DiscussionSection";
+import SolutionSection from "@/components/SolutionSection";
 
 export default function ProblemDetailPage({
   params,
@@ -18,6 +19,7 @@ export default function ProblemDetailPage({
   const [showSolution, setShowSolution] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [solvedCount, setSolvedCount] = useState(0);
   const isSolved = user?.solvedProblems.includes(id) ?? false;
   const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
 
@@ -44,7 +46,15 @@ export default function ProblemDetailPage({
       }
       setLoading(false);
     }
+    async function fetchSolvedCount() {
+      const { count } = await supabase
+        .from("user_solved_problems")
+        .select("*", { count: "exact", head: true })
+        .eq("problem_id", id);
+      if (count !== null) setSolvedCount(count);
+    }
     fetchProblem();
+    fetchSolvedCount();
   }, [id]);
 
   if (loading) {
@@ -90,9 +100,20 @@ export default function ProblemDetailPage({
 
         <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
         <h1 className="text-2xl font-light text-black mt-1 mb-3">{problem.title}</h1>
-        <p className="text-neutral-400 mb-4 text-sm">
-          {problem.source} &middot; {problem.year}
-        </p>
+        <div className="flex items-center gap-3 text-sm text-neutral-400 mb-4">
+          <span>{problem.source} &middot; {problem.year}</span>
+          {solvedCount > 0 && (
+            <>
+              <span className="text-neutral-200">&middot;</span>
+              <span className="flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {solvedCount}명 풀이 완료
+              </span>
+            </>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {problem.tags.map((tag) => (
@@ -153,6 +174,11 @@ export default function ProblemDetailPage({
         <div className={showSolution ? "border-t border-neutral-100 pt-6" : "hidden"}>
           <LatexRenderer content={problem.officialSolution} />
         </div>
+      </div>
+
+      {/* User Solutions Section */}
+      <div className="border border-neutral-200 p-8 mb-6">
+        <SolutionSection problemId={id} />
       </div>
 
       {/* Discussion Section */}

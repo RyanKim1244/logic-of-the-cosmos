@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Problem } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 
-export default function ProblemCard({ problem }: { problem: Problem }) {
+export default function ProblemCard({ problem, solvedCount = 0 }: { problem: Problem; solvedCount?: number }) {
   const { user } = useAuth();
   const isSolved = user?.solvedProblems.includes(problem.id) ?? false;
   const isBookmarked = user?.bookmarkedProblems.includes(problem.id) ?? false;
@@ -41,7 +41,17 @@ export default function ProblemCard({ problem }: { problem: Problem }) {
           </h3>
         </div>
 
-        <p className="text-xs text-neutral-400 mt-3 tracking-wide">{problem.source} &middot; {problem.year}</p>
+        <div className="flex items-center justify-between mt-3">
+          <p className="text-xs text-neutral-400 tracking-wide">{problem.source} &middot; {problem.year}</p>
+          {solvedCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-neutral-300">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {solvedCount}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
