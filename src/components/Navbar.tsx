@@ -7,7 +7,7 @@ import SearchModal from "@/components/SearchModal";
 import Logo from "@/components/Logo";
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -69,7 +69,9 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {user ? (
+              {loading ? (
+                <span className="w-7 h-7 bg-neutral-800 animate-pulse rounded" />
+              ) : user ? (
                 <Link
                   href="/profile"
                   className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
