@@ -19,6 +19,10 @@ export const metadata: Metadata = {
     title: "Logic of The Cosmos - 과학 올림피아드 문제 플랫폼",
     description: "IPhO, IChO, IBO, KPhO, KMO 기출문제와 풀이를 제공하는 과학 학습 플랫폼",
   },
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   robots: {
     index: true,
     follow: true,
@@ -66,7 +70,7 @@ export default function RootLayout({
               &copy; 2026 Logic of The Cosmos
             </p>
             <p className="text-xs mt-2 text-neutral-600">
-              과학 올림피아드 문제 학습 플랫폼
+              경계 없는 과학 탐구의 장
             </p>
           </div>
         </footer>

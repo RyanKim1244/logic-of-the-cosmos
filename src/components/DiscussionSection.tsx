@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Discussion } from "@/types";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+
+interface Discussion {
+  id: string;
+  problem_id: string;
+  author_name: string;
+  content: string;
+  created_at: string;
+  parent_id: string | null;
+}
 
 interface DiscussionSectionProps {
   problemId: string;
-  initialDiscussions: Discussion[];
 }
 
-export default function DiscussionSection({ problemId, initialDiscussions }: DiscussionSectionProps) {
+export default function DiscussionSection({ problemId }: DiscussionSectionProps) {
   const { user } = useAuth();
-  const [discussions, setDiscussions] = useState<Discussion[]>(initialDiscussions);
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
@@ -20,48 +28,71 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
   const authorName = user ? user.name : "Guest";
 
   useEffect(() => {
+    async function fetchDiscussions() {
+      const { data } = await supabase
+        .from("discussions")
+        .select("*")
+        .eq("problem_id", problemId)
+        .order("created_at", { ascending: true });
+      if (data) setDiscussions(data);
+    }
+    fetchDiscussions();
+  }, [problemId]);
+
+  useEffect(() => {
     if (sectionRef.current && window.MathJax?.typesetPromise) {
       window.MathJax.typesetPromise([sectionRef.current]).catch(console.error);
     }
   }, [discussions]);
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const discussion: Discussion = {
-      id: `disc-${Date.now()}`,
-      problemId,
-      author: authorName,
-      content: newComment.trim(),
-      createdAt: new Date().toISOString().split("T")[0],
-      parentId: null,
-    };
+    const { data, error } = await supabase
+      .from("discussions")
+      .insert({
+        problem_id: problemId,
+        author_id: user?.id || null,
+        author_name: authorName,
+        content: newComment.trim(),
+        parent_id: null,
+      })
+      .select()
+      .single();
 
-    setDiscussions([...discussions, discussion]);
-    setNewComment("");
+    if (!error && data) {
+      setDiscussions([...discussions, data]);
+      setNewComment("");
+    }
   };
 
-  const handleSubmitReply = (e: React.FormEvent) => {
+  const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyContent.trim() || !replyTo) return;
 
-    const discussion: Discussion = {
-      id: `disc-${Date.now()}`,
-      problemId,
-      author: authorName,
-      content: replyContent.trim(),
-      createdAt: new Date().toISOString().split("T")[0],
-      parentId: replyTo,
-    };
+    const { data, error } = await supabase
+      .from("discussions")
+      .insert({
+        problem_id: problemId,
+        author_id: user?.id || null,
+        author_name: authorName,
+        content: replyContent.trim(),
+        parent_id: replyTo,
+      })
+      .select()
+      .single();
 
-    setDiscussions([...discussions, discussion]);
-    setReplyContent("");
-    setReplyTo(null);
+    if (!error && data) {
+      setDiscussions([...discussions, data]);
+      setReplyContent("");
+      setReplyTo(null);
+    }
   };
 
-  const topLevel = discussions.filter((d) => d.parentId === null);
-  const getReplies = (parentId: string) => discussions.filter((d) => d.parentId === parentId);
+  const formatDate = (dateStr: string) => new Date(dateStr).toISOString().split("T")[0];
+  const topLevel = discussions.filter((d) => d.parent_id === null);
+  const getReplies = (parentId: string) => discussions.filter((d) => d.parent_id === parentId);
 
   return (
     <div ref={sectionRef} className="mt-10">
@@ -110,11 +141,11 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
           <div key={disc.id} className="border border-neutral-200 p-5">
             <div className="flex items-center gap-3 mb-3">
               <span className="w-8 h-8 bg-neutral-800 text-white flex items-center justify-center text-xs font-medium shrink-0">
-                {disc.author.charAt(0).toUpperCase()}
+                {disc.author_name.charAt(0).toUpperCase()}
               </span>
               <div className="flex-1 min-w-0">
-                <span className="font-medium text-black text-sm">{disc.author}</span>
-                <span className="text-xs text-neutral-400 ml-2">{disc.createdAt}</span>
+                <span className="font-medium text-black text-sm">{disc.author_name}</span>
+                <span className="text-xs text-neutral-400 ml-2">{formatDate(disc.created_at)}</span>
               </div>
             </div>
             <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-sm leading-relaxed pl-11">{disc.content}</div>
@@ -135,10 +166,10 @@ export default function DiscussionSection({ problemId, initialDiscussions }: Dis
               <div key={reply.id} className="ml-11 mt-4 pl-4 border-l-2 border-neutral-100">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-6 h-6 bg-neutral-200 text-neutral-600 flex items-center justify-center text-xs font-medium shrink-0">
-                    {reply.author.charAt(0).toUpperCase()}
+                    {reply.author_name.charAt(0).toUpperCase()}
                   </span>
-                  <span className="font-medium text-neutral-700 text-sm">{reply.author}</span>
-                  <span className="text-xs text-neutral-400">{reply.createdAt}</span>
+                  <span className="font-medium text-neutral-700 text-sm">{reply.author_name}</span>
+                  <span className="text-xs text-neutral-400">{formatDate(reply.created_at)}</span>
                 </div>
                 <div className="text-neutral-600 text-sm whitespace-pre-wrap leading-relaxed pl-8">{reply.content}</div>
               </div>

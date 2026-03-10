@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { problems } from "@/data/problems";
+import { Problem } from "@/types";
 
 interface FilterSidebarProps {
   selectedTags: string[];
@@ -10,6 +10,7 @@ interface FilterSidebarProps {
   onTagChange: (tags: string[]) => void;
   onSourceChange: (sources: string[]) => void;
   onSearchChange: (query: string) => void;
+  problems?: Problem[];
 }
 
 function Dropdown({
@@ -118,18 +119,19 @@ export default function FilterSidebar({
   onTagChange,
   onSourceChange,
   onSearchChange,
+  problems = [],
 }: FilterSidebarProps) {
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     problems.forEach((p) => p.tags.forEach((t) => tags.add(t)));
     return Array.from(tags).sort();
-  }, []);
+  }, [problems]);
 
   const allSources = useMemo(() => {
     const sources = new Set<string>();
     problems.forEach((p) => sources.add(p.source));
     return Array.from(sources).sort();
-  }, []);
+  }, [problems]);
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {

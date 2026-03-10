@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -11,31 +12,38 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { login, register } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSubmitting(true);
 
-    if (isRegister) {
-      if (!name.trim()) {
-        setError("이름을 입력해주세요.");
-        return;
-      }
-      const result = register(email, password, name);
-      if (result.success) {
-        router.push("/profile");
+    try {
+      if (isRegister) {
+        if (!name.trim()) {
+          setError("이름을 입력해주세요.");
+          setSubmitting(false);
+          return;
+        }
+        const result = await register(email, password, name);
+        if (result.success) {
+          router.push("/profile");
+        } else {
+          setError(result.error || "회원가입에 실패했습니다.");
+        }
       } else {
-        setError(result.error || "회원가입에 실패했습니다.");
+        const result = await login(email, password);
+        if (result.success) {
+          router.push("/");
+        } else {
+          setError(result.error || "로그인에 실패했습니다.");
+        }
       }
-    } else {
-      const result = login(email, password);
-      if (result.success) {
-        router.push("/");
-      } else {
-        setError(result.error || "로그인에 실패했습니다.");
-      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -43,8 +51,9 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <Link href="/" className="text-2xl font-light tracking-[0.2em] uppercase text-black">
-            LoTC
+          <Link href="/" className="inline-flex flex-col items-center gap-2">
+            <Logo size={48} className="text-black" />
+            <span className="text-2xl font-light tracking-[0.2em] uppercase text-black">LoTC</span>
           </Link>
           <p className="text-neutral-400 text-sm mt-2">Logic of The Cosmos</p>
         </div>
@@ -105,9 +114,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-black text-white text-sm font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors"
+              disabled={submitting}
+              className="w-full py-3 bg-black text-white text-sm font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-50"
             >
-              {isRegister ? "가입하기" : "로그인"}
+              {submitting ? "처리 중..." : isRegister ? "가입하기" : "로그인"}
             </button>
           </form>
 

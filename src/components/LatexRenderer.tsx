@@ -37,7 +37,7 @@ function formatContent(text: string): string {
       const captionHtml = caption
         ? `<figcaption class="text-xs text-neutral-400 mt-2 text-center">${caption}</figcaption>`
         : "";
-      return `<figure class="my-4 flex flex-col items-center"><img src="${src}" alt="${alt}" class="max-w-full h-auto border border-neutral-200" />${captionHtml}</figure>`;
+      return `<figure class="my-4 flex flex-col items-center"><img src="${src}" alt="${alt}" class="max-w-full h-auto border border-neutral-200" loading="lazy" decoding="async" />${captionHtml}</figure>`;
     }
   );
 

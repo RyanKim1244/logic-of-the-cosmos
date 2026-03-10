@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { problems, discussions } from "@/data/problems";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { Problem } from "@/types";
 import LatexRenderer from "@/components/LatexRenderer";
 import DiscussionSection from "@/components/DiscussionSection";
+import SolutionSection from "@/components/SolutionSection";
 
 export default function ProblemDetailPage({
   params,
@@ -15,10 +17,66 @@ export default function ProblemDetailPage({
   const { id } = use(params);
   const { user, toggleSolved, toggleBookmark } = useAuth();
   const [showSolution, setShowSolution] = useState(false);
+  const [problem, setProblem] = useState<Problem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [solvedCount, setSolvedCount] = useState(0);
   const isSolved = user?.solvedProblems.includes(id) ?? false;
   const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
 
-  const problem = problems.find((p) => p.id === id);
+  useEffect(() => {
+    async function fetchProblem() {
+      try {
+        const { data } = await withTimeout(
+          supabase
+            .from("problems")
+            .select("*")
+            .eq("id", id)
+            .single()
+        );
+        if (data) {
+          setProblem({
+            id: data.id,
+            problemNumber: data.problem_number,
+            title: data.title,
+            source: data.source,
+            year: data.year,
+            tags: data.tags,
+            content: data.content,
+            officialSolution: data.official_solution,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          });
+        }
+      } catch {
+        // timeout or network error
+      } finally {
+        setLoading(false);
+      }
+    }
+    async function fetchSolvedCount() {
+      try {
+        const { count } = await withTimeout(
+          supabase
+            .from("user_solved_problems")
+            .select("*", { count: "exact", head: true })
+            .eq("problem_id", id)
+        );
+        if (count !== null) setSolvedCount(count);
+      } catch {
+        // ignore
+      }
+    }
+    fetchProblem();
+    fetchSolvedCount();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <p className="text-neutral-400 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
 
   if (!problem) {
     return (
@@ -31,8 +89,6 @@ export default function ProblemDetailPage({
     );
   }
 
-  const problemDiscussions = discussions.filter((d) => d.problemId === id);
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Breadcrumb */}
@@ -44,7 +100,6 @@ export default function ProblemDetailPage({
 
       {/* Problem Header */}
       <div className={`border p-8 mb-6 relative ${isSolved ? "border-emerald-300 bg-emerald-50/30" : "border-neutral-200"}`}>
-        {/* Solved badge */}
         {isSolved && (
           <div className="absolute top-4 right-4 flex items-center gap-1.5 solved-badge">
             <span className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
@@ -58,27 +113,33 @@ export default function ProblemDetailPage({
 
         <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
         <h1 className="text-2xl font-light text-black mt-1 mb-3">{problem.title}</h1>
-        <p className="text-neutral-400 mb-4 text-sm">
-          {problem.source} &middot; {problem.year}
-        </p>
+        <div className="flex items-center gap-3 text-sm text-neutral-400 mb-4">
+          <span>{problem.source} &middot; {problem.year}</span>
+          {solvedCount > 0 && (
+            <>
+              <span className="text-neutral-200">&middot;</span>
+              <span className="flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {solvedCount}명 풀이 완료
+              </span>
+            </>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {problem.tags.map((tag) => (
-            <span key={tag} className="px-2 py-0.5 text-neutral-400 text-xs">
-              #{tag}
-            </span>
+            <span key={tag} className="px-2 py-0.5 text-neutral-400 text-xs">#{tag}</span>
           ))}
         </div>
 
-        {/* Action buttons */}
         {user && (
           <div className="flex items-center gap-3 mb-6">
             <button
               onClick={() => toggleSolved(id)}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
-                isSolved
-                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                  : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
+                isSolved ? "bg-emerald-500 text-white hover:bg-emerald-600" : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,9 +150,7 @@ export default function ProblemDetailPage({
             <button
               onClick={() => toggleBookmark(id)}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all ${
-                isBookmarked
-                  ? "bg-amber-500 text-white hover:bg-amber-600"
-                  : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
+                isBookmarked ? "bg-amber-500 text-white hover:bg-amber-600" : "border border-neutral-300 text-neutral-500 hover:border-black hover:text-black"
               }`}
             >
               <svg className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +161,6 @@ export default function ProblemDetailPage({
           </div>
         )}
 
-        {/* Problem Content */}
         <div className="border-t border-neutral-100 pt-6">
           <LatexRenderer content={problem.content} />
         </div>
@@ -115,9 +173,7 @@ export default function ProblemDetailPage({
           <button
             onClick={() => setShowSolution(!showSolution)}
             className={`px-5 py-2 text-xs font-medium transition-colors uppercase tracking-wider ${
-              showSolution
-                ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                : "bg-black text-white hover:bg-neutral-800"
+              showSolution ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200" : "bg-black text-white hover:bg-neutral-800"
             }`}
           >
             {showSolution ? "풀이 숨기기" : "풀이 보기"}
@@ -125,9 +181,7 @@ export default function ProblemDetailPage({
         </div>
 
         {!showSolution && (
-          <p className="text-neutral-400 text-sm">
-            먼저 직접 풀어본 후 풀이를 확인하세요!
-          </p>
+          <p className="text-neutral-400 text-sm">먼저 직접 풀어본 후 풀이를 확인하세요!</p>
         )}
 
         <div className={showSolution ? "border-t border-neutral-100 pt-6" : "hidden"}>
@@ -135,9 +189,14 @@ export default function ProblemDetailPage({
         </div>
       </div>
 
+      {/* User Solutions Section */}
+      <div className="border border-neutral-200 p-8 mb-6">
+        <SolutionSection problemId={id} />
+      </div>
+
       {/* Discussion Section */}
       <div className="border border-neutral-200 p-8">
-        <DiscussionSection problemId={id} initialDiscussions={problemDiscussions} />
+        <DiscussionSection problemId={id} />
       </div>
     </div>
   );
