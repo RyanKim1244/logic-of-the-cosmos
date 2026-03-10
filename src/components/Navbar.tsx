@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import SearchModal from "@/components/SearchModal";
+import Logo from "@/components/Logo";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -25,7 +26,8 @@ export default function Navbar() {
       <nav aria-label="메인 내비게이션" className="bg-black text-white sticky top-0 z-50 border-b border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            <Link href="/" className="flex items-center space-x-2.5 hover:opacity-80 transition-opacity">
+              <Logo size={28} />
               <span className="text-xl font-light tracking-[0.2em] uppercase">LoTC</span>
               <span className="hidden sm:inline text-sm text-neutral-400 font-light">Logic of The Cosmos</span>
             </Link>

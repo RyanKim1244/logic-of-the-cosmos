@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -50,8 +51,9 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <Link href="/" className="text-2xl font-light tracking-[0.2em] uppercase text-black">
-            LoTC
+          <Link href="/" className="inline-flex flex-col items-center gap-2">
+            <Logo size={48} className="text-black" />
+            <span className="text-2xl font-light tracking-[0.2em] uppercase text-black">LoTC</span>
           </Link>
           <p className="text-neutral-400 text-sm mt-2">Logic of The Cosmos</p>
         </div>
