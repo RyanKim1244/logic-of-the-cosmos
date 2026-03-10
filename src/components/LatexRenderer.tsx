@@ -118,7 +118,7 @@ function LatexRendererInner({ content }: { content: string }) {
   return (
     <div
       ref={containerRef}
-      className="latex-content prose prose-lg max-w-none"
+      className="latex-content prose prose-sm max-w-none"
       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatContent(content), { ADD_TAGS: ["figure", "figcaption"], ADD_ATTR: ["class"] }) }}
     />
   );

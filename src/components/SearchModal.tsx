@@ -55,15 +55,20 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
     const controller = new AbortController();
     searchControllerRef.current = controller;
     const searchTerm = `%${q}%`;
+    const numericQuery = q.trim().replace(/^#/, "");
+    const isNumericSearch = /^\d+$/.test(numericQuery);
 
     try {
-      const [problemsRes, topicsRes] = await Promise.all([
-        withTimeout(
-          supabase.from("problems").select("id, title, source, year")
+      const problemQuery = isNumericSearch
+        ? supabase.from("problems").select("id, problem_number, title, source, year")
+            .or(`problem_number.eq.${numericQuery},title.ilike.${searchTerm},source.ilike.${searchTerm}`)
+            .limit(5)
+        : supabase.from("problems").select("id, problem_number, title, source, year")
             .or(`title.ilike.${searchTerm},source.ilike.${searchTerm},content.ilike.${searchTerm}`)
-            .limit(5),
-          3000, controller.signal
-        ),
+            .limit(5);
+
+      const [problemsRes, topicsRes] = await Promise.all([
+        withTimeout(problemQuery, 3000, controller.signal),
         withTimeout(
           supabase.from("topics").select("id, title, author_name")
             .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
@@ -77,7 +82,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
       const items: SearchResult[] = [];
       if (problemsRes.data) {
         for (const p of problemsRes.data) {
-          items.push({ type: "problem", id: p.id, title: p.title, subtitle: `${p.source} · ${p.year}` });
+          items.push({ type: "problem", id: p.id, title: p.title, subtitle: `#${p.problem_number} · ${p.source} · ${p.year}` });
         }
       }
       if (topicsRes.data) {
@@ -138,7 +143,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="문제, 토픽 검색..."
+            placeholder="번호, 제목, 출처, 토픽 검색..."
             className="flex-1 px-3 py-4 text-sm focus:outline-none"
           />
           <kbd className="text-[10px] text-neutral-400 border border-neutral-200 px-1.5 py-0.5 rounded">ESC</kbd>
@@ -181,7 +186,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
         {!query.trim() && (
           <div className="py-8 text-center">
-            <p className="text-xs text-neutral-400">문제 제목, 출처, 토픽 제목으로 검색하세요</p>
+            <p className="text-xs text-neutral-400">문제 번호, 제목, 출처, 토픽으로 검색하세요</p>
             <p className="text-[10px] text-neutral-300 mt-2">
               <kbd className="border border-neutral-200 px-1 py-0.5 rounded">↑</kbd>{" "}
               <kbd className="border border-neutral-200 px-1 py-0.5 rounded">↓</kbd> 이동{" "}

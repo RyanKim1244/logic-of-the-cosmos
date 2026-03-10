@@ -170,8 +170,8 @@ export default function ProblemDetailPage({
       </div>
 
       {/* Solution Section */}
-      <div className="border border-neutral-200 p-8 mb-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="border border-neutral-200 p-6 mb-6">
+        <div className="flex items-center justify-between">
           <h2 className="text-xl font-light text-black">공식 풀이</h2>
           <button
             onClick={() => setShowSolution(!showSolution)}
@@ -183,11 +183,7 @@ export default function ProblemDetailPage({
           </button>
         </div>
 
-        {!showSolution && (
-          <p className="text-neutral-400 text-sm">먼저 직접 풀어본 후 풀이를 확인하세요!</p>
-        )}
-
-        <div className={showSolution ? "border-t border-neutral-100 pt-6" : "hidden"}>
+        <div className={showSolution ? "border-t border-neutral-100 pt-6 mt-4" : "hidden"}>
           <LatexRenderer content={problem.officialSolution} />
         </div>
       </div>

@@ -32,7 +32,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
     async function fetchDiscussions() {
       try {
         const { data } = await withTimeout(
-          supabase.from("discussions").select("*").eq("problem_id", problemId).order("created_at", { ascending: true }),
+          supabase.from("discussions").select("*").eq("problem_id", problemId).or("is_solution.is.null,is_solution.eq.false").order("created_at", { ascending: true }),
           5000, controller.signal
         );
         if (!controller.signal.aborted && data) setDiscussions(data);
@@ -151,7 +151,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                 <span className="text-xs text-neutral-400 ml-2">{formatDate(disc.created_at)}</span>
               </div>
             </div>
-            <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-sm leading-relaxed pl-11">{disc.content}</div>
+            <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-xs leading-relaxed pl-11">{disc.content}</div>
             <div className="pl-11">
               <button
                 onClick={() => {
@@ -174,7 +174,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                   <span className="font-medium text-neutral-700 text-sm">{reply.author_name}</span>
                   <span className="text-xs text-neutral-400">{formatDate(reply.created_at)}</span>
                 </div>
-                <div className="text-neutral-600 text-sm whitespace-pre-wrap leading-relaxed pl-8">{reply.content}</div>
+                <div className="text-neutral-600 text-xs whitespace-pre-wrap leading-relaxed pl-8">{reply.content}</div>
               </div>
             ))}
 
