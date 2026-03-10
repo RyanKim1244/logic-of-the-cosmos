@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { supabase, withRetry } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
+import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { parseMultiLang, serializeMultiLang, type MultiLangContent } from "@/lib/multilang";
 import MultiLangEditor from "@/components/MultiLangEditor";
 
@@ -81,44 +82,70 @@ export default function AdminPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (sig?: AbortSignal) => {
+    // Restore from cache immediately
+    const cachedProblems = getCached<ProblemRow[]>("admin_problems", true);
+    const cachedContests = getCached<ContestRow[]>("admin_contests", true);
+    if (cachedProblems) setAllProblems(cachedProblems);
+    if (cachedContests) setAllContests(cachedContests);
+    if (cachedProblems && cachedContests && !isCacheStale("admin_problems") && !isCacheStale("admin_contests")) return;
+
     setFetchError(null);
     try {
       const [pRes, cRes] = await Promise.allSettled([
-        withRetry(async () => supabase.from("problems").select("*").order("problem_number")),
-        withRetry(async () => supabase.from("contests").select("*")),
+        withRetry(async () => withTimeout(supabase.from("problems").select("*").order("problem_number"), 10000, sig)),
+        withRetry(async () => withTimeout(supabase.from("contests").select("*"), 8000, sig)),
       ]);
+
+      if (sig?.aborted) return;
 
       if (pRes.status === "fulfilled" && !pRes.value.error && pRes.value.data) {
         setAllProblems(pRes.value.data);
+        setCache("admin_problems", pRes.value.data);
       } else {
         setFetchError("문제 데이터를 불러오는 데 실패했습니다.");
       }
 
       if (cRes.status === "fulfilled" && !cRes.value.error && cRes.value.data) {
         setAllContests(cRes.value.data);
+        setCache("admin_contests", cRes.value.data);
       } else if (!fetchError) {
         setFetchError("대회 데이터를 불러오는 데 실패했습니다.");
       }
     } catch {
+      if (sig?.aborted) return;
       setFetchError("데이터를 불러오는 데 실패했습니다.");
     }
   }, []);
 
   useEffect(() => {
-    if (user?.is_admin) fetchData();
-  }, [user, fetchData]);
+    if (!user?.is_admin) return;
+    let controller = new AbortController();
+    fetchData(controller.signal);
 
-  // Re-fetch when tab becomes visible (handles stale data after idle)
-  useEffect(() => {
     function handleVisibility() {
-      if (document.visibilityState === "visible" && user?.is_admin) {
-        fetchData();
+      if (document.visibilityState === "visible") {
+        controller.abort();
+        controller = new AbortController();
+        fetchData(controller.signal);
       }
     }
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [user, fetchData]);
+
+  // Pre-compute problem counts per contest (O(n) instead of O(n×m) per render)
+  const contestProblemCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const contest of allContests) {
+      const shortLower = contest.short_name.toLowerCase();
+      counts[contest.id] = allProblems.filter((p) => p.source.toLowerCase().includes(shortLower)).length;
+    }
+    return counts;
+  }, [allProblems, allContests]);
 
   // Problem handlers
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
@@ -245,7 +272,7 @@ export default function AdminPage() {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <p className="text-red-500 text-sm mb-4">{fetchError}</p>
-        <button onClick={fetchData} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+        <button onClick={() => fetchData()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
       </div>
     );
   }
@@ -371,9 +398,7 @@ export default function AdminPage() {
               <h2 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">등록된 대회 ({allContests.length})</h2>
             </div>
             <div className="divide-y divide-neutral-200">
-              {allContests.map((contest) => {
-                const count = allProblems.filter((p) => p.source.toLowerCase().includes(contest.short_name.toLowerCase())).length;
-                return (
+              {allContests.map((contest) => (
                   <div key={contest.id} className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -383,7 +408,7 @@ export default function AdminPage() {
                       <p className="text-xs text-neutral-400 truncate">{contest.description}</p>
                       <div className="flex items-center gap-4 mt-1 text-xs text-neutral-400">
                         <span>{contest.years.length}개 연도</span>
-                        <span>{count}문제</span>
+                        <span>{contestProblemCounts[contest.id] ?? 0}문제</span>
                         {contest.website && <span>웹사이트 있음</span>}
                       </div>
                     </div>
@@ -392,8 +417,7 @@ export default function AdminPage() {
                       <button onClick={() => handleDeleteContest(contest.id)} className="px-3 py-1.5 text-xs text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors uppercase tracking-wider">삭제</button>
                     </div>
                   </div>
-                );
-              })}
+              ))}
             </div>
           </div>
         </>
