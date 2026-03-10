@@ -29,8 +29,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const PROFILE_TIMEOUT = 10000; // 10s hard ceiling
+
 async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
-  // Auth-critical path: no timeout wrapper to avoid false logouts
+  // Race against a timeout so the caller never hangs forever
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("PROFILE_TIMEOUT")), PROFILE_TIMEOUT)
+  );
+
+  return Promise.race([fetchProfileInner(authUser), timeout]);
+}
+
+async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -181,12 +191,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : error.message;
         return { success: false, error: msg };
       }
-      // Eagerly fetch profile so user state is set immediately
+      // Don't await fetchProfile here — it can hang and block the login flow.
+      // Instead, fire-and-forget; onAuthStateChange SIGNED_IN will also load profile.
       if (data.user) {
-        try {
-          const profile = await fetchProfile(data.user);
+        const u = data.user;
+        fetchProfile(u).then((profile) => {
           if (profile) setUser(profile);
-        } catch { /* onAuthStateChange will retry */ }
+        }).catch(() => { /* onAuthStateChange will retry */ });
       }
       return { success: true };
     } catch (err) {
