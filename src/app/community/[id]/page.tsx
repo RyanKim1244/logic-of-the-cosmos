@@ -43,61 +43,42 @@ export default function TopicDetailPage() {
   const authorName = user ? user.name : "Guest";
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchData() {
       try {
-        const { data: topicData } = await withTimeout(
-          supabase
-            .from("topics")
-            .select("*")
-            .eq("id", id)
-            .single()
-        );
+        const sig = controller.signal;
 
-        if (topicData) {
-          setTopic(topicData);
-        }
+        // Fetch topic and comments in parallel
+        const [{ data: topicData }, { data: commentsData }] = await Promise.all([
+          withTimeout(supabase.from("topics").select("*").eq("id", id).single(), 5000, sig),
+          withTimeout(supabase.from("topic_comments").select("*").eq("topic_id", id).order("created_at", { ascending: true }), 5000, sig),
+        ]);
 
-        const { data: commentsData } = await withTimeout(
-          supabase
-            .from("topic_comments")
-            .select("*")
-            .eq("topic_id", id)
-            .order("created_at", { ascending: true })
-        );
+        if (sig.aborted) return;
+        if (topicData) setTopic(topicData);
+        if (commentsData) setComments(commentsData);
 
-        if (commentsData) {
-          setComments(commentsData);
-        }
-
-        // Check user's upvote status
+        // Check user's upvote status in parallel
         if (user) {
-          const { data: topicUpvote } = await withTimeout(
-            supabase
-              .from("topic_upvotes")
-              .select("*")
-              .eq("user_id", user.id)
-              .eq("topic_id", id as string)
-              .maybeSingle()
-          );
+          const [{ data: topicUpvote }, { data: commentUpvotes }] = await Promise.all([
+            withTimeout(supabase.from("topic_upvotes").select("*").eq("user_id", user.id).eq("topic_id", id as string).maybeSingle(), 5000, sig),
+            withTimeout(supabase.from("comment_upvotes").select("comment_id").eq("user_id", user.id), 5000, sig),
+          ]);
+          if (sig.aborted) return;
           setTopicVoted(!!topicUpvote);
-
-          const { data: commentUpvotes } = await withTimeout(
-            supabase
-              .from("comment_upvotes")
-              .select("comment_id")
-              .eq("user_id", user.id)
-          );
           if (commentUpvotes) {
             setVotedComments(new Set(commentUpvotes.map((u) => u.comment_id)));
           }
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
         setError(`토픽을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
+    return () => controller.abort();
   }, [id, user]);
 
   useEffect(() => {

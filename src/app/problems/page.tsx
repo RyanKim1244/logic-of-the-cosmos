@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { supabase, withTimeout } from "@/lib/supabase";
+import { getCached, setCache } from "@/lib/cache";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 import FilterSidebar from "@/components/FilterSidebar";
@@ -17,59 +18,73 @@ export default function ProblemsPage() {
   const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>({});
   const PER_PAGE = 20;
 
-  const fetchProblems = async (retries = 1) => {
+  const mapProblem = (p: Record<string, unknown>): Problem => ({
+    id: p.id as string,
+    problemNumber: p.problem_number as number,
+    title: p.title as string,
+    source: p.source as string,
+    year: p.year as number,
+    tags: p.tags as string[],
+    content: p.content as string,
+    officialSolution: p.official_solution as string,
+    createdAt: p.created_at as string,
+    updatedAt: p.updated_at as string,
+  });
+
+  const fetchProblems = async (signal?: AbortSignal) => {
     setError(null);
     setLoading(true);
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const { data, error: fetchError } = await withTimeout(
-          supabase.from("problems").select("*").order("problem_number", { ascending: true })
-        );
-        if (fetchError) {
-          if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
-          setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
-          break;
-        }
-        if (data) {
-          setProblems(data.map((p) => ({
-            id: p.id,
-            problemNumber: p.problem_number,
-            title: p.title,
-            source: p.source,
-            year: p.year,
-            tags: p.tags,
-            content: p.content,
-            officialSolution: p.official_solution,
-            createdAt: p.created_at,
-            updatedAt: p.updated_at,
-          })));
-        }
-        break;
-      } catch (e) {
-        if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
-        setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+
+    const cached = getCached<Problem[]>("problems");
+    if (cached) {
+      setProblems(cached);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error: fetchError } = await withTimeout(
+        supabase.from("problems").select("*").order("problem_number", { ascending: true }),
+        5000, signal
+      );
+      if (fetchError) {
+        setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
+      } else if (data) {
+        const mapped = data.map(mapProblem);
+        setProblems(mapped);
+        setCache("problems", mapped);
       }
+    } catch (e) {
+      if (signal?.aborted) return;
+      setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
     }
     setLoading(false);
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchSolvedCounts() {
+      const cached = getCached<Record<string, number>>("solvedCounts");
+      if (cached) { setSolvedCounts(cached); return; }
       try {
         const { data } = await withTimeout(
-          supabase.from("user_solved_problems").select("problem_id")
+          supabase.from("user_solved_problems").select("problem_id"),
+          5000, controller.signal
         );
+        if (controller.signal.aborted) return;
         if (data) {
           const counts: Record<string, number> = {};
           for (const row of data) {
             counts[row.problem_id] = (counts[row.problem_id] || 0) + 1;
           }
           setSolvedCounts(counts);
+          setCache("solvedCounts", counts);
         }
       } catch { /* ignore */ }
     }
-    fetchProblems();
+    fetchProblems(controller.signal);
     fetchSolvedCounts();
+    return () => controller.abort();
   }, []);
 
   const filteredProblems = useMemo(() => {

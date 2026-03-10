@@ -90,16 +90,15 @@ export default function ContestDetailPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchData() {
       try {
         const { data: contestData, error: fetchError } = await withTimeout(
-          supabase
-            .from("contests")
-            .select("*")
-            .eq("id", id)
-            .single()
+          supabase.from("contests").select("*").eq("id", id).single(),
+          5000, controller.signal
         );
 
+        if (controller.signal.aborted) return;
         if (fetchError) {
           setError(`대회 정보를 불러오는 데 실패했습니다. (${fetchError.message})`);
           setLoading(false);
@@ -114,18 +113,22 @@ export default function ContestDetailPage({
               .from("problems")
               .select("id, problem_number, title, source, year")
               .ilike("source", `%${contestData.short_name}%`)
-              .order("year", { ascending: false })
+              .order("year", { ascending: false }),
+            5000, controller.signal
           );
 
+          if (controller.signal.aborted) return;
           if (problems) setContestProblems(problems);
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
         setError(`대회 정보를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
+    return () => controller.abort();
   }, [id]);
 
   if (loading) {

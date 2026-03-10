@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export interface User {
@@ -29,23 +29,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", authUser.id)
-    .single();
+  const { data: profile } = await withTimeout(
+    supabase.from("profiles").select("*").eq("id", authUser.id).single()
+  );
 
   if (!profile) return null;
 
-  const { data: solved } = await supabase
-    .from("user_solved_problems")
-    .select("problem_id")
-    .eq("user_id", authUser.id);
-
-  const { data: bookmarked } = await supabase
-    .from("user_bookmarked_problems")
-    .select("problem_id")
-    .eq("user_id", authUser.id);
+  // Fetch solved and bookmarked in parallel instead of sequentially
+  const [{ data: solved }, { data: bookmarked }] = await Promise.all([
+    withTimeout(supabase.from("user_solved_problems").select("problem_id").eq("user_id", authUser.id)),
+    withTimeout(supabase.from("user_bookmarked_problems").select("problem_id").eq("user_id", authUser.id)),
+  ]);
 
   return {
     id: profile.id,

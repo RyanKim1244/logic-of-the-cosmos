@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import LatexRenderer from "@/components/LatexRenderer";
 
@@ -26,17 +26,18 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
   const mySolution = solutions.find((s) => s.author_id === user?.id);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchSolutions() {
-      const { data } = await supabase
-        .from("discussions")
-        .select("*")
-        .eq("problem_id", problemId)
-        .eq("is_solution", true)
-        .is("parent_id", null)
-        .order("created_at", { ascending: true });
-      if (data) setSolutions(data);
+      try {
+        const { data } = await withTimeout(
+          supabase.from("discussions").select("*").eq("problem_id", problemId).eq("is_solution", true).is("parent_id", null).order("created_at", { ascending: true }),
+          5000, controller.signal
+        );
+        if (!controller.signal.aborted && data) setSolutions(data);
+      } catch { /* ignore */ }
     }
     fetchSolutions();
+    return () => controller.abort();
   }, [problemId]);
 
   useEffect(() => {
