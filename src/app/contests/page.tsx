@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache } from "@/lib/cache";
 
 interface Contest {
@@ -34,8 +34,9 @@ export default function ContestsPage() {
     }
 
     try {
-      const { data: contestsData, error: fetchError } = await withTimeout(
-        supabase.from("contests").select("*"), 5000, signal
+      const { data: contestsData, error: fetchError } = await withRetry(
+        () => withTimeout(supabase.from("contests").select("*"), 8000, signal),
+        1, 1000, signal
       );
       if (signal?.aborted) return;
       if (fetchError) {

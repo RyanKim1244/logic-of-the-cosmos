@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import { invalidateCache, invalidateCacheByPrefix } from "@/lib/cache";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export interface User {
@@ -72,16 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resolved = true;
         setLoading(false);
       }
-    }, 8000);
+    }, 10000);
 
-    // Use getUser() for more reliable cookie-based session detection
-    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
+    // Try to restore session with retry on transient failures
+    async function restoreSession(attempt = 0): Promise<void> {
       try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
         if (authUser && isMounted) {
           const profile = await fetchProfile(authUser);
           if (profile && isMounted) setUser(profile);
         }
       } catch {
+        // Retry once on transient failure (network hiccup, cold start)
+        if (attempt < 1 && isMounted) {
+          await new Promise((r) => setTimeout(r, 1500));
+          return restoreSession(attempt + 1);
+        }
         // Don't clear user on initial load failure — session may still be valid
       } finally {
         if (!resolved) {
@@ -89,12 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (isMounted) setLoading(false);
         }
       }
-    }).catch(() => {
-      if (!resolved) {
-        resolved = true;
-        if (isMounted) setLoading(false);
-      }
-    });
+    }
+
+    restoreSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -171,6 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    // Clear all caches so next login gets fresh data
+    invalidateCacheByPrefix("home");
+    invalidateCache("problems");
+    invalidateCache("solvedCounts");
   };
 
   const updateProfile = async (updates: Partial<Pick<User, "name" | "bio">>) => {
@@ -198,23 +206,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isSolved = user.solvedProblems.includes(problemId);
 
     if (isSolved) {
-      await supabase
+      const { error } = await supabase
         .from("user_solved_problems")
         .delete()
         .eq("user_id", user.id)
         .eq("problem_id", problemId);
-      setUser({
-        ...user,
-        solvedProblems: user.solvedProblems.filter((id) => id !== problemId),
-      });
+      if (!error) {
+        setUser({
+          ...user,
+          solvedProblems: user.solvedProblems.filter((id) => id !== problemId),
+        });
+        invalidateCache("solvedCounts");
+        invalidateCache("homeStats");
+      }
     } else {
-      await supabase
+      const { error } = await supabase
         .from("user_solved_problems")
         .insert({ user_id: user.id, problem_id: problemId });
-      setUser({
-        ...user,
-        solvedProblems: [...user.solvedProblems, problemId],
-      });
+      if (!error) {
+        setUser({
+          ...user,
+          solvedProblems: [...user.solvedProblems, problemId],
+        });
+        invalidateCache("solvedCounts");
+        invalidateCache("homeStats");
+      }
     }
   };
 
@@ -223,23 +239,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isBookmarked = user.bookmarkedProblems.includes(problemId);
 
     if (isBookmarked) {
-      await supabase
+      const { error } = await supabase
         .from("user_bookmarked_problems")
         .delete()
         .eq("user_id", user.id)
         .eq("problem_id", problemId);
-      setUser({
-        ...user,
-        bookmarkedProblems: user.bookmarkedProblems.filter((id) => id !== problemId),
-      });
+      if (!error) {
+        setUser({
+          ...user,
+          bookmarkedProblems: user.bookmarkedProblems.filter((id) => id !== problemId),
+        });
+      }
     } else {
-      await supabase
+      const { error } = await supabase
         .from("user_bookmarked_problems")
         .insert({ user_id: user.id, problem_id: problemId });
-      setUser({
-        ...user,
-        bookmarkedProblems: [...user.bookmarkedProblems, problemId],
-      });
+      if (!error) {
+        setUser({
+          ...user,
+          bookmarkedProblems: [...user.bookmarkedProblems, problemId],
+        });
+      }
     }
   };
 

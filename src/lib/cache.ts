@@ -19,3 +19,13 @@ export function setCache(key: string, data: unknown): void {
 export function invalidateCache(key: string): void {
   cache.delete(key);
 }
+
+export function invalidateCacheByPrefix(prefix: string): void {
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.delete(key);
+  }
+}
+
+export function invalidateAll(): void {
+  cache.clear();
+}

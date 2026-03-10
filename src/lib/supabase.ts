@@ -7,7 +7,22 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholde
 /**
  * Browser client that uses cookies for session persistence.
  * This ensures sessions survive page refreshes in Next.js.
+ *
+ * Uses a lazy singleton so the browser check runs at access time,
+ * not at module-evaluation time (avoids SSR/client mismatch).
  */
+let _supabase: ReturnType<typeof createBrowserClient> | ReturnType<typeof createClient> | null = null;
+
+export function getSupabase() {
+  if (!_supabase) {
+    _supabase = typeof window !== "undefined"
+      ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+      : createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return _supabase;
+}
+
+// Keep the named export for backward-compatibility with existing imports.
 export const supabase = typeof window !== "undefined"
   ? createBrowserClient(supabaseUrl, supabaseAnonKey)
   : createClient(supabaseUrl, supabaseAnonKey);
@@ -65,4 +80,30 @@ export async function withTimeout<T>(
       }
     );
   });
+}
+
+/**
+ * Retries a function up to `retries` times with exponential backoff.
+ * Respects an optional AbortSignal to bail out early.
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries = 2,
+  baseDelay = 1000,
+  signal?: AbortSignal
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (signal?.aborted) throw new Error("요청이 취소되었습니다.");
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastError;
 }

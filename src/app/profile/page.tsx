@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import ContributionHeatmap from "@/components/ContributionHeatmap";
 
 interface ProblemSummary {
@@ -94,17 +94,17 @@ export default function ProfilePage() {
       const sig = controller.signal;
 
       try {
-        // Fetch bookmarked and solved in parallel
+        // Fetch bookmarked and solved in parallel with retry
         const [bookmarkedRes, solvedRes, solveHistoryRes, solutionCountRes, discussionCountRes] = await Promise.all([
           user.bookmarkedProblems.length > 0
-            ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 5000, sig)
+            ? withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 8000, sig), 1, 1000, sig)
             : Promise.resolve({ data: null, error: null }),
           user.solvedProblems.length > 0
-            ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 5000, sig)
+            ? withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 8000, sig), 1, 1000, sig)
             : Promise.resolve({ data: null, error: null }),
-          withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 5000, sig),
-          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).eq("is_solution", true), 5000, sig),
-          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).or("is_solution.is.null,is_solution.eq.false"), 5000, sig),
+          withRetry(() => withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 8000, sig), 1, 1000, sig),
+          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).eq("is_solution", true), 8000, sig), 1, 1000, sig),
+          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).or("is_solution.is.null,is_solution.eq.false"), 8000, sig), 1, 1000, sig),
         ]);
 
         if (sig.aborted) return;

@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { supabase, withTimeout } from "@/lib/supabase";
-import { getCached, setCache } from "@/lib/cache";
+import { supabase, withTimeout, withRetry } from "@/lib/supabase";
+import { getCached, setCache, invalidateCache } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 
 interface Topic {
@@ -46,9 +46,11 @@ export default function CommunityPage() {
       }
 
       try {
-        const { data: topics, error: fetchError } = await withTimeout(
-          supabase.from("topics").select("*").order("created_at", { ascending: false }),
-          5000, controller.signal
+        const { data: topics, error: fetchError } = await withRetry(
+          () => withTimeout(
+            supabase.from("topics").select("*").order("created_at", { ascending: false }),
+            8000, controller.signal
+          ), 1, 1000, controller.signal
         );
 
         if (controller.signal.aborted) return;
@@ -142,6 +144,8 @@ export default function CommunityPage() {
       setNewContent("");
       setNewTags("");
       setShowCreateForm(false);
+      invalidateCache("communityTopics");
+      invalidateCache("communityCommentCounts");
     }
   };
 
