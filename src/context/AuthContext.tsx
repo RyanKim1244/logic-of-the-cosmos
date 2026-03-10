@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { invalidateCache, invalidateCacheByPrefix } from "@/lib/cache";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -75,65 +75,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let resolved = false;
     let isMounted = true;
 
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        setLoading(false);
-      }
-    }, 10000);
-
-    // Try to restore session with retry on transient failures
-    async function restoreSession(attempt = 0): Promise<void> {
+    // Step 1: Use getSession() for INSTANT UI (reads localStorage only, no network).
+    // This prevents the "briefly logged out" flash on page refresh.
+    async function quickRestore() {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser && isMounted) {
-          const profile = await fetchProfile(authUser);
-          if (profile && isMounted) setUser(profile);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && isMounted) {
+          const profile = await fetchProfile(session.user);
+          if (profile && isMounted) {
+            setUser(profile);
+            setLoading(false);
+          }
         }
       } catch {
-        // Retry once on transient failure (network hiccup, cold start)
-        if (attempt < 1 && isMounted) {
-          await new Promise((r) => setTimeout(r, 1500));
-          return restoreSession(attempt + 1);
-        }
-        // Don't clear user on initial load failure — session may still be valid
-      } finally {
-        if (!resolved) {
-          resolved = true;
-          if (isMounted) setLoading(false);
-        }
+        // Ignore — onAuthStateChange will handle it
       }
     }
+    quickRestore();
 
-    restoreSession();
-
+    // Step 2: Listen for auth state changes (handles INITIAL_SESSION,
+    // TOKEN_REFRESHED, SIGNED_IN, SIGNED_OUT).
+    // This is the authoritative source — it fires after the SDK verifies
+    // the session with the server and refreshes tokens if needed.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
 
-        // Skip INITIAL_SESSION — getUser() above handles initialization.
-        if (event === "INITIAL_SESSION") return;
-
         // Only clear user on explicit sign-out
         if (event === "SIGNED_OUT") {
           setUser(null);
+          setLoading(false);
           return;
         }
 
-        // For TOKEN_REFRESHED and SIGNED_IN, update profile but don't
-        // clear user on transient errors (network timeout, etc.)
+        // For all other events (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED),
+        // update the profile from session data.
         if (session?.user) {
           try {
             const profile = await fetchProfile(session.user);
             if (profile && isMounted) setUser(profile);
-            // If profile fetch fails, keep existing user state
           } catch {
-            // Silently ignore — keep current user rather than logging out
+            // Keep existing user on transient errors
           }
         }
+
+        // Mark loading done after INITIAL_SESSION is processed
+        if (isMounted) setLoading(false);
       }
     );
 
@@ -167,7 +156,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
-      clearTimeout(timeout);
       clearInterval(keepalive);
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
