@@ -1,19 +1,19 @@
-<svg width="100" height="100" viewBox="-5 -5 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="-5" y="-5" width="110" height="110" rx="20" fill="#0a0a0a"/>
-  <!-- C shape -->
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" rx="20" fill="#0a0a0a"/>
+  <!-- C shape - centered at (50,50), radius 38 -->
   <path
-    d="M72 20A42 42 0 1 0 72 80"
+    d="M69 17A38 38 0 1 0 69 83"
     stroke="white"
     stroke-width="6"
     stroke-linecap="round"
     fill="none"
   />
-  <!-- Orbital ring -->
+  <!-- Orbital ring - centered at (50,50) -->
   <ellipse
     cx="50"
     cy="50"
-    rx="18"
-    ry="42"
+    rx="14"
+    ry="36"
     transform="rotate(-30 50 50)"
     stroke="white"
     stroke-width="2.5"
@@ -24,5 +24,5 @@
   <!-- Center dot -->
   <circle cx="50" cy="50" r="3.5" fill="white"/>
   <!-- Orbiting dot -->
-  <circle cx="72" cy="22" r="2.5" fill="white" opacity="0.6"/>
+  <circle cx="69" cy="19" r="2.5" fill="white" opacity="0.6"/>
 </svg>
