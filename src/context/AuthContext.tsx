@@ -60,45 +60,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let resolved = false;
 
+    // Force loading=false after 12s (slightly longer than withTimeout's 10s default)
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
         setLoading(false);
       }
-    }, 3000);
+    }, 12000);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      try {
-        if (session?.user) {
-          const profile = await fetchProfile(session.user);
-          setUser(profile);
-        }
-      } catch {
-        setUser(null);
-      } finally {
-        if (!resolved) {
-          resolved = true;
-          setLoading(false);
-        }
-      }
-    }).catch(() => {
-      if (!resolved) {
-        resolved = true;
-        setLoading(false);
-      }
-    });
-
+    // Use onAuthStateChange as the sole session restoration mechanism.
+    // It fires INITIAL_SESSION on mount, so no need for a separate getSession() call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         try {
           if (session?.user) {
             const profile = await fetchProfile(session.user);
             setUser(profile);
-          } else {
+          } else if (event === "SIGNED_OUT") {
+            // Only clear user on explicit sign-out, not on transient failures
             setUser(null);
           }
         } catch {
-          setUser(null);
+          // Don't setUser(null) on errors — keep previous user state
+          // This prevents logout on transient network/timeout errors
+        } finally {
+          if (!resolved) {
+            resolved = true;
+            setLoading(false);
+          }
         }
       }
     );
