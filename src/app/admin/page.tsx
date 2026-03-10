@@ -187,13 +187,17 @@ export default function AdminPage() {
   const inputClass = "w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors";
   const labelClass = "block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider";
 
-  if (!user) {
+  const ADMIN_EMAIL = "simcitybuilditchannel@gmail.com";
+
+  if (!user || user.email !== ADMIN_EMAIL) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <h1 className="text-xl font-light text-black mb-4">로그인이 필요합니다</h1>
-        <p className="text-sm text-neutral-400 mb-6">관리자 패널에 접근하려면 로그인해주세요.</p>
-        <Link href="/login" className="px-6 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">
-          로그인
+        <h1 className="text-xl font-light text-black mb-4">접근 권한이 없습니다</h1>
+        <p className="text-sm text-neutral-400 mb-6">
+          {!user ? "관리자 계정으로 로그인해주세요." : "관리자 전용 페이지입니다."}
+        </p>
+        <Link href={!user ? "/login" : "/"} className="px-6 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">
+          {!user ? "로그인" : "홈으로"}
         </Link>
       </div>
     );

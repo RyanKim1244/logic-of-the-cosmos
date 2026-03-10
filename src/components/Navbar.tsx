@@ -34,12 +34,14 @@ export default function Navbar() {
             >
               커뮤니티
             </Link>
-            <Link
-              href="/admin"
-              className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
-            >
-              관리자
-            </Link>
+            {user?.email === "simcitybuilditchannel@gmail.com" && (
+              <Link
+                href="/admin"
+                className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide"
+              >
+                관리자
+              </Link>
+            )}
 
             {user ? (
               <Link
