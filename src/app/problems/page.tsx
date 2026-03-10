@@ -3,19 +3,25 @@
 import { useState, useMemo, useEffect } from "react";
 import { supabase, withTimeout } from "@/lib/supabase";
 import { getCached, setCache } from "@/lib/cache";
+import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 import FilterSidebar from "@/components/FilterSidebar";
+import type { SortOption, StatusFilter } from "@/components/FilterSidebar";
 
 export default function ProblemsPage() {
+  const { user } = useAuth();
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("number");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>({});
+  const [discussionCounts, setDiscussionCounts] = useState<Record<string, number>>({});
   const PER_PAGE = 20;
 
   const mapProblem = (p: Record<string, unknown>): Problem => ({
@@ -82,13 +88,33 @@ export default function ProblemsPage() {
         }
       } catch { /* ignore */ }
     }
+    async function fetchDiscussionCounts() {
+      const cached = getCached<Record<string, number>>("discussionCounts");
+      if (cached) { setDiscussionCounts(cached); return; }
+      try {
+        const { data } = await withTimeout(
+          supabase.from("discussions").select("problem_id"),
+          5000, controller.signal
+        );
+        if (controller.signal.aborted) return;
+        if (data) {
+          const counts: Record<string, number> = {};
+          for (const row of data) {
+            counts[row.problem_id] = (counts[row.problem_id] || 0) + 1;
+          }
+          setDiscussionCounts(counts);
+          setCache("discussionCounts", counts);
+        }
+      } catch { /* ignore */ }
+    }
     fetchProblems(controller.signal);
     fetchSolvedCounts();
+    fetchDiscussionCounts();
     return () => controller.abort();
   }, []);
 
   const filteredProblems = useMemo(() => {
-    return problems.filter((problem) => {
+    const filtered = problems.filter((problem) => {
       const matchesTags =
         selectedTags.length === 0 || selectedTags.some((tag) => problem.tags.includes(tag));
       const matchesSource =
@@ -100,14 +126,39 @@ export default function ProblemsPage() {
         problem.source.toLowerCase().includes(query) ||
         problem.tags.some((tag) => tag.toLowerCase().includes(query)) ||
         String(problem.problemNumber).includes(searchQuery);
-      return matchesTags && matchesSource && matchesSearch;
+
+      // Status filter
+      let matchesStatus = true;
+      if (statusFilter === "solved") {
+        matchesStatus = user?.solvedProblems.includes(problem.id) ?? false;
+      } else if (statusFilter === "unsolved") {
+        matchesStatus = !user?.solvedProblems.includes(problem.id);
+      } else if (statusFilter === "bookmarked") {
+        matchesStatus = user?.bookmarkedProblems.includes(problem.id) ?? false;
+      }
+
+      return matchesTags && matchesSource && matchesSearch && matchesStatus;
     });
-  }, [problems, selectedTags, selectedSources, searchQuery]);
+
+    // Sort
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "latest":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "most_solved":
+          return (solvedCounts[b.id] || 0) - (solvedCounts[a.id] || 0);
+        case "most_discussed":
+          return (discussionCounts[b.id] || 0) - (discussionCounts[a.id] || 0);
+        default: // "number"
+          return a.problemNumber - b.problemNumber;
+      }
+    });
+  }, [problems, selectedTags, selectedSources, searchQuery, sortBy, statusFilter, user, solvedCounts, discussionCounts]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedTags, selectedSources, searchQuery]);
+  }, [selectedTags, selectedSources, searchQuery, sortBy, statusFilter]);
 
   const totalPages = Math.ceil(filteredProblems.length / PER_PAGE);
   const paginatedProblems = filteredProblems.slice(
@@ -147,6 +198,10 @@ export default function ProblemsPage() {
           onSourceChange={setSelectedSources}
           onSearchChange={setSearchQuery}
           problems={problems}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
         />
 
         <div className="flex-1">

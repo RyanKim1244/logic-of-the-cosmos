@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase, withTimeout } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export interface User {
@@ -29,17 +29,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
-  const { data: profile } = await withTimeout(
-    supabase.from("profiles").select("*").eq("id", authUser.id).single()
-  );
+  // Auth-critical path: no timeout wrapper to avoid false logouts
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
 
   if (!profile) return null;
 
-  // Fetch solved and bookmarked in parallel instead of sequentially
-  const [{ data: solved }, { data: bookmarked }] = await Promise.all([
-    withTimeout(supabase.from("user_solved_problems").select("problem_id").eq("user_id", authUser.id)),
-    withTimeout(supabase.from("user_bookmarked_problems").select("problem_id").eq("user_id", authUser.id)),
+  // Fetch solved and bookmarked in parallel — failures here are non-critical
+  const [solvedResult, bookmarkedResult] = await Promise.allSettled([
+    supabase.from("user_solved_problems").select("problem_id").eq("user_id", authUser.id),
+    supabase.from("user_bookmarked_problems").select("problem_id").eq("user_id", authUser.id),
   ]);
+
+  const solved = solvedResult.status === "fulfilled" ? solvedResult.value.data : null;
+  const bookmarked = bookmarkedResult.status === "fulfilled" ? bookmarkedResult.value.data : null;
 
   return {
     id: profile.id,
@@ -59,38 +65,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let resolved = false;
+    let isMounted = true;
 
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
         setLoading(false);
       }
-    }, 5000);
+    }, 8000);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Use getUser() for more reliable cookie-based session detection
+    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
       try {
-        if (session?.user) {
-          const profile = await fetchProfile(session.user);
-          if (profile) setUser(profile);
+        if (authUser && isMounted) {
+          const profile = await fetchProfile(authUser);
+          if (profile && isMounted) setUser(profile);
         }
       } catch {
         // Don't clear user on initial load failure — session may still be valid
       } finally {
         if (!resolved) {
           resolved = true;
-          setLoading(false);
+          if (isMounted) setLoading(false);
         }
       }
     }).catch(() => {
       if (!resolved) {
         resolved = true;
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Skip INITIAL_SESSION — getSession() above handles initialization.
+        if (!isMounted) return;
+
+        // Skip INITIAL_SESSION — getUser() above handles initialization.
         if (event === "INITIAL_SESSION") return;
 
         // Only clear user on explicit sign-out
@@ -104,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           try {
             const profile = await fetchProfile(session.user);
-            if (profile) setUser(profile);
+            if (profile && isMounted) setUser(profile);
             // If profile fetch fails, keep existing user state
           } catch {
             // Silently ignore — keep current user rather than logging out
@@ -114,18 +124,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      isMounted = false;
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       const msg = error.message === "Invalid login credentials"
         ? "이메일 또는 비밀번호가 일치하지 않습니다."
         : error.message;
       return { success: false, error: msg };
+    }
+    // Eagerly fetch profile so user state is set immediately
+    if (data.user) {
+      try {
+        const profile = await fetchProfile(data.user);
+        if (profile) setUser(profile);
+      } catch { /* onAuthStateChange will retry */ }
     }
     return { success: true };
   };
@@ -164,7 +182,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!error) {
       // Sync name change across all existing comments
       if (updates.name && updates.name !== user.name) {
-        await Promise.all([
+        // Use allSettled so one failure doesn't block others
+        await Promise.allSettled([
           supabase.from("discussions").update({ author_name: updates.name }).eq("author_id", user.id),
           supabase.from("topic_comments").update({ author_name: updates.name }).eq("author_id", user.id),
           supabase.from("topics").update({ author_name: updates.name }).eq("author_id", user.id),

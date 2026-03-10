@@ -208,6 +208,17 @@ export interface Database {
         };
         Update: never;
       };
+      solution_upvotes: {
+        Row: {
+          user_id: string;
+          solution_id: string;
+        };
+        Insert: {
+          user_id: string;
+          solution_id: string;
+        };
+        Update: never;
+      };
     };
   };
 }

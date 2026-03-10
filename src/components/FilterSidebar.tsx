@@ -3,6 +3,9 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Problem } from "@/types";
 
+export type SortOption = "number" | "latest" | "most_solved" | "most_discussed";
+export type StatusFilter = "all" | "solved" | "unsolved" | "bookmarked";
+
 interface FilterSidebarProps {
   selectedTags: string[];
   selectedSources: string[];
@@ -11,6 +14,10 @@ interface FilterSidebarProps {
   onSourceChange: (sources: string[]) => void;
   onSearchChange: (query: string) => void;
   problems?: Problem[];
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
+  statusFilter?: StatusFilter;
+  onStatusFilterChange?: (status: StatusFilter) => void;
 }
 
 function Dropdown({
@@ -112,6 +119,20 @@ function Dropdown({
   );
 }
 
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "number", label: "번호순" },
+  { value: "latest", label: "최신순" },
+  { value: "most_solved", label: "많이 푼 순" },
+  { value: "most_discussed", label: "토론 많은 순" },
+];
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "전체" },
+  { value: "unsolved", label: "미풀이" },
+  { value: "solved", label: "풀이 완료" },
+  { value: "bookmarked", label: "북마크" },
+];
+
 export default function FilterSidebar({
   selectedTags,
   selectedSources,
@@ -120,6 +141,10 @@ export default function FilterSidebar({
   onSourceChange,
   onSearchChange,
   problems = [],
+  sortBy = "number",
+  onSortChange,
+  statusFilter = "all",
+  onStatusFilterChange,
 }: FilterSidebarProps) {
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -149,7 +174,7 @@ export default function FilterSidebar({
     }
   };
 
-  const activeCount = selectedTags.length + selectedSources.length + (searchQuery ? 1 : 0);
+  const activeCount = selectedTags.length + selectedSources.length + (searchQuery ? 1 : 0) + (statusFilter !== "all" ? 1 : 0) + (sortBy !== "number" ? 1 : 0);
 
   return (
     <aside className="w-full lg:w-72 shrink-0">
@@ -179,6 +204,50 @@ export default function FilterSidebar({
               className="w-full pl-10 pr-3 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors bg-neutral-50 focus:bg-white"
             />
           </div>
+
+          {/* Sort */}
+          {onSortChange && (
+            <div>
+              <label className="block text-xs text-neutral-400 uppercase tracking-wider mb-1.5">정렬</label>
+              <div className="grid grid-cols-2 gap-1">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onSortChange(opt.value)}
+                    className={`px-2 py-2 text-[11px] font-medium tracking-wider transition-colors ${
+                      sortBy === opt.value
+                        ? "bg-black text-white"
+                        : "border border-neutral-200 text-neutral-500 hover:border-black hover:text-black"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Status Filter */}
+          {onStatusFilterChange && (
+            <div>
+              <label className="block text-xs text-neutral-400 uppercase tracking-wider mb-1.5">풀이 상태</label>
+              <div className="grid grid-cols-2 gap-1">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onStatusFilterChange(opt.value)}
+                    className={`px-2 py-2 text-[11px] font-medium tracking-wider transition-colors ${
+                      statusFilter === opt.value
+                        ? "bg-black text-white"
+                        : "border border-neutral-200 text-neutral-500 hover:border-black hover:text-black"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Source Dropdown */}
           <Dropdown
@@ -242,6 +311,8 @@ export default function FilterSidebar({
                 onTagChange([]);
                 onSourceChange([]);
                 onSearchChange("");
+                onSortChange?.("number");
+                onStatusFilterChange?.("all");
               }}
               className="w-full text-xs text-neutral-400 hover:text-black font-medium py-2.5 border border-neutral-200 hover:border-black transition-all uppercase tracking-widest"
             >
