@@ -36,34 +36,27 @@ export default function PublicProfilePage({
 
   useEffect(() => {
     const controller = new AbortController();
-    async function fetchProfile() {
-      try {
-        const sig = controller.signal;
-        const results = await Promise.allSettled([
-          withRetry(() => withTimeout(supabase.from("profiles").select("id, name, bio, created_at").eq("id", id).single(), 8000, sig), 1, 1000, sig),
-          withRetry(() => withTimeout(supabase.from("user_solved_problems").select("*", { count: "exact", head: true }).eq("user_id", id), 8000, sig), 1, 1000, sig),
-          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", id).eq("is_solution", true), 8000, sig), 1, 1000, sig),
-          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", id).or("is_solution.is.null,is_solution.eq.false"), 8000, sig), 1, 1000, sig),
-        ]);
+    const sig = controller.signal;
 
-        if (sig.aborted) return;
+    // Profile (required for page render — controls loading state)
+    withRetry(() => withTimeout(supabase.from("profiles").select("id, name, bio, created_at").eq("id", id).single(), 6000, sig), 1, 1000, sig)
+      .then((res) => { if (!sig.aborted && res.data) setProfile(res.data); })
+      .catch(() => {})
+      .finally(() => { if (!sig.aborted) setLoading(false); });
 
-        const profileRes = results[0].status === "fulfilled" ? results[0].value : null;
-        const solvedRes = results[1].status === "fulfilled" ? results[1].value : null;
-        const solutionRes = results[2].status === "fulfilled" ? results[2].value : null;
-        const discussionRes = results[3].status === "fulfilled" ? results[3].value : null;
+    // Stats fire independently — each renders as it arrives
+    withRetry(() => withTimeout(supabase.from("user_solved_problems").select("*", { count: "exact", head: true }).eq("user_id", id), 6000, sig), 1, 1000, sig)
+      .then((res) => { if (!sig.aborted && res.count != null) setSolvedCount(res.count); })
+      .catch(() => {});
 
-        if (profileRes?.data) setProfile(profileRes.data);
-        if (solvedRes?.count !== null && solvedRes?.count !== undefined) setSolvedCount(solvedRes.count);
-        if (solutionRes?.count !== null && solutionRes?.count !== undefined) setSolutionCount(solutionRes.count);
-        if (discussionRes?.count !== null && discussionRes?.count !== undefined) setDiscussionCount(discussionRes.count);
-      } catch {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProfile();
+    withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", id).eq("is_solution", true), 6000, sig), 1, 1000, sig)
+      .then((res) => { if (!sig.aborted && res.count != null) setSolutionCount(res.count); })
+      .catch(() => {});
+
+    withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", id).or("is_solution.is.null,is_solution.eq.false"), 6000, sig), 1, 1000, sig)
+      .then((res) => { if (!sig.aborted && res.count != null) setDiscussionCount(res.count); })
+      .catch(() => {});
+
     return () => controller.abort();
   }, [id]);
 
