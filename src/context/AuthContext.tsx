@@ -29,8 +29,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const PROFILE_TIMEOUT = 10000; // 10s hard ceiling
+
 async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
-  // Auth-critical path: no timeout wrapper to avoid false logouts
+  // Race against a timeout so the caller never hangs forever
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("PROFILE_TIMEOUT")), PROFILE_TIMEOUT)
+  );
+
+  return Promise.race([fetchProfileInner(authUser), timeout]);
+}
+
+async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -127,48 +137,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // When the tab becomes visible again after being idle, proactively
-    // refresh the session so stale tokens don't cause silent failures.
+    // --- Session keepalive ---
+    // Supabase access tokens expire after ~1 hour by default.
+    // Proactively refresh every 4 minutes so they never go stale,
+    // even if the user leaves the tab open without navigating.
+    const KEEPALIVE_MS = 4 * 60 * 1000;
+    const keepalive = setInterval(() => {
+      if (!isMounted) return;
+      supabase.auth.getUser().catch(() => {});
+    }, KEEPALIVE_MS);
+
+    // When the tab becomes visible again after being idle, immediately
+    // refresh the session and re-sync profile data.
     function handleVisibilityChange() {
-      if (document.visibilityState === "visible" && isMounted) {
-        supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-          if (authUser && isMounted) {
-            fetchProfile(authUser).then((profile) => {
-              if (profile && isMounted) setUser(profile);
-            }).catch(() => { /* keep existing user */ });
-          } else if (!authUser && isMounted) {
-            // Session truly expired — clear user
-            setUser(null);
-          }
-        }).catch(() => { /* network hiccup — keep existing user */ });
-      }
+      if (document.visibilityState !== "visible" || !isMounted) return;
+      supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+        if (!isMounted) return;
+        if (authUser) {
+          fetchProfile(authUser).then((profile) => {
+            if (profile && isMounted) setUser(profile);
+          }).catch(() => { /* keep existing user */ });
+        } else {
+          // Session truly expired — clear user
+          setUser(null);
+        }
+      }).catch(() => { /* network hiccup — keep existing user */ });
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       isMounted = false;
       clearTimeout(timeout);
+      clearInterval(keepalive);
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      const msg = error.message === "Invalid login credentials"
-        ? "이메일 또는 비밀번호가 일치하지 않습니다."
-        : error.message;
+    try {
+      // 15s timeout so the UI never hangs indefinitely
+      const authPromise = supabase.auth.signInWithPassword({ email, password });
+      const result = await Promise.race([
+        authPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("LOGIN_TIMEOUT")), 15000)
+        ),
+      ]);
+      const { data, error } = result;
+      if (error) {
+        const msg = error.message === "Invalid login credentials"
+          ? "이메일 또는 비밀번호가 일치하지 않습니다."
+          : error.message;
+        return { success: false, error: msg };
+      }
+      // Don't await fetchProfile here — it can hang and block the login flow.
+      // Instead, fire-and-forget; onAuthStateChange SIGNED_IN will also load profile.
+      if (data.user) {
+        const u = data.user;
+        fetchProfile(u).then((profile) => {
+          if (profile) setUser(profile);
+        }).catch(() => { /* onAuthStateChange will retry */ });
+      }
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error && err.message === "LOGIN_TIMEOUT"
+        ? "서버 응답이 없습니다. 잠시 후 다시 시도해주세요."
+        : "로그인 중 오류가 발생했습니다.";
       return { success: false, error: msg };
     }
-    // Eagerly fetch profile so user state is set immediately
-    if (data.user) {
-      try {
-        const profile = await fetchProfile(data.user);
-        if (profile) setUser(profile);
-      } catch { /* onAuthStateChange will retry */ }
-    }
-    return { success: true };
   };
 
   const register = async (email: string, password: string, name: string) => {
