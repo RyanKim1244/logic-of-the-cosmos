@@ -1,20 +1,17 @@
-import { createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
 
 /**
- * Single Supabase client instance shared by every import.
- * Browser → createBrowserClient (cookie-based session persistence).
- * Server  → createClient (stateless, no cookies).
- *
- * Both `supabase` and `getSupabase()` return the SAME object so auth
- * state changes (token refresh, sign-out) are visible everywhere.
+ * Single Supabase client instance.
+ * Uses createClient (localStorage for auth tokens) instead of
+ * createBrowserClient (cookie-based) — the cookie approach was causing
+ * REST API requests to hang after signInWithPassword in Next.js 16.
+ * The proxy.ts (server-side) still uses createServerClient for cookie
+ * refresh on navigation.
  */
-export const supabase = typeof window !== "undefined"
-  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
-  : createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export function getSupabase() {
   return supabase;

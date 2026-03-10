@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
-import { getCached, setCache } from "@/lib/cache";
+import { getCached, setCache, invalidateCacheByPrefix } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
@@ -84,13 +84,16 @@ export default function Home() {
 
         const uniqueAuthors = authorDataRes?.data ? new Set(authorDataRes.data.map((d: { author_name: string }) => d.author_name)).size : 0;
         const newStats = {
-          problems: problemCountRes?.count || 0,
-          contests: contestCountRes?.count || 0,
-          discussions: discussionCountRes?.count || 0,
+          problems: problemCountRes?.count ?? 0,
+          contests: contestCountRes?.count ?? 0,
+          discussions: discussionCountRes?.count ?? 0,
           authors: uniqueAuthors,
         };
         setStats(newStats);
-        setCache("homeStats", newStats);
+        // Only cache stats if at least one value is non-zero (avoid caching failed queries)
+        if (newStats.problems > 0 || newStats.contests > 0 || newStats.discussions > 0) {
+          setCache("homeStats", newStats);
+        }
 
         // Problem counts per contest
         if (contestsRes?.data) {
@@ -116,7 +119,20 @@ export default function Home() {
       }
     }
     fetchData();
-    return () => controller.abort();
+
+    // When user returns to this tab, clear stale cache and re-fetch
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        invalidateCacheByPrefix("home");
+        fetchData();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   return (

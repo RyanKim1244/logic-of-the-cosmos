@@ -176,35 +176,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // 15s timeout so the UI never hangs indefinitely
-      const authPromise = supabase.auth.signInWithPassword({ email, password });
-      const result = await Promise.race([
-        authPromise,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("LOGIN_TIMEOUT")), 15000)
-        ),
-      ]);
-      const { data, error } = result;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         const msg = error.message === "Invalid login credentials"
           ? "이메일 또는 비밀번호가 일치하지 않습니다."
           : error.message;
         return { success: false, error: msg };
       }
-      // Don't await fetchProfile here — it can hang and block the login flow.
-      // Instead, fire-and-forget; onAuthStateChange SIGNED_IN will also load profile.
       if (data.user) {
-        const u = data.user;
-        fetchProfile(u).then((profile) => {
+        try {
+          const profile = await fetchProfile(data.user);
           if (profile) setUser(profile);
-        }).catch(() => { /* onAuthStateChange will retry */ });
+        } catch { /* onAuthStateChange will retry */ }
       }
       return { success: true };
-    } catch (err) {
-      const msg = err instanceof Error && err.message === "LOGIN_TIMEOUT"
-        ? "서버 응답이 없습니다. 잠시 후 다시 시도해주세요."
-        : "로그인 중 오류가 발생했습니다.";
-      return { success: false, error: msg };
+    } catch {
+      return { success: false, error: "로그인 중 오류가 발생했습니다." };
     }
   };
 
