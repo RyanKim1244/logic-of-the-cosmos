@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
@@ -26,50 +26,58 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch recent problems
-      const { data: problemsData } = await supabase
-        .from("problems")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(3);
+      try {
+        // Fetch recent problems
+        const { data: problemsData } = await withTimeout(
+          supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3)
+        );
 
-      if (problemsData) {
-        setRecentProblems(problemsData.map((p) => ({
-          id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
-          year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
-          createdAt: p.created_at, updatedAt: p.updated_at,
-        })));
-      }
-
-      // Fetch contests
-      const { data: contestsData } = await supabase.from("contests").select("id, name, short_name, years").limit(4);
-      if (contestsData) setTopContests(contestsData);
-
-      // Fetch stats
-      const { count: problemCount } = await supabase.from("problems").select("*", { count: "exact", head: true });
-      const { count: contestCount } = await supabase.from("contests").select("*", { count: "exact", head: true });
-      const { count: discussionCount } = await supabase.from("discussions").select("*", { count: "exact", head: true });
-
-      const { data: authorData } = await supabase.from("discussions").select("author_name");
-      const uniqueAuthors = authorData ? new Set(authorData.map((d) => d.author_name)).size : 0;
-
-      setStats({
-        problems: problemCount || 0,
-        contests: contestCount || 0,
-        discussions: discussionCount || 0,
-        authors: uniqueAuthors,
-      });
-
-      // Problem counts per contest
-      if (contestsData) {
-        const { data: allProblems } = await supabase.from("problems").select("source");
-        if (allProblems) {
-          const counts: Record<string, number> = {};
-          for (const c of contestsData) {
-            counts[c.id] = allProblems.filter((p) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
-          }
-          setProblemCounts(counts);
+        if (problemsData) {
+          setRecentProblems(problemsData.map((p) => ({
+            id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
+            year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
+            createdAt: p.created_at, updatedAt: p.updated_at,
+          })));
         }
+
+        // Fetch contests
+        const { data: contestsData } = await withTimeout(
+          supabase.from("contests").select("id, name, short_name, years").limit(4)
+        );
+        if (contestsData) setTopContests(contestsData);
+
+        // Fetch stats in parallel
+        const [problemCountRes, contestCountRes, discussionCountRes, authorDataRes] = await Promise.all([
+          withTimeout(supabase.from("problems").select("*", { count: "exact", head: true })),
+          withTimeout(supabase.from("contests").select("*", { count: "exact", head: true })),
+          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true })),
+          withTimeout(supabase.from("discussions").select("author_name")),
+        ]);
+
+        const uniqueAuthors = authorDataRes.data ? new Set(authorDataRes.data.map((d) => d.author_name)).size : 0;
+
+        setStats({
+          problems: problemCountRes.count || 0,
+          contests: contestCountRes.count || 0,
+          discussions: discussionCountRes.count || 0,
+          authors: uniqueAuthors,
+        });
+
+        // Problem counts per contest
+        if (contestsData) {
+          const { data: allProblems } = await withTimeout(
+            supabase.from("problems").select("source")
+          );
+          if (allProblems) {
+            const counts: Record<string, number> = {};
+            for (const c of contestsData) {
+              counts[c.id] = allProblems.filter((p) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
+            }
+            setProblemCounts(counts);
+          }
+        }
+      } catch {
+        // Silently handle errors on home page - data will show as 0/empty
       }
     }
     fetchData();

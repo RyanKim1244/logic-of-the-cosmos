@@ -49,17 +49,24 @@ export default function CommunityPage() {
 
         if (topics) {
           setAllTopics(topics);
-          const counts: Record<string, number> = {};
-          for (const topic of topics) {
-            const { count } = await withTimeout(
+
+          // Fetch all comment counts in a single query instead of N+1
+          const topicIds = topics.map((t) => t.id);
+          if (topicIds.length > 0) {
+            const { data: comments } = await withTimeout(
               supabase
                 .from("topic_comments")
-                .select("*", { count: "exact", head: true })
-                .eq("topic_id", topic.id)
+                .select("topic_id")
+                .in("topic_id", topicIds)
             );
-            counts[topic.id] = count || 0;
+            const counts: Record<string, number> = {};
+            if (comments) {
+              for (const c of comments) {
+                counts[c.topic_id] = (counts[c.topic_id] || 0) + 1;
+              }
+            }
+            setCommentCounts(counts);
           }
-          setCommentCounts(counts);
         }
       } catch {
         setError("토픽을 불러오는 데 실패했습니다.");
