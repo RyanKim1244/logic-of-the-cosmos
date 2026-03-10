@@ -25,7 +25,8 @@ export default function ProblemsPage() {
           .select("*")
           .order("problem_number", { ascending: true });
         if (fetchError) {
-          setError("문제 목록을 불러오는 데 실패했습니다.");
+          console.error("Supabase problems error:", fetchError);
+          setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
           setLoading(false);
           return;
         }
@@ -43,8 +44,9 @@ export default function ProblemsPage() {
             updatedAt: p.updated_at,
           })));
         }
-      } catch {
-        setError("문제 목록을 불러오는 데 실패했습니다.");
+      } catch (e) {
+        console.error("Problems fetch exception:", e);
+        setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       }
       setLoading(false);
     }
