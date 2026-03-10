@@ -64,6 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let resolved = false;
+
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        setLoading(false);
+      }
+    }, 5000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       try {
         if (session?.user) {
@@ -73,10 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         setUser(null);
       } finally {
-        setLoading(false);
+        if (!resolved) {
+          resolved = true;
+          setLoading(false);
+        }
       }
     }).catch(() => {
-      setLoading(false);
+      if (!resolved) {
+        resolved = true;
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -94,7 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
