@@ -23,6 +23,8 @@ export default function CommunityPage() {
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [loadingTopics, setLoadingTopics] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PER_PAGE = 20;
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -69,6 +71,17 @@ export default function CommunityPage() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [allTopics, searchQuery, sortBy]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortBy]);
+
+  const totalPages = Math.ceil(filteredTopics.length / PER_PAGE);
+  const paginatedTopics = filteredTopics.slice(
+    (currentPage - 1) * PER_PAGE,
+    currentPage * PER_PAGE
+  );
 
   const handleCreateTopic = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +181,12 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">{filteredTopics.length}개의 토픽</p>
+      <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">
+        {filteredTopics.length}개의 토픽
+        {totalPages > 1 && (
+          <span className="ml-2">· 페이지 {currentPage}/{totalPages}</span>
+        )}
+      </p>
 
       {/* Topic List */}
       <div className="space-y-3">
@@ -177,7 +195,7 @@ export default function CommunityPage() {
             <p className="text-neutral-400 text-sm">검색 결과가 없습니다.</p>
           </div>
         ) : (
-          filteredTopics.map((topic) => (
+          paginatedTopics.map((topic) => (
             <Link key={topic.id} href={`/community/${topic.id}`} className="block border border-neutral-200 p-5 hover:border-black transition-all group">
               <div className="flex gap-4">
                 <div className="flex flex-col items-center shrink-0 pt-0.5">
@@ -204,6 +222,50 @@ export default function CommunityPage() {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-10">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+          >
+            &larr;
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((page) => {
+              if (totalPages <= 7) return true;
+              if (page === 1 || page === totalPages) return true;
+              if (Math.abs(page - currentPage) <= 1) return true;
+              return false;
+            })
+            .map((page, i, arr) => {
+              const showEllipsis = i > 0 && page - arr[i - 1] > 1;
+              return (
+                <span key={page} className="flex items-center gap-2">
+                  {showEllipsis && <span className="text-neutral-300 text-sm px-1">···</span>}
+                  <button
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 text-sm border transition-colors ${
+                      page === currentPage
+                        ? "bg-black text-white border-black"
+                        : "border-neutral-200 hover:border-black"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                </span>
+              );
+            })}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+          >
+            &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 }
