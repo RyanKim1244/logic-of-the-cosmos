@@ -5,27 +5,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
 
 /**
- * Browser client that uses cookies for session persistence.
- * This ensures sessions survive page refreshes in Next.js.
+ * Single Supabase client instance shared by every import.
+ * Browser → createBrowserClient (cookie-based session persistence).
+ * Server  → createClient (stateless, no cookies).
  *
- * Uses a lazy singleton so the browser check runs at access time,
- * not at module-evaluation time (avoids SSR/client mismatch).
+ * Both `supabase` and `getSupabase()` return the SAME object so auth
+ * state changes (token refresh, sign-out) are visible everywhere.
  */
-let _supabase: ReturnType<typeof createBrowserClient> | ReturnType<typeof createClient> | null = null;
-
-export function getSupabase() {
-  if (!_supabase) {
-    _supabase = typeof window !== "undefined"
-      ? createBrowserClient(supabaseUrl, supabaseAnonKey)
-      : createClient(supabaseUrl, supabaseAnonKey);
-  }
-  return _supabase;
-}
-
-// Keep the named export for backward-compatibility with existing imports.
 export const supabase = typeof window !== "undefined"
   ? createBrowserClient(supabaseUrl, supabaseAnonKey)
   : createClient(supabaseUrl, supabaseAnonKey);
+
+export function getSupabase() {
+  return supabase;
+}
 
 /**
  * Wraps a Supabase query with a timeout and optional external AbortSignal.

@@ -127,10 +127,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // When the tab becomes visible again after being idle, proactively
+    // refresh the session so stale tokens don't cause silent failures.
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible" && isMounted) {
+        supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+          if (authUser && isMounted) {
+            fetchProfile(authUser).then((profile) => {
+              if (profile && isMounted) setUser(profile);
+            }).catch(() => { /* keep existing user */ });
+          } else if (!authUser && isMounted) {
+            // Session truly expired — clear user
+            setUser(null);
+          }
+        }).catch(() => { /* network hiccup — keep existing user */ });
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       isMounted = false;
       clearTimeout(timeout);
       subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
