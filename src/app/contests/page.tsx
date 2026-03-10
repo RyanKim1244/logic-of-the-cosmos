@@ -1,6 +1,8 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import ContestsContent from "@/components/ContestsContent";
 
+export const revalidate = 60;
+
 export default async function ContestsPage() {
   const supabase = createServerSupabase();
 

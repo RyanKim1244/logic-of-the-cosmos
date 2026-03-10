@@ -81,6 +81,9 @@ export default function ContestsContent({
       }
     };
 
+    // Refresh on mount (stale-while-revalidate)
+    fetchData(controller.signal);
+
     function handleVisibility() {
       if (document.visibilityState === "visible") {
         controller = new AbortController();

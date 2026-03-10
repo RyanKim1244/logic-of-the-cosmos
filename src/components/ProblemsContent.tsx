@@ -143,6 +143,11 @@ export default function ProblemsContent({
       } catch { /* ignore */ }
     }
 
+    // Refresh on mount (stale-while-revalidate)
+    fetchProblems(controller.signal, true);
+    fetchSolvedCounts(controller.signal);
+    fetchDiscussionCounts(controller.signal);
+
     // Re-fetch when tab becomes visible
     function handleVisibility() {
       if (document.visibilityState === "visible") {

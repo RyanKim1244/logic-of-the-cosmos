@@ -150,6 +150,9 @@ export default function HomeContent({
       }
     }
 
+    // Refresh on mount (stale-while-revalidate: show server data, update in background)
+    fetchData();
+
     // When user returns to this tab, re-fetch (but keep existing data visible)
     function handleVisibility() {
       if (document.visibilityState === "visible") {
