@@ -83,6 +83,8 @@ export default function ProfilePage() {
   const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>([]);
   const [solveHistory, setSolveHistory] = useState<SolveRecord[]>([]);
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
+  const [solutionCount, setSolutionCount] = useState(0);
+  const [discussionCount, setDiscussionCount] = useState(0);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -93,7 +95,7 @@ export default function ProfilePage() {
 
       try {
         // Fetch bookmarked and solved in parallel
-        const [bookmarkedRes, solvedRes, solveHistoryRes] = await Promise.all([
+        const [bookmarkedRes, solvedRes, solveHistoryRes, solutionCountRes, discussionCountRes] = await Promise.all([
           user.bookmarkedProblems.length > 0
             ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 5000, sig)
             : Promise.resolve({ data: null, error: null }),
@@ -101,6 +103,8 @@ export default function ProfilePage() {
             ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 5000, sig)
             : Promise.resolve({ data: null, error: null }),
           withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 5000, sig),
+          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).eq("is_solution", true), 5000, sig),
+          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", user.id).or("is_solution.is.null,is_solution.eq.false"), 5000, sig),
         ]);
 
         if (sig.aborted) return;
@@ -110,6 +114,9 @@ export default function ProfilePage() {
 
         if (solvedRes.error) { setFetchError("풀이 데이터를 불러오는 데 실패했습니다."); return; }
         if (solvedRes.data) setSolvedProblems(solvedRes.data);
+
+        if (solutionCountRes.count !== null) setSolutionCount(solutionCountRes.count);
+        if (discussionCountRes.count !== null) setDiscussionCount(discussionCountRes.count);
 
         if (solveHistoryRes.error) { setFetchError("풀이 기록을 불러오는 데 실패했습니다."); return; }
 
@@ -246,14 +253,14 @@ export default function ProfilePage() {
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{solvedProblems.length}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">풀이 완료</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
-          <div className="text-3xl font-extralight">{bookmarkedProblems.length}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">북마크</div>
+          <div className="text-3xl font-extralight">{solutionCount}</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">작성한 풀이</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
-          <div className="text-3xl font-extralight">0</div>
+          <div className="text-3xl font-extralight">{discussionCount}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">토론 참여</div>
         </div>
       </div>

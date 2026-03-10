@@ -71,10 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         if (session?.user) {
           const profile = await fetchProfile(session.user);
-          setUser(profile);
+          if (profile) setUser(profile);
         }
       } catch {
-        setUser(null);
+        // Don't clear user on initial load failure — session may still be valid
       } finally {
         if (!resolved) {
           resolved = true;
@@ -91,18 +91,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Skip INITIAL_SESSION — getSession() above handles initialization.
-        // Processing it here causes a race condition that clears the user.
         if (event === "INITIAL_SESSION") return;
 
-        try {
-          if (session?.user) {
-            const profile = await fetchProfile(session.user);
-            setUser(profile);
-          } else {
-            setUser(null);
-          }
-        } catch {
+        // Only clear user on explicit sign-out
+        if (event === "SIGNED_OUT") {
           setUser(null);
+          return;
+        }
+
+        // For TOKEN_REFRESHED and SIGNED_IN, update profile but don't
+        // clear user on transient errors (network timeout, etc.)
+        if (session?.user) {
+          try {
+            const profile = await fetchProfile(session.user);
+            if (profile) setUser(profile);
+            // If profile fetch fails, keep existing user state
+          } catch {
+            // Silently ignore — keep current user rather than logging out
+          }
         }
       }
     );
