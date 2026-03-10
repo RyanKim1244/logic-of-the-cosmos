@@ -182,3 +182,89 @@ html {
     transform: scale(1);
   }
 }
+
+/* ── Smooth expand/collapse using grid rows ── */
+.animate-expand {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+}
+
+.animate-expand[data-collapsed="true"] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.animate-expand > .animate-expand-inner {
+  overflow: hidden;
+}
+
+/* ── Slide down (menus, forms) ── */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ── Fade in ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease both;
+}
+
+/* ── Scale up (modals) ── */
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ── Backdrop fade ── */
+@keyframes backdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-backdrop {
+  animation: backdropFade 0.2s ease both;
+}
+
+/* ── Fade slide up (content reveal) ── */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}

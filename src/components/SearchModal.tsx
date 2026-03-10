@@ -128,9 +128,9 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-backdrop" />
       <div
-        className="relative w-full max-w-lg bg-white border border-neutral-200 shadow-2xl"
+        className="relative w-full max-w-lg bg-white border border-neutral-200 shadow-2xl animate-scale-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b border-neutral-200 px-4">

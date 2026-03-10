@@ -180,7 +180,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
 
             {/* Reply form */}
             {replyTo === disc.id && (
-              <form onSubmit={handleSubmitReply} className="ml-11 mt-4 pl-4 border-l-2 border-neutral-100">
+              <form onSubmit={handleSubmitReply} className="ml-11 mt-4 pl-4 border-l-2 border-neutral-100 animate-fade-slide-up">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-6 h-6 bg-black text-white flex items-center justify-center text-xs font-medium shrink-0">
                     {authorName.charAt(0).toUpperCase()}

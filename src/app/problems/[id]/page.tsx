@@ -183,7 +183,7 @@ export default function ProblemDetailPage({
           </button>
         </div>
 
-        <div className={showSolution ? "border-t border-neutral-100 pt-6 mt-4" : "hidden"}>
+        <div className={showSolution ? "border-t border-neutral-100 pt-6 mt-4 animate-fade-slide-up" : "hidden"}>
           <LatexRenderer content={problem.officialSolution} />
         </div>
       </div>
