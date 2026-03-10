@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
-import LatexRenderer from "@/components/LatexRenderer";
+import MultiLangViewer from "@/components/MultiLangViewer";
 import DiscussionSection from "@/components/DiscussionSection";
 import SolutionSection from "@/components/SolutionSection";
 
@@ -185,7 +185,7 @@ export default function ProblemDetailPage({
         )}
 
         <div className="border-t border-neutral-100 pt-6">
-          <LatexRenderer content={problem.content} />
+          <MultiLangViewer content={problem.content} />
         </div>
       </div>
 
@@ -204,7 +204,7 @@ export default function ProblemDetailPage({
         </div>
 
         <div className={showSolution ? "border-t border-neutral-100 pt-6 mt-4 animate-fade-slide-up" : "hidden"}>
-          <LatexRenderer content={problem.officialSolution} />
+          <MultiLangViewer content={problem.officialSolution} />
         </div>
       </div>
 

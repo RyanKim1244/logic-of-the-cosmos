@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, withRetry } from "@/lib/supabase";
+import { parseMultiLang, serializeMultiLang, type MultiLangContent } from "@/lib/multilang";
+import MultiLangEditor from "@/components/MultiLangEditor";
 
 type Tab = "problems" | "contests";
 
@@ -34,8 +36,8 @@ type ProblemFormData = {
   source: string;
   year: number;
   tags: string;
-  content: string;
-  officialSolution: string;
+  content: MultiLangContent;
+  officialSolution: MultiLangContent;
 };
 
 type ContestFormData = {
@@ -51,8 +53,8 @@ const emptyProblemForm: ProblemFormData = {
   source: "",
   year: new Date().getFullYear(),
   tags: "",
-  content: "",
-  officialSolution: "",
+  content: { ko: "" },
+  officialSolution: { ko: "" },
 };
 
 const emptyContestForm: ContestFormData = {
@@ -121,7 +123,7 @@ export default function AdminPage() {
   // Problem handlers
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
   const openEditProblem = (p: ProblemRow) => {
-    setProblemForm({ title: p.title, source: p.source, year: p.year, tags: p.tags.join(", "), content: p.content, officialSolution: p.official_solution });
+    setProblemForm({ title: p.title, source: p.source, year: p.year, tags: p.tags.join(", "), content: parseMultiLang(p.content), officialSolution: parseMultiLang(p.official_solution) });
     setEditingProblemId(p.id); setProblemMode("edit");
   };
   const closeProblemForm = () => { setProblemMode("none"); setEditingProblemId(null); setProblemForm(emptyProblemForm); };
@@ -132,10 +134,13 @@ export default function AdminPage() {
     const tags = problemForm.tags.split(",").map((t) => t.trim()).filter(Boolean);
     const now = new Date().toISOString();
 
+    const contentStr = serializeMultiLang(problemForm.content);
+    const solutionStr = serializeMultiLang(problemForm.officialSolution);
+
     if (problemMode === "edit" && editingProblemId) {
       const { error } = await supabase.from("problems").update({
         title: problemForm.title, source: problemForm.source, year: problemForm.year,
-        tags, content: problemForm.content, official_solution: problemForm.officialSolution, updated_at: now,
+        tags, content: contentStr, official_solution: solutionStr, updated_at: now,
       }).eq("id", editingProblemId);
 
       if (error) {
@@ -143,7 +148,7 @@ export default function AdminPage() {
         return;
       }
       setAllProblems(allProblems.map((p) =>
-        p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, content: problemForm.content, official_solution: problemForm.officialSolution, updated_at: now } : p
+        p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, content: contentStr, official_solution: solutionStr, updated_at: now } : p
       ));
     } else {
       const id = `custom-${Date.now()}`;
@@ -153,7 +158,7 @@ export default function AdminPage() {
       const nextNumber = Math.max(maxNum + 1, 1000);
       const { data, error } = await supabase.from("problems").insert({
         id, problem_number: nextNumber, title: problemForm.title, source: problemForm.source, year: problemForm.year,
-        tags, content: problemForm.content, official_solution: problemForm.officialSolution,
+        tags, content: contentStr, official_solution: solutionStr,
       }).select().single();
 
       if (error) {
@@ -296,8 +301,8 @@ export default function AdminPage() {
                   <div><label className={labelClass}>연도</label><input type="number" required min={1900} max={2100} value={problemForm.year} onChange={(e) => setProblemForm({ ...problemForm, year: parseInt(e.target.value) })} className={inputClass} /></div>
                   <div><label className={labelClass}>태그 (쉼표로 구분)</label><input type="text" value={problemForm.tags} onChange={(e) => setProblemForm({ ...problemForm, tags: e.target.value })} className={inputClass} placeholder="예: electromagnetism, special-relativity" /></div>
                 </div>
-                <div><label className={labelClass}>문제 내용 (LaTeX 지원)</label><textarea required value={problemForm.content} onChange={(e) => setProblemForm({ ...problemForm, content: e.target.value })} className={`${inputClass} font-mono resize-none`} rows={10} placeholder={"LaTeX 수식을 포함한 문제 내용을 입력하세요.\n인라인 수식: $E = mc^2$\n블록 수식: $$\\int_0^\\infty e^{-x} dx = 1$$"} /></div>
-                <div><label className={labelClass}>공식 풀이 (LaTeX 지원)</label><textarea required value={problemForm.officialSolution} onChange={(e) => setProblemForm({ ...problemForm, officialSolution: e.target.value })} className={`${inputClass} font-mono resize-none`} rows={10} placeholder="공식 풀이를 입력하세요..." /></div>
+                <MultiLangEditor label="문제 내용 (LaTeX 지원)" value={problemForm.content} onChange={(content) => setProblemForm({ ...problemForm, content })} rows={10} placeholder="LaTeX 수식을 포함한 문제 내용을 입력하세요." required />
+                <MultiLangEditor label="공식 풀이 (LaTeX 지원)" value={problemForm.officialSolution} onChange={(officialSolution) => setProblemForm({ ...problemForm, officialSolution })} rows={10} placeholder="공식 풀이를 입력하세요..." required />
                 <div className="flex gap-3 pt-2">
                   <button type="submit" className="px-6 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider">{problemMode === "edit" ? "수정 완료" : "문제 등록"}</button>
                   <button type="button" onClick={closeProblemForm} className="px-6 py-2.5 border border-neutral-300 text-neutral-700 text-xs font-medium hover:border-black hover:text-black transition-colors uppercase tracking-wider">취소</button>
