@@ -151,6 +151,7 @@ export default function ProblemsContent({
     // Re-fetch when tab becomes visible
     function handleVisibility() {
       if (document.visibilityState === "visible") {
+        controller.abort();
         controller = new AbortController();
         fetchProblems(controller.signal, true);
         fetchSolvedCounts(controller.signal);
