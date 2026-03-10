@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import ContributionHeatmap from "@/components/ContributionHeatmap";
 
 interface ProblemSummary {
   id: string;
+  title: string;
+  source: string;
+}
+
+interface SolveRecord {
+  problem_id: string;
+  created_at: string;
   title: string;
   source: string;
 }
@@ -20,6 +28,8 @@ export default function ProfilePage() {
   const [editBio, setEditBio] = useState("");
   const [bookmarkedProblems, setBookmarkedProblems] = useState<ProblemSummary[]>([]);
   const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>([]);
+  const [solveHistory, setSolveHistory] = useState<SolveRecord[]>([]);
+  const [solvedDates, setSolvedDates] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchProblems() {
@@ -39,6 +49,43 @@ export default function ProfilePage() {
           .select("id, title, source")
           .in("id", user.solvedProblems);
         if (data) setSolvedProblems(data);
+      }
+
+      // Fetch solve history with dates
+      const { data: solveData } = await supabase
+        .from("user_solved_problems")
+        .select("problem_id, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (solveData) {
+        setSolvedDates(solveData.map((s) => s.created_at));
+
+        // Fetch problem details for history
+        const problemIds = solveData.map((s) => s.problem_id);
+        if (problemIds.length > 0) {
+          const { data: problemDetails } = await supabase
+            .from("problems")
+            .select("id, title, source")
+            .in("id", problemIds);
+
+          if (problemDetails) {
+            const detailMap = new Map(problemDetails.map((p) => [p.id, p]));
+            const history: SolveRecord[] = solveData
+              .map((s) => {
+                const detail = detailMap.get(s.problem_id);
+                if (!detail) return null;
+                return {
+                  problem_id: s.problem_id,
+                  created_at: s.created_at,
+                  title: detail.title,
+                  source: detail.source,
+                };
+              })
+              .filter((r): r is SolveRecord => r !== null);
+            setSolveHistory(history);
+          }
+        }
       }
     }
     fetchProblems();
@@ -79,6 +126,18 @@ export default function ProfilePage() {
     setEditBio(user.bio);
     setIsEditing(true);
   };
+
+  // Group solve history by date
+  const groupedHistory: Record<string, SolveRecord[]> = {};
+  for (const record of solveHistory) {
+    const dateStr = new Date(record.created_at).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    if (!groupedHistory[dateStr]) groupedHistory[dateStr] = [];
+    groupedHistory[dateStr].push(record);
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -134,6 +193,53 @@ export default function ProfilePage() {
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">토론 참여</div>
         </div>
       </div>
+
+      {/* Contribution Heatmap */}
+      <section className="mb-8">
+        <ContributionHeatmap solvedDates={solvedDates} />
+      </section>
+
+      {/* Solve History */}
+      <section className="mb-8">
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">풀이 기록</h2>
+        {solveHistory.length === 0 ? (
+          <div className="border border-neutral-200 p-8 text-center">
+            <p className="text-neutral-400 text-sm">아직 풀이 기록이 없습니다.</p>
+            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 풀러 가기 &rarr;</Link>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(groupedHistory).map(([date, records]) => (
+              <div key={date}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                  <h3 className="text-sm font-medium text-neutral-600">{date}</h3>
+                  <span className="text-xs text-neutral-400">{records.length}문제</span>
+                </div>
+                <div className="space-y-1.5 ml-5 border-l border-neutral-200 pl-4">
+                  {records.map((record, i) => (
+                    <Link
+                      key={`${record.problem_id}-${i}`}
+                      href={`/problems/${record.problem_id}`}
+                      className="block border border-neutral-200 p-3 hover:border-black transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{record.title}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-neutral-400">{record.source}</span>
+                          <span className="text-[10px] text-neutral-300">
+                            {new Date(record.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Bookmarked Problems */}
       <section className="mb-8">
