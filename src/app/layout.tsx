@@ -37,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <Script id="mathjax-config" strategy="beforeInteractive">{`
+        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <Script id="mathjax-config" strategy="afterInteractive">{`
           window.MathJax = {
             tex: {
               inlineMath: [['$', '$']],
@@ -55,7 +57,7 @@ export default function RootLayout({
         `}</Script>
         <Script
           src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </head>
       <body className="bg-white text-neutral-900 min-h-screen">

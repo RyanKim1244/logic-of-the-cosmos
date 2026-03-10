@@ -1,13 +1,21 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import MultiLangViewer from "@/components/MultiLangViewer";
-import DiscussionSection from "@/components/DiscussionSection";
-import SolutionSection from "@/components/SolutionSection";
+
+const DiscussionSection = dynamic(() => import("@/components/DiscussionSection"), {
+  ssr: false,
+  loading: () => <p className="text-neutral-400 text-center py-8 text-sm">토론 로딩 중...</p>,
+});
+const SolutionSection = dynamic(() => import("@/components/SolutionSection"), {
+  ssr: false,
+  loading: () => <p className="text-neutral-400 text-center py-8 text-sm">풀이 로딩 중...</p>,
+});
 
 export default function ProblemDetailPage({
   params,
