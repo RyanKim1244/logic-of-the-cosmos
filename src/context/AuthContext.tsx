@@ -30,6 +30,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const PROFILE_TIMEOUT = 10000; // 10s hard ceiling
+const PROFILE_CACHE_KEY = "lotc_profile_cache";
+
+function saveProfileToCache(profile: User) {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+  } catch { /* quota exceeded or private browsing — ignore */ }
+}
+
+function loadProfileFromCache(): User | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+}
+
+function clearProfileCache() {
+  try {
+    localStorage.removeItem(PROFILE_CACHE_KEY);
+  } catch { /* ignore */ }
+}
 
 async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
   // Race against a timeout so the caller never hangs forever
@@ -71,29 +94,26 @@ async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserRaw] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Always keep localStorage cache in sync with user state
+  const setUser = (u: User | null) => {
+    setUserRaw(u);
+    if (u) saveProfileToCache(u);
+    else clearProfileCache();
+  };
 
   useEffect(() => {
     let isMounted = true;
 
-    // Step 1: Use getSession() for INSTANT UI (reads localStorage only, no network).
-    // This prevents the "briefly logged out" flash on page refresh.
-    async function quickRestore() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user && isMounted) {
-          const profile = await fetchProfile(session.user);
-          if (profile && isMounted) {
-            setUser(profile);
-            setLoading(false);
-          }
-        }
-      } catch {
-        // Ignore — onAuthStateChange will handle it
-      }
+    // Step 1: Instantly restore cached profile from localStorage (zero network).
+    // This eliminates the skeleton flash on page refresh.
+    const cached = loadProfileFromCache();
+    if (cached) {
+      setUserRaw(cached);
+      setLoading(false);
     }
-    quickRestore();
 
     // Step 2: Listen for auth state changes (handles INITIAL_SESSION,
     // TOKEN_REFRESHED, SIGNED_IN, SIGNED_OUT).
@@ -111,14 +131,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // For all other events (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED),
-        // update the profile from session data.
+        // fetch fresh profile and update cache.
         if (session?.user) {
           try {
             const profile = await fetchProfile(session.user);
-            if (profile && isMounted) setUser(profile);
+            if (profile && isMounted) {
+              setUser(profile);
+            }
           } catch {
             // Keep existing user on transient errors
           }
+        } else if (!cached) {
+          // No session and no cache — not logged in
+          setUser(null);
         }
 
         // Mark loading done after INITIAL_SESSION is processed
