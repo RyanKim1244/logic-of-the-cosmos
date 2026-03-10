@@ -33,9 +33,11 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
     const controller = new AbortController();
     async function fetchDiscussions() {
       try {
-        const { data } = await withTimeout(
-          supabase.from("discussions").select("*").eq("problem_id", problemId).or("is_solution.is.null,is_solution.eq.false").order("created_at", { ascending: true }),
-          5000, controller.signal
+        const { data } = await withRetry(
+          () => withTimeout(
+            supabase.from("discussions").select("*").eq("problem_id", problemId).or("is_solution.is.null,is_solution.eq.false").order("created_at", { ascending: true }),
+            8000, controller.signal
+          ), 1, 1000, controller.signal
         );
         if (!controller.signal.aborted && data) setDiscussions(data);
       } catch { /* ignore */ }

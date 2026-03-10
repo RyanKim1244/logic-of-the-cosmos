@@ -44,7 +44,7 @@ create table if not exists problems (
 -- problem_number 시퀀스를 1000부터 시작
 ALTER SEQUENCE problems_problem_number_seq RESTART WITH 1000;
 
--- 3. Discussions (문제 토론)
+-- 3. Discussions (문제 토론 + 풀이)
 create table if not exists discussions (
   id text primary key default gen_random_uuid()::text,
   problem_id text references problems(id) on delete cascade not null,
@@ -52,6 +52,7 @@ create table if not exists discussions (
   author_name text not null,
   content text not null,
   parent_id text references discussions(id) on delete cascade,
+  is_solution boolean default false,
   created_at timestamptz default now()
 );
 
@@ -119,6 +120,13 @@ create table if not exists comment_upvotes (
   primary key (user_id, comment_id)
 );
 
+-- 11. Solution Upvotes (풀이 추천)
+create table if not exists solution_upvotes (
+  user_id uuid references profiles(id) on delete cascade,
+  solution_id text references discussions(id) on delete cascade,
+  primary key (user_id, solution_id)
+);
+
 -- ============================================
 -- Row Level Security (RLS) 정책
 -- ============================================
@@ -145,7 +153,14 @@ create policy "Admins can delete problems" on problems for delete using (
 alter table discussions enable row level security;
 create policy "Discussions are viewable by everyone" on discussions for select using (true);
 create policy "Authenticated users can create discussions" on discussions for insert with check (auth.uid() is not null);
+create policy "Users can update own discussions" on discussions for update using (author_id = auth.uid());
+create policy "Admins can update any discussion" on discussions for update using (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);
 create policy "Users can delete own discussions" on discussions for delete using (author_id = auth.uid());
+create policy "Admins can delete any discussion" on discussions for delete using (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);
 
 -- Topics
 alter table topics enable row level security;
@@ -155,12 +170,19 @@ create policy "Users can update own topics" on topics for update using (author_i
 create policy "Admins can update any topic" on topics for update using (
   exists (select 1 from profiles where id = auth.uid() and is_admin = true)
 );
+create policy "Users can delete own topics" on topics for delete using (author_id = auth.uid());
+create policy "Admins can delete any topic" on topics for delete using (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);
 
 -- Topic Comments
 alter table topic_comments enable row level security;
 create policy "Topic comments are viewable by everyone" on topic_comments for select using (true);
 create policy "Authenticated users can create topic comments" on topic_comments for insert with check (auth.uid() is not null);
 create policy "Users can delete own comments" on topic_comments for delete using (author_id = auth.uid());
+create policy "Admins can delete any topic comment" on topic_comments for delete using (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);
 
 -- Contests
 alter table contests enable row level security;
@@ -175,9 +197,9 @@ create policy "Admins can delete contests" on contests for delete using (
   exists (select 1 from profiles where id = auth.uid() and is_admin = true)
 );
 
--- User Solved Problems
+-- User Solved Problems (공개 조회 허용 — 문제별 풀이 수 표시)
 alter table user_solved_problems enable row level security;
-create policy "Users can view own solved" on user_solved_problems for select using (user_id = auth.uid());
+create policy "Anyone can view solved problems" on user_solved_problems for select using (true);
 create policy "Users can insert own solved" on user_solved_problems for insert with check (user_id = auth.uid());
 create policy "Users can delete own solved" on user_solved_problems for delete using (user_id = auth.uid());
 
@@ -199,21 +221,20 @@ create policy "Users can view own comment upvotes" on comment_upvotes for select
 create policy "Users can insert comment upvotes" on comment_upvotes for insert with check (user_id = auth.uid());
 create policy "Users can delete comment upvotes" on comment_upvotes for delete using (user_id = auth.uid());
 
+-- Solution Upvotes (공개 조회 허용 — 풀이 추천 수 표시)
+alter table solution_upvotes enable row level security;
+create policy "Anyone can view solution upvotes" on solution_upvotes for select using (true);
+create policy "Users can insert solution upvotes" on solution_upvotes for insert with check (user_id = auth.uid());
+create policy "Users can delete solution upvotes" on solution_upvotes for delete using (user_id = auth.uid());
+
 -- ============================================
 -- 인덱스
 -- ============================================
 create index if not exists idx_discussions_problem_id on discussions(problem_id);
+create index if not exists idx_discussions_is_solution on discussions(is_solution);
+create index if not exists idx_discussions_author_id on discussions(author_id);
 create index if not exists idx_topic_comments_topic_id on topic_comments(topic_id);
 create index if not exists idx_problems_source on problems(source);
 create index if not exists idx_problems_year on problems(year);
 create index if not exists idx_user_solved_problem_id on user_solved_problems(problem_id);
-
--- ============================================
--- 마이그레이션 (기존 DB에 적용)
--- ============================================
-
--- 풀이 제출 기능: discussions 테이블에 is_solution 컬럼 추가
-alter table discussions add column if not exists is_solution boolean default false;
-
--- 풀이 수 통계: 누구나 문제별 풀이 수를 조회할 수 있도록 허용
-create policy "Anyone can count solved problems" on user_solved_problems for select using (true);
+create index if not exists idx_solution_upvotes_solution_id on solution_upvotes(solution_id);

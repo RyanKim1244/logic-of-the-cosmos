@@ -42,39 +42,46 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
     const controller = new AbortController();
     async function fetchSolutions() {
       try {
-        const { data } = await withTimeout(
-          supabase.from("discussions").select("*").eq("problem_id", problemId).eq("is_solution", true).is("parent_id", null).order("created_at", { ascending: true }),
-          5000, controller.signal
+        const sig = controller.signal;
+        const { data } = await withRetry(
+          () => withTimeout(
+            supabase.from("discussions").select("*").eq("problem_id", problemId).eq("is_solution", true).is("parent_id", null).order("created_at", { ascending: true }),
+            8000, sig
+          ), 1, 1000, sig
         );
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (data) {
           setSolutions(data);
 
-          // Fetch upvote counts for all solutions
+          // Fetch upvote counts for all solutions (non-critical — table may not exist yet)
           const solutionIds = data.map((s) => s.id);
           if (solutionIds.length > 0) {
-            const { data: upvotes } = await withTimeout(
-              supabase.from("solution_upvotes").select("solution_id").in("solution_id", solutionIds),
-              5000, controller.signal
-            );
-            if (controller.signal.aborted) return;
-            if (upvotes) {
-              const counts: Record<string, number> = {};
-              for (const u of upvotes) {
-                counts[u.solution_id] = (counts[u.solution_id] || 0) + 1;
-              }
-              setUpvoteCounts(counts);
-            }
-
-            // Check user's votes
-            if (user) {
-              const { data: myVotes } = await withTimeout(
-                supabase.from("solution_upvotes").select("solution_id").eq("user_id", user.id).in("solution_id", solutionIds),
-                5000, controller.signal
+            try {
+              const { data: upvotes } = await withTimeout(
+                supabase.from("solution_upvotes").select("solution_id").in("solution_id", solutionIds),
+                5000, sig
               );
-              if (!controller.signal.aborted && myVotes) {
-                setVotedSolutions(new Set(myVotes.map((v) => v.solution_id)));
+              if (sig.aborted) return;
+              if (upvotes) {
+                const counts: Record<string, number> = {};
+                for (const u of upvotes) {
+                  counts[u.solution_id] = (counts[u.solution_id] || 0) + 1;
+                }
+                setUpvoteCounts(counts);
               }
+
+              // Check user's votes
+              if (user) {
+                const { data: myVotes } = await withTimeout(
+                  supabase.from("solution_upvotes").select("solution_id").eq("user_id", user.id).in("solution_id", solutionIds),
+                  5000, sig
+                );
+                if (!sig.aborted && myVotes) {
+                  setVotedSolutions(new Set(myVotes.map((v) => v.solution_id)));
+                }
+              }
+            } catch {
+              // solution_upvotes table may not exist yet — degrade gracefully
             }
           }
         }
@@ -92,17 +99,26 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
 
   const handleUpvote = async (solutionId: string) => {
     if (!user) return;
-    const newVoted = new Set(votedSolutions);
-    if (newVoted.has(solutionId)) {
-      newVoted.delete(solutionId);
-      await supabase.from("solution_upvotes").delete().eq("user_id", user.id).eq("solution_id", solutionId);
-      setUpvoteCounts({ ...upvoteCounts, [solutionId]: (upvoteCounts[solutionId] || 1) - 1 });
-    } else {
-      newVoted.add(solutionId);
-      await supabase.from("solution_upvotes").insert({ user_id: user.id, solution_id: solutionId });
-      setUpvoteCounts({ ...upvoteCounts, [solutionId]: (upvoteCounts[solutionId] || 0) + 1 });
+    try {
+      const newVoted = new Set(votedSolutions);
+      if (newVoted.has(solutionId)) {
+        newVoted.delete(solutionId);
+        const { error } = await supabase.from("solution_upvotes").delete().eq("user_id", user.id).eq("solution_id", solutionId);
+        if (!error) {
+          setUpvoteCounts({ ...upvoteCounts, [solutionId]: (upvoteCounts[solutionId] || 1) - 1 });
+          setVotedSolutions(newVoted);
+        }
+      } else {
+        newVoted.add(solutionId);
+        const { error } = await supabase.from("solution_upvotes").insert({ user_id: user.id, solution_id: solutionId });
+        if (!error) {
+          setUpvoteCounts({ ...upvoteCounts, [solutionId]: (upvoteCounts[solutionId] || 0) + 1 });
+          setVotedSolutions(newVoted);
+        }
+      }
+    } catch {
+      // solution_upvotes table may not exist — silently ignore
     }
-    setVotedSolutions(newVoted);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
