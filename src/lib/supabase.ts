@@ -19,7 +19,7 @@ export const supabase = typeof window !== "undefined"
  */
 export async function withTimeout<T>(
   query: PromiseLike<T>,
-  ms = 5000,
+  ms = 10000,
   signal?: AbortSignal
 ): Promise<T> {
   if (signal?.aborted) {
