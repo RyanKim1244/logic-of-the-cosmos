@@ -90,23 +90,24 @@ export default function ContestDetailPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    async function fetchData() {
+    let controller = new AbortController();
+    async function fetchData(sig: AbortSignal) {
       try {
         const { data: contestData, error: fetchError } = await withRetry(
-          () => withTimeout(supabase.from("contests").select("*").eq("id", id).single(), 8000, controller.signal),
-          1, 1000, controller.signal
+          () => withTimeout(supabase.from("contests").select("*").eq("id", id).single(), 8000, sig),
+          1, 1000, sig
         );
 
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (fetchError) {
-          setError(`대회 정보를 불러오는 데 실패했습니다. (${fetchError.message})`);
+          if (!contest) setError(`대회 정보를 불러오는 데 실패했습니다. (${fetchError.message})`);
           setLoading(false);
           return;
         }
 
         if (contestData) {
           setContest(contestData);
+          setError(null);
 
           const { data: problems } = await withTimeout(
             supabase
@@ -114,21 +115,33 @@ export default function ContestDetailPage({
               .select("id, problem_number, title, source, year")
               .ilike("source", `%${contestData.short_name}%`)
               .order("year", { ascending: false }),
-            5000, controller.signal
+            5000, sig
           );
 
-          if (controller.signal.aborted) return;
+          if (sig.aborted) return;
           if (problems) setContestProblems(problems);
         }
       } catch (e) {
-        if (controller.signal.aborted) return;
-        setError(`대회 정보를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        if (sig.aborted) return;
+        if (!contest) setError(`대회 정보를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       } finally {
         setLoading(false);
       }
     }
-    fetchData();
-    return () => controller.abort();
+    fetchData(controller.signal);
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller = new AbortController();
+        fetchData(controller.signal);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [id]);
 
   if (loading) {

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
-import { getCached, setCache, invalidateCache } from "@/lib/cache";
+import { getCached, setCache, invalidateCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 
 interface Topic {
@@ -34,33 +34,34 @@ export default function CommunityPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    async function fetchTopics() {
-      const cachedTopics = getCached<Topic[]>("communityTopics");
-      const cachedCounts = getCached<Record<string, number>>("communityCommentCounts");
+    let controller = new AbortController();
+    async function fetchTopics(sig: AbortSignal, isBackground = false) {
+      // Show stale cache immediately
+      const cachedTopics = getCached<Topic[]>("communityTopics", true);
+      const cachedCounts = getCached<Record<string, number>>("communityCommentCounts", true);
+      if (cachedTopics) setAllTopics(cachedTopics);
+      if (cachedCounts) setCommentCounts(cachedCounts);
       if (cachedTopics && cachedCounts) {
-        setAllTopics(cachedTopics);
-        setCommentCounts(cachedCounts);
         setLoadingTopics(false);
-        return;
+        if (!isCacheStale("communityTopics") && !isCacheStale("communityCommentCounts")) return;
       }
 
       try {
         const { data: topics, error: fetchError } = await withRetry(
           () => withTimeout(
             supabase.from("topics").select("*").order("created_at", { ascending: false }),
-            8000, controller.signal
-          ), 1, 1000, controller.signal
+            8000, sig
+          ), 1, 1000, sig
         );
 
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (fetchError) {
-          setError("토픽을 불러오는 데 실패했습니다.");
+          if (allTopics.length === 0 && !isBackground) setError("토픽을 불러오는 데 실패했습니다.");
           setLoadingTopics(false);
           return;
         }
 
-        if (topics) {
+        if (topics && topics.length > 0) {
           setAllTopics(topics);
           setCache("communityTopics", topics);
 
@@ -68,9 +69,9 @@ export default function CommunityPage() {
           if (topicIds.length > 0) {
             const { data: comments } = await withTimeout(
               supabase.from("topic_comments").select("topic_id").in("topic_id", topicIds),
-              5000, controller.signal
+              5000, sig
             );
-            if (controller.signal.aborted) return;
+            if (sig.aborted) return;
             const counts: Record<string, number> = {};
             if (comments) {
               for (const c of comments) {
@@ -82,13 +83,25 @@ export default function CommunityPage() {
           }
         }
       } catch {
-        if (controller.signal.aborted) return;
-        setError("토픽을 불러오는 데 실패했습니다.");
+        if (sig.aborted) return;
+        if (allTopics.length === 0 && !isBackground) setError("토픽을 불러오는 데 실패했습니다.");
       }
       setLoadingTopics(false);
     }
-    fetchTopics();
-    return () => controller.abort();
+    fetchTopics(controller.signal);
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller = new AbortController();
+        fetchTopics(controller.signal, true);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const filteredTopics = useMemo(() => {

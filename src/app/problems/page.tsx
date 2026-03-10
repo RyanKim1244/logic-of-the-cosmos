@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
-import { getCached, setCache } from "@/lib/cache";
+import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
@@ -37,15 +37,20 @@ export default function ProblemsPage() {
     updatedAt: p.updated_at as string,
   });
 
-  const fetchProblems = async (signal?: AbortSignal) => {
-    setError(null);
-    setLoading(true);
+  const fetchProblems = async (signal?: AbortSignal, isBackground = false) => {
+    if (!isBackground) {
+      setError(null);
+    }
 
-    const cached = getCached<Problem[]>("problems");
+    // Show stale cache immediately, only show loading if no data at all
+    const cached = getCached<Problem[]>("problems", true);
     if (cached) {
       setProblems(cached);
       setLoading(false);
-      return;
+      // If cache is still fresh, skip re-fetch
+      if (!isCacheStale("problems")) return;
+    } else if (!isBackground) {
+      setLoading(true);
     }
 
     try {
@@ -56,30 +61,39 @@ export default function ProblemsPage() {
         ), 1, 1000, signal
       );
       if (fetchError) {
-        setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
-      } else if (data) {
+        // Only show error if we have no existing data
+        if (problems.length === 0) {
+          setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
+        }
+      } else if (data && data.length > 0) {
         const mapped = data.map(mapProblem);
         setProblems(mapped);
         setCache("problems", mapped);
       }
     } catch (e) {
       if (signal?.aborted) return;
-      setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+      // Only show error if we have no existing data
+      if (problems.length === 0) {
+        setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+      }
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    const controller = new AbortController();
-    async function fetchSolvedCounts() {
-      const cached = getCached<Record<string, number>>("solvedCounts");
-      if (cached) { setSolvedCounts(cached); return; }
+    let controller = new AbortController();
+    async function fetchSolvedCounts(sig: AbortSignal) {
+      const cached = getCached<Record<string, number>>("solvedCounts", true);
+      if (cached) {
+        setSolvedCounts(cached);
+        if (!isCacheStale("solvedCounts")) return;
+      }
       try {
         const { data } = await withTimeout(
           supabase.from("user_solved_problems").select("problem_id"),
-          5000, controller.signal
+          5000, sig
         );
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (data) {
           const counts: Record<string, number> = {};
           for (const row of data) {
@@ -90,15 +104,18 @@ export default function ProblemsPage() {
         }
       } catch { /* ignore */ }
     }
-    async function fetchDiscussionCounts() {
-      const cached = getCached<Record<string, number>>("discussionCounts");
-      if (cached) { setDiscussionCounts(cached); return; }
+    async function fetchDiscussionCounts(sig: AbortSignal) {
+      const cached = getCached<Record<string, number>>("discussionCounts", true);
+      if (cached) {
+        setDiscussionCounts(cached);
+        if (!isCacheStale("discussionCounts")) return;
+      }
       try {
         const { data } = await withTimeout(
           supabase.from("discussions").select("problem_id"),
-          5000, controller.signal
+          5000, sig
         );
-        if (controller.signal.aborted) return;
+        if (sig.aborted) return;
         if (data) {
           const counts: Record<string, number> = {};
           for (const row of data) {
@@ -109,10 +126,26 @@ export default function ProblemsPage() {
         }
       } catch { /* ignore */ }
     }
+
     fetchProblems(controller.signal);
-    fetchSolvedCounts();
-    fetchDiscussionCounts();
-    return () => controller.abort();
+    fetchSolvedCounts(controller.signal);
+    fetchDiscussionCounts(controller.signal);
+
+    // Re-fetch when tab becomes visible (keeps data fresh)
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller = new AbortController();
+        fetchProblems(controller.signal, true);
+        fetchSolvedCounts(controller.signal);
+        fetchDiscussionCounts(controller.signal);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const filteredProblems = useMemo(() => {

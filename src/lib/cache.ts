@@ -2,14 +2,28 @@ const cache = new Map<string, { data: unknown; timestamp: number }>();
 
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 
-export function getCached<T>(key: string): T | null {
+/**
+ * Returns cached data if it exists.
+ * If `allowStale` is true (default), returns data even if TTL has expired.
+ * The caller can use `isCacheStale` to decide whether to refetch in the background.
+ */
+export function getCached<T>(key: string, allowStale = false): T | null {
   const entry = cache.get(key);
   if (!entry) return null;
-  if (Date.now() - entry.timestamp > DEFAULT_TTL) {
+  if (!allowStale && Date.now() - entry.timestamp > DEFAULT_TTL) {
     cache.delete(key);
     return null;
   }
   return entry.data as T;
+}
+
+/**
+ * Returns true if the cached entry is older than TTL (or missing).
+ */
+export function isCacheStale(key: string): boolean {
+  const entry = cache.get(key);
+  if (!entry) return true;
+  return Date.now() - entry.timestamp > DEFAULT_TTL;
 }
 
 export function setCache(key: string, data: unknown): void {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
-import { getCached, setCache, invalidateCacheByPrefix } from "@/lib/cache";
+import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
@@ -26,27 +26,31 @@ export default function Home() {
   const [problemCounts, setProblemCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const controller = new AbortController();
+    let controller = new AbortController();
 
     async function fetchData() {
-      // Check cache first
-      const cachedProblems = getCached<Problem[]>("homeRecentProblems");
-      const cachedContests = getCached<ContestPreview[]>("homeContests");
-      const cachedStats = getCached<typeof stats>("homeStats");
-      const cachedCounts = getCached<Record<string, number>>("homeProblemCounts");
-      if (cachedProblems && cachedContests && cachedStats && cachedCounts) {
-        setRecentProblems(cachedProblems);
-        setTopContests(cachedContests);
-        setStats(cachedStats);
-        setProblemCounts(cachedCounts);
+      // Serve stale cache immediately (if available), then revalidate in background
+      const cachedProblems = getCached<Problem[]>("homeRecentProblems", true);
+      const cachedContests = getCached<ContestPreview[]>("homeContests", true);
+      const cachedStats = getCached<typeof stats>("homeStats", true);
+      const cachedCounts = getCached<Record<string, number>>("homeProblemCounts", true);
+
+      // Show cached data immediately
+      if (cachedProblems) setRecentProblems(cachedProblems);
+      if (cachedContests) setTopContests(cachedContests);
+      if (cachedStats) setStats(cachedStats);
+      if (cachedCounts) setProblemCounts(cachedCounts);
+
+      // If all caches are fresh, no need to refetch
+      if (cachedProblems && cachedContests && cachedStats && cachedCounts &&
+          !isCacheStale("homeRecentProblems") && !isCacheStale("homeContests") &&
+          !isCacheStale("homeStats") && !isCacheStale("homeProblemCounts")) {
         return;
       }
 
       try {
         const sig = controller.signal;
 
-        // Fetch everything in parallel — use allSettled so one failure
-        // doesn't prevent the rest of the page from rendering.
         const results = await Promise.allSettled([
           withRetry(() => withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 8000, sig), 1, 800, sig),
           withRetry(() => withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 8000, sig), 1, 800, sig),
@@ -65,7 +69,8 @@ export default function Home() {
         const discussionCountRes = results[4].status === "fulfilled" ? results[4].value : null;
         const authorDataRes = results[5].status === "fulfilled" ? results[5].value : null;
 
-        if (problemsRes?.data) {
+        // Only update state if we got real data — never overwrite good data with empty
+        if (problemsRes?.data && problemsRes.data.length > 0) {
           /* eslint-disable @typescript-eslint/no-explicit-any */
           const mapped: Problem[] = (problemsRes.data as any[]).map((p) => ({
             id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
@@ -77,7 +82,7 @@ export default function Home() {
           setCache("homeRecentProblems", mapped);
         }
 
-        if (contestsRes?.data) {
+        if (contestsRes?.data && contestsRes.data.length > 0) {
           setTopContests(contestsRes.data);
           setCache("homeContests", contestsRes.data);
         }
@@ -89,20 +94,20 @@ export default function Home() {
           discussions: discussionCountRes?.count ?? 0,
           authors: uniqueAuthors,
         };
-        setStats(newStats);
-        // Only cache stats if at least one value is non-zero (avoid caching failed queries)
+        // Only update stats if at least one value is non-zero (don't overwrite with failed data)
         if (newStats.problems > 0 || newStats.contests > 0 || newStats.discussions > 0) {
+          setStats(newStats);
           setCache("homeStats", newStats);
         }
 
         // Problem counts per contest
-        if (contestsRes?.data) {
+        if (contestsRes?.data && contestsRes.data.length > 0) {
           try {
             const { data: allProblems } = await withTimeout(
               supabase.from("problems").select("source"), 8000, sig
             );
             if (controller.signal.aborted) return;
-            if (allProblems) {
+            if (allProblems && allProblems.length > 0) {
               const counts: Record<string, number> = {};
               for (const c of contestsRes.data) {
                 counts[c.id] = allProblems.filter((p: { source: string }) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
@@ -115,15 +120,16 @@ export default function Home() {
           }
         }
       } catch {
-        // Silently handle errors on home page - data will show as 0/empty
+        // On fetch failure, keep existing state — never reset to empty
       }
     }
     fetchData();
 
-    // When user returns to this tab, clear stale cache and re-fetch
+    // When user returns to this tab, re-fetch (but keep existing data visible)
     function handleVisibility() {
       if (document.visibilityState === "visible") {
-        invalidateCacheByPrefix("home");
+        // Create a fresh AbortController for the new fetch
+        controller = new AbortController();
         fetchData();
       }
     }
