@@ -50,8 +50,8 @@ export default function TopicDetailPage() {
 
         // Fetch topic and comments in parallel
         const [{ data: topicData }, { data: commentsData }] = await Promise.all([
-          withTimeout(supabase.from("topics").select("*").eq("id", id).single(), 5000, sig),
-          withTimeout(supabase.from("topic_comments").select("*").eq("topic_id", id).order("created_at", { ascending: true }), 5000, sig),
+          withTimeout(supabase.from("topics").select("*").eq("id", id).single(), undefined, sig),
+          withTimeout(supabase.from("topic_comments").select("*").eq("topic_id", id).order("created_at", { ascending: true }), undefined, sig),
         ]);
 
         if (sig.aborted) return;
@@ -61,8 +61,8 @@ export default function TopicDetailPage() {
         // Check user's upvote status in parallel
         if (user) {
           const [{ data: topicUpvote }, { data: commentUpvotes }] = await Promise.all([
-            withTimeout(supabase.from("topic_upvotes").select("*").eq("user_id", user.id).eq("topic_id", id as string).maybeSingle(), 5000, sig),
-            withTimeout(supabase.from("comment_upvotes").select("comment_id").eq("user_id", user.id), 5000, sig),
+            withTimeout(supabase.from("topic_upvotes").select("*").eq("user_id", user.id).eq("topic_id", id as string).maybeSingle(), undefined, sig),
+            withTimeout(supabase.from("comment_upvotes").select("comment_id").eq("user_id", user.id), undefined, sig),
           ]);
           if (sig.aborted) return;
           setTopicVoted(!!topicUpvote);

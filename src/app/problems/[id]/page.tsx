@@ -30,7 +30,7 @@ export default function ProblemDetailPage({
       try {
         const { data, error: fetchError } = await withTimeout(
           supabase.from("problems").select("*").eq("id", id).single(),
-          5000, controller.signal
+          undefined, controller.signal
         );
         if (controller.signal.aborted) return;
         if (fetchError) {
@@ -53,7 +53,7 @@ export default function ProblemDetailPage({
       try {
         const { count } = await withTimeout(
           supabase.from("user_solved_problems").select("*", { count: "exact", head: true }).eq("problem_id", id),
-          5000, controller.signal
+          undefined, controller.signal
         );
         if (controller.signal.aborted) return;
         if (count !== null) setSolvedCount(count);

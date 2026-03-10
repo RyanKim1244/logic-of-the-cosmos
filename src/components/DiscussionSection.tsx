@@ -33,7 +33,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
       try {
         const { data } = await withTimeout(
           supabase.from("discussions").select("*").eq("problem_id", problemId).order("created_at", { ascending: true }),
-          5000, controller.signal
+          undefined, controller.signal
         );
         if (!controller.signal.aborted && data) setDiscussions(data);
       } catch { /* ignore */ }

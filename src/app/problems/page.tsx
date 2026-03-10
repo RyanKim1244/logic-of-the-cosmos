@@ -45,7 +45,7 @@ export default function ProblemsPage() {
     try {
       const { data, error: fetchError } = await withTimeout(
         supabase.from("problems").select("*").order("problem_number", { ascending: true }),
-        5000, signal
+        undefined, signal
       );
       if (fetchError) {
         setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
@@ -69,7 +69,7 @@ export default function ProblemsPage() {
       try {
         const { data } = await withTimeout(
           supabase.from("user_solved_problems").select("problem_id"),
-          5000, controller.signal
+          undefined, controller.signal
         );
         if (controller.signal.aborted) return;
         if (data) {

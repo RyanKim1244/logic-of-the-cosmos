@@ -95,12 +95,12 @@ export default function ProfilePage() {
         // Fetch bookmarked and solved in parallel
         const [bookmarkedRes, solvedRes, solveHistoryRes] = await Promise.all([
           user.bookmarkedProblems.length > 0
-            ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 5000, sig)
+            ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), undefined, sig)
             : Promise.resolve({ data: null, error: null }),
           user.solvedProblems.length > 0
-            ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 5000, sig)
+            ? withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), undefined, sig)
             : Promise.resolve({ data: null, error: null }),
-          withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 5000, sig),
+          withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), undefined, sig),
         ]);
 
         if (sig.aborted) return;
@@ -120,7 +120,7 @@ export default function ProfilePage() {
           const problemIds = solveData.map((s: { problem_id: string }) => s.problem_id);
           if (problemIds.length > 0) {
             const { data: problemDetails } = await withTimeout(
-              supabase.from("problems").select("id, title, source").in("id", problemIds), 5000, sig
+              supabase.from("problems").select("id, title, source").in("id", problemIds), undefined, sig
             );
             if (sig.aborted) return;
 

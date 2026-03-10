@@ -47,12 +47,12 @@ export default function Home() {
 
         // Fetch everything in parallel
         const [problemsRes, contestsRes, problemCountRes, contestCountRes, discussionCountRes, authorDataRes] = await Promise.all([
-          withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 5000, sig),
-          withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 5000, sig),
-          withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), 5000, sig),
-          withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), 5000, sig),
-          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), 5000, sig),
-          withTimeout(supabase.from("discussions").select("author_name"), 5000, sig),
+          withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), undefined, sig),
+          withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), undefined, sig),
+          withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), undefined, sig),
+          withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), undefined, sig),
+          withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), undefined, sig),
+          withTimeout(supabase.from("discussions").select("author_name"), undefined, sig),
         ]);
 
         if (controller.signal.aborted) return;
@@ -83,7 +83,7 @@ export default function Home() {
         // Problem counts per contest
         if (contestsRes.data) {
           const { data: allProblems } = await withTimeout(
-            supabase.from("problems").select("source"), 5000, sig
+            supabase.from("problems").select("source"), undefined, sig
           );
           if (controller.signal.aborted) return;
           if (allProblems) {

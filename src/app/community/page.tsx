@@ -47,7 +47,7 @@ export default function CommunityPage() {
       try {
         const { data: topics, error: fetchError } = await withTimeout(
           supabase.from("topics").select("*").order("created_at", { ascending: false }),
-          5000, controller.signal
+          undefined, controller.signal
         );
 
         if (controller.signal.aborted) return;
@@ -65,7 +65,7 @@ export default function CommunityPage() {
           if (topicIds.length > 0) {
             const { data: comments } = await withTimeout(
               supabase.from("topic_comments").select("topic_id").in("topic_id", topicIds),
-              5000, controller.signal
+              undefined, controller.signal
             );
             if (controller.signal.aborted) return;
             const counts: Record<string, number> = {};

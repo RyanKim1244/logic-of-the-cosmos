@@ -95,7 +95,7 @@ export default function ContestDetailPage({
       try {
         const { data: contestData, error: fetchError } = await withTimeout(
           supabase.from("contests").select("*").eq("id", id).single(),
-          5000, controller.signal
+          undefined, controller.signal
         );
 
         if (controller.signal.aborted) return;
@@ -114,7 +114,7 @@ export default function ContestDetailPage({
               .select("id, problem_number, title, source, year")
               .ilike("source", `%${contestData.short_name}%`)
               .order("year", { ascending: false }),
-            5000, controller.signal
+            undefined, controller.signal
           );
 
           if (controller.signal.aborted) return;

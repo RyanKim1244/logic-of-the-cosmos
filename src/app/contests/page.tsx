@@ -35,7 +35,7 @@ export default function ContestsPage() {
 
     try {
       const { data: contestsData, error: fetchError } = await withTimeout(
-        supabase.from("contests").select("*"), 5000, signal
+        supabase.from("contests").select("*"), undefined, signal
       );
       if (signal?.aborted) return;
       if (fetchError) {
@@ -48,7 +48,7 @@ export default function ContestsPage() {
         setCache("contests", contestsData);
 
         const { data: problems } = await withTimeout(
-          supabase.from("problems").select("source"), 5000, signal
+          supabase.from("problems").select("source"), undefined, signal
         );
         if (signal?.aborted) return;
         if (problems) {

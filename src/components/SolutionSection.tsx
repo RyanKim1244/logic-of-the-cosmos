@@ -31,7 +31,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
       try {
         const { data } = await withTimeout(
           supabase.from("discussions").select("*").eq("problem_id", problemId).eq("is_solution", true).is("parent_id", null).order("created_at", { ascending: true }),
-          5000, controller.signal
+          undefined, controller.signal
         );
         if (!controller.signal.aborted && data) setSolutions(data);
       } catch { /* ignore */ }
