@@ -34,9 +34,30 @@ export default function PublicProfilePage({
     }
   }, [user, id, router]);
 
+  // Restore cached stats immediately
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem(`public_profile_stats_${id}`);
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (data.solvedCount != null) setSolvedCount(data.solvedCount);
+        if (data.solutionCount != null) setSolutionCount(data.solutionCount);
+        if (data.discussionCount != null) setDiscussionCount(data.discussionCount);
+      }
+    } catch { /* ignore */ }
+  }, [id]);
+
   useEffect(() => {
     const controller = new AbortController();
     const sig = controller.signal;
+    const cacheKey = `public_profile_stats_${id}`;
+
+    function updateCache(patch: Record<string, unknown>) {
+      try {
+        const prev = JSON.parse(sessionStorage.getItem(cacheKey) || "{}");
+        sessionStorage.setItem(cacheKey, JSON.stringify({ ...prev, ...patch }));
+      } catch { /* ignore */ }
+    }
 
     // Profile (required for page render — controls loading state)
     withRetry(() => withTimeout(supabase.from("profiles").select("id, name, bio, created_at").eq("id", id).single(), 6000, sig), 1, 1000, sig)
@@ -46,15 +67,15 @@ export default function PublicProfilePage({
 
     // Stats fire independently — each renders as it arrives
     withRetry(() => withTimeout(supabase.from("user_solved_problems").select("*", { count: "exact", head: true }).eq("user_id", id), 6000, sig), 1, 1000, sig)
-      .then((res) => { if (!sig.aborted && res.count != null) setSolvedCount(res.count); })
+      .then((res) => { if (!sig.aborted && res.count != null) { setSolvedCount(res.count); updateCache({ solvedCount: res.count }); } })
       .catch(() => {});
 
     withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", id).eq("is_solution", true), 6000, sig), 1, 1000, sig)
-      .then((res) => { if (!sig.aborted && res.count != null) setSolutionCount(res.count); })
+      .then((res) => { if (!sig.aborted && res.count != null) { setSolutionCount(res.count); updateCache({ solutionCount: res.count }); } })
       .catch(() => {});
 
     withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }).eq("author_id", id).or("is_solution.is.null,is_solution.eq.false"), 6000, sig), 1, 1000, sig)
-      .then((res) => { if (!sig.aborted && res.count != null) setDiscussionCount(res.count); })
+      .then((res) => { if (!sig.aborted && res.count != null) { setDiscussionCount(res.count); updateCache({ discussionCount: res.count }); } })
       .catch(() => {});
 
     return () => controller.abort();
