@@ -6,41 +6,56 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholde
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
- * Wraps a Supabase query with a timeout that actually aborts the underlying fetch.
- * Unlike Promise.race, this cancels the HTTP request on timeout via AbortController.
- * Accepts an optional external AbortSignal for useEffect cleanup.
+ * Wraps a Supabase query with a timeout and optional external AbortSignal.
+ * On timeout or abort, the promise rejects immediately so callers can clean up.
+ * Callers should check signal.aborted before updating state.
  */
 export async function withTimeout<T>(
   query: PromiseLike<T>,
   ms = 5000,
   signal?: AbortSignal
 ): Promise<T> {
-  const controller = new AbortController();
-
-  if (signal) {
-    if (signal.aborted) {
-      controller.abort();
-      throw new Error("요청이 취소되었습니다.");
-    }
-    signal.addEventListener("abort", () => controller.abort(), { once: true });
-  }
-
-  // Attach AbortSignal to Supabase query builder to cancel the actual HTTP request
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const q = query as any;
-  if (typeof q.abortSignal === "function") {
-    query = q.abortSignal(controller.signal);
+  if (signal?.aborted) {
+    throw new Error("요청이 취소되었습니다.");
   }
 
   return new Promise<T>((resolve, reject) => {
+    let settled = false;
+
     const timer = setTimeout(() => {
-      controller.abort();
-      reject(new Error("요청 시간이 초과되었습니다."));
+      if (!settled) {
+        settled = true;
+        reject(new Error("요청 시간이 초과되었습니다."));
+      }
     }, ms);
 
+    // If external signal aborts (e.g. useEffect cleanup), reject immediately
+    const onAbort = () => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        reject(new Error("요청이 취소되었습니다."));
+      }
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+
     Promise.resolve(query).then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      (error) => { clearTimeout(timer); reject(error); }
+      (value) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          signal?.removeEventListener("abort", onAbort);
+          resolve(value);
+        }
+      },
+      (error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          signal?.removeEventListener("abort", onAbort);
+          reject(error);
+        }
+      }
     );
   });
 }
