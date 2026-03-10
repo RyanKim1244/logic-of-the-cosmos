@@ -287,7 +287,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <ScrollReveal>
             <h2 className="text-2xl md:text-3xl font-light text-black mb-4">과학의 경계를 넓혀보세요</h2>
-            <p className="text-neutral-400 text-sm mb-10 max-w-lg mx-auto">수천 개의 문제와 풀이, 활발한 토론이 기다리고 있습니다. 지금 바로 시작하세요.</p>
+            <p className="text-neutral-400 text-sm mb-10 max-w-lg mx-auto">문제를 풀고, 풀이를 공유하고, 함께 성장하세요.</p>
             <div className="flex items-center justify-center gap-4">
               <Link href="/problems" className="px-8 py-3 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">문제 풀기</Link>
               {!user && (
