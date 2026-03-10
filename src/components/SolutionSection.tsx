@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -186,7 +187,11 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                       {solution.author_name.charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
-                      <span className="font-medium text-black text-xs">{solution.author_name}</span>
+                      {solution.author_id ? (
+                        <Link href={`/profile/${solution.author_id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-black text-xs hover:underline">{solution.author_name}</Link>
+                      ) : (
+                        <span className="font-medium text-black text-xs">{solution.author_name}</span>
+                      )}
                       {solution.author_id === user?.id && (
                         <span className="ml-2 text-[10px] text-blue-500 font-medium uppercase tracking-wider">내 풀이</span>
                       )}
@@ -202,19 +207,21 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                   <div className="animate-expand-inner">
                     {isExpanded && (
                       <div className="px-4 sm:px-6 pb-4 sm:pb-6 animate-fade-slide-up">
-                        {solution.author_id === user?.id && editingId !== solution.id && (
+                        {(solution.author_id === user?.id || user?.is_admin) && editingId !== solution.id && (
                           <div className="flex items-center gap-2 mb-3 pl-11">
-                            <button
-                              onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
-                              className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
-                            >
-                              수정
-                            </button>
+                            {solution.author_id === user?.id && (
+                              <button
+                                onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
+                                className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
+                              >
+                                수정
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDelete(solution.id)}
                               className="text-xs text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-wider"
                             >
-                              삭제
+                              삭제{user?.is_admin && solution.author_id !== user?.id ? " (관리자)" : ""}
                             </button>
                           </div>
                         )}

@@ -10,6 +10,7 @@ interface Topic {
   id: string;
   title: string;
   content: string;
+  author_id: string | null;
   author_name: string;
   tags: string[];
   created_at: string;

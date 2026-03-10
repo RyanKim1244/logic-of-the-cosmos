@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 interface Discussion {
   id: string;
   problem_id: string;
+  author_id: string | null;
   author_name: string;
   content: string;
   created_at: string;
@@ -93,6 +95,15 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
     }
   };
 
+  const handleDeleteComment = async (id: string) => {
+    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+    const { error } = await supabase.from("discussions").delete().eq("id", id);
+    if (!error) {
+      // Also remove replies to this comment
+      setDiscussions(discussions.filter((d) => d.id !== id && d.parent_id !== id));
+    }
+  };
+
   const formatDate = (dateStr: string) => new Date(dateStr).toISOString().split("T")[0];
   const topLevel = discussions.filter((d) => d.parent_id === null);
   const getReplies = (parentId: string) => discussions.filter((d) => d.parent_id === parentId);
@@ -147,12 +158,16 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                 {disc.author_name.charAt(0).toUpperCase()}
               </span>
               <div className="flex-1 min-w-0">
-                <span className="font-medium text-black text-sm">{disc.author_name}</span>
+                {disc.author_id ? (
+                  <Link href={`/profile/${disc.author_id}`} className="font-medium text-black text-sm hover:underline">{disc.author_name}</Link>
+                ) : (
+                  <span className="font-medium text-black text-sm">{disc.author_name}</span>
+                )}
                 <span className="text-xs text-neutral-400 ml-2">{formatDate(disc.created_at)}</span>
               </div>
             </div>
             <div className="text-neutral-700 mb-3 whitespace-pre-wrap text-xs leading-relaxed pl-11">{disc.content}</div>
-            <div className="pl-11">
+            <div className="pl-11 flex items-center gap-3">
               <button
                 onClick={() => {
                   setReplyTo(replyTo === disc.id ? null : disc.id);
@@ -162,6 +177,14 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
               >
                 {replyTo === disc.id ? "취소" : "답글"}
               </button>
+              {(disc.author_id === user?.id || user?.is_admin) && (
+                <button
+                  onClick={() => handleDeleteComment(disc.id)}
+                  className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors"
+                >
+                  삭제{user?.is_admin && disc.author_id !== user?.id ? " (관리자)" : ""}
+                </button>
+              )}
             </div>
 
             {/* Replies */}
@@ -171,10 +194,22 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                   <span className="w-6 h-6 bg-neutral-200 text-neutral-600 flex items-center justify-center text-xs font-medium shrink-0">
                     {reply.author_name.charAt(0).toUpperCase()}
                   </span>
-                  <span className="font-medium text-neutral-700 text-sm">{reply.author_name}</span>
+                  {reply.author_id ? (
+                    <Link href={`/profile/${reply.author_id}`} className="font-medium text-neutral-700 text-sm hover:underline">{reply.author_name}</Link>
+                  ) : (
+                    <span className="font-medium text-neutral-700 text-sm">{reply.author_name}</span>
+                  )}
                   <span className="text-xs text-neutral-400">{formatDate(reply.created_at)}</span>
                 </div>
                 <div className="text-neutral-600 text-xs whitespace-pre-wrap leading-relaxed pl-8">{reply.content}</div>
+                {(reply.author_id === user?.id || user?.is_admin) && (
+                  <button
+                    onClick={() => handleDeleteComment(reply.id)}
+                    className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors mt-1 pl-8"
+                  >
+                    삭제{user?.is_admin && reply.author_id !== user?.id ? " (관리자)" : ""}
+                  </button>
+                )}
               </div>
             ))}
 

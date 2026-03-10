@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -10,6 +10,7 @@ interface Topic {
   id: string;
   title: string;
   content: string;
+  author_id: string | null;
   author_name: string;
   tags: string[];
   created_at: string;
@@ -19,6 +20,7 @@ interface Topic {
 interface Comment {
   id: string;
   topic_id: string;
+  author_id: string | null;
   author_name: string;
   content: string;
   created_at: string;
@@ -40,6 +42,7 @@ export default function TopicDetailPage() {
   const [replyContent, setReplyContent] = useState("");
   const sectionRef = useRef<HTMLDivElement>(null);
 
+  const router = useRouter();
   const authorName = user ? user.name : "Guest";
 
   useEffect(() => {
@@ -195,6 +198,23 @@ export default function TopicDetailPage() {
     }
   };
 
+  const handleDeleteTopic = async () => {
+    if (!confirm("토픽을 삭제하시겠습니까? 모든 댓글도 삭제됩니다.")) return;
+    await supabase.from("topic_comments").delete().eq("topic_id", topic!.id);
+    const { error } = await supabase.from("topics").delete().eq("id", topic!.id);
+    if (!error) router.push("/community");
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+    // Delete replies first
+    await supabase.from("topic_comments").delete().eq("parent_id", commentId);
+    const { error } = await supabase.from("topic_comments").delete().eq("id", commentId);
+    if (!error) {
+      setComments(comments.filter((c) => c.id !== commentId && c.parent_id !== commentId));
+    }
+  };
+
   const formatDate = (dateStr: string) => new Date(dateStr).toISOString().split("T")[0];
   const topLevel = comments.filter((c) => c.parent_id === null);
   const getReplies = (parentId: string) => comments.filter((c) => c.parent_id === parentId);
@@ -227,8 +247,20 @@ export default function TopicDetailPage() {
             </div>
             <div className="flex items-center gap-3 mt-4 pt-4 border-t border-neutral-100">
               <span className="w-7 h-7 bg-black text-white flex items-center justify-center text-xs font-medium">{topic.author_name.charAt(0).toUpperCase()}</span>
-              <span className="text-sm font-medium text-black">{topic.author_name}</span>
+              {topic.author_id ? (
+                <Link href={`/profile/${topic.author_id}`} className="text-sm font-medium text-black hover:underline">{topic.author_name}</Link>
+              ) : (
+                <span className="text-sm font-medium text-black">{topic.author_name}</span>
+              )}
               <span className="text-xs text-neutral-400">{formatDate(topic.created_at)}</span>
+              {(topic.author_id === user?.id || user?.is_admin) && (
+                <button
+                  onClick={handleDeleteTopic}
+                  className="ml-auto text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors"
+                >
+                  삭제{user?.is_admin && topic.author_id !== user?.id ? " (관리자)" : ""}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -272,13 +304,27 @@ export default function TopicDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-6 h-6 bg-neutral-800 text-white flex items-center justify-center text-xs font-medium">{comment.author_name.charAt(0).toUpperCase()}</span>
-                  <span className="font-medium text-sm text-black">{comment.author_name}</span>
+                  {comment.author_id ? (
+                    <Link href={`/profile/${comment.author_id}`} className="font-medium text-sm text-black hover:underline">{comment.author_name}</Link>
+                  ) : (
+                    <span className="font-medium text-sm text-black">{comment.author_name}</span>
+                  )}
                   <span className="text-xs text-neutral-400">{formatDate(comment.created_at)}</span>
                 </div>
                 <p className="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed mb-2">{comment.content}</p>
-                <button onClick={() => { setReplyTo(replyTo === comment.id ? null : comment.id); setReplyContent(""); }} className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors">
-                  {replyTo === comment.id ? "취소" : "답글"}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => { setReplyTo(replyTo === comment.id ? null : comment.id); setReplyContent(""); }} className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors">
+                    {replyTo === comment.id ? "취소" : "답글"}
+                  </button>
+                  {(comment.author_id === user?.id || user?.is_admin) && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors"
+                    >
+                      삭제{user?.is_admin && comment.author_id !== user?.id ? " (관리자)" : ""}
+                    </button>
+                  )}
+                </div>
 
                 {getReplies(comment.id).map((reply) => (
                   <div key={reply.id} className="mt-4 pl-4 border-l-2 border-neutral-100">
@@ -294,10 +340,22 @@ export default function TopicDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="w-5 h-5 bg-neutral-200 text-neutral-600 flex items-center justify-center text-xs">{reply.author_name.charAt(0).toUpperCase()}</span>
-                          <span className="font-medium text-sm text-neutral-700">{reply.author_name}</span>
+                          {reply.author_id ? (
+                            <Link href={`/profile/${reply.author_id}`} className="font-medium text-sm text-neutral-700 hover:underline">{reply.author_name}</Link>
+                          ) : (
+                            <span className="font-medium text-sm text-neutral-700">{reply.author_name}</span>
+                          )}
                           <span className="text-xs text-neutral-400">{formatDate(reply.created_at)}</span>
                         </div>
                         <p className="text-sm text-neutral-600 whitespace-pre-wrap leading-relaxed">{reply.content}</p>
+                        {(reply.author_id === user?.id || user?.is_admin) && (
+                          <button
+                            onClick={() => handleDeleteComment(reply.id)}
+                            className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors mt-1"
+                          >
+                            삭제{user?.is_admin && reply.author_id !== user?.id ? " (관리자)" : ""}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
