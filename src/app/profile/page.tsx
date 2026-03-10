@@ -20,6 +20,59 @@ interface SolveRecord {
   source: string;
 }
 
+function CollapsibleSection({
+  title, count, emptyText, emptyLink, emptyLinkText, items,
+}: {
+  title: string; count: number; emptyText: string; emptyLink: string; emptyLinkText: string;
+  items: ProblemSummary[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <section className="mb-8">
+      {items.length === 0 ? (
+        <>
+          <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">{title}</h2>
+          <div className="border border-neutral-200 p-8 text-center">
+            <p className="text-neutral-400 text-sm">{emptyText}</p>
+            <Link href={emptyLink} className="text-sm text-black hover:underline mt-2 inline-block">{emptyLinkText} &rarr;</Link>
+          </div>
+        </>
+      ) : (
+        <div className="border border-neutral-200">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-neutral-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{title}</h2>
+              <span className="text-xs text-neutral-400">{count}개</span>
+            </div>
+            <svg
+              className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {isOpen && (
+            <div className="px-6 pb-5 space-y-2">
+              {items.map((p) => (
+                <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{p.title}</span>
+                    <span className="text-xs text-neutral-400">{p.source}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function ProfilePage() {
   const { user, loading: authLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
@@ -242,48 +295,24 @@ export default function ProfilePage() {
       </section>
 
       {/* Bookmarked Problems */}
-      <section className="mb-8">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">북마크한 문제</h2>
-        {bookmarkedProblems.length === 0 ? (
-          <div className="border border-neutral-200 p-8 text-center">
-            <p className="text-neutral-400 text-sm">아직 북마크한 문제가 없습니다.</p>
-            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 목록 보기 &rarr;</Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {bookmarkedProblems.map((p) => (
-              <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{p.title}</span>
-                  <span className="text-xs text-neutral-400">{p.source}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      <CollapsibleSection
+        title="북마크한 문제"
+        count={bookmarkedProblems.length}
+        emptyText="아직 북마크한 문제가 없습니다."
+        emptyLink="/problems"
+        emptyLinkText="문제 목록 보기"
+        items={bookmarkedProblems}
+      />
 
       {/* Solved Problems */}
-      <section>
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">풀이 완료</h2>
-        {solvedProblems.length === 0 ? (
-          <div className="border border-neutral-200 p-8 text-center">
-            <p className="text-neutral-400 text-sm">아직 풀이를 완료한 문제가 없습니다.</p>
-            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 풀러 가기 &rarr;</Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {solvedProblems.map((p) => (
-              <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{p.title}</span>
-                  <span className="text-xs text-neutral-400">{p.source}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      <CollapsibleSection
+        title="풀이 완료"
+        count={solvedProblems.length}
+        emptyText="아직 풀이를 완료한 문제가 없습니다."
+        emptyLink="/problems"
+        emptyLinkText="문제 풀러 가기"
+        items={solvedProblems}
+      />
     </div>
   );
 }

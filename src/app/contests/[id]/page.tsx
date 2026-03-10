@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -19,6 +19,63 @@ interface Problem {
   title: string;
   source: string;
   year: number;
+}
+
+function YearAccordion({ problemsByYear }: { problemsByYear: { year: number; problems: Problem[] }[] }) {
+  const [openYears, setOpenYears] = useState<Set<number>>(new Set());
+
+  const toggle = useCallback((year: number) => {
+    setOpenYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="space-y-3">
+      {problemsByYear.map(({ year, problems: yearProblems }) => {
+        const isOpen = openYears.has(year);
+        return (
+          <div key={year} className="border border-neutral-200">
+            <button
+              onClick={() => toggle(year)}
+              className="w-full flex items-center justify-between px-6 py-4 hover:bg-neutral-50 transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <h2 className="text-lg font-light text-black">{year}</h2>
+                <span className="text-xs text-neutral-400">{yearProblems.length}문제</span>
+              </div>
+              <svg
+                className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {isOpen && (
+              <div className="px-6 pb-5 grid md:grid-cols-2 gap-4">
+                {yearProblems.map((problem) => (
+                  <Link key={problem.id} href={`/problems/${problem.id}`} className="block h-full">
+                    <div className="border border-neutral-200 p-5 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
+                      <div className="flex-1">
+                        <span className="text-[10px] text-neutral-300 font-mono">#{problem.problem_number}</span>
+                        <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 mt-0.5">
+                          {problem.title}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-neutral-400 mt-2">{problem.source}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ContestDetailPage({
@@ -110,32 +167,7 @@ export default function ContestDetailPage({
           <p className="text-sm mt-2">관리자 페이지에서 문제를 추가해 보세요.</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {problemsByYear.map(({ year, problems: yearProblems }) => (
-            <div key={year}>
-              <div className="flex items-center gap-4 mb-4">
-                <h2 className="text-lg font-light text-black">{year}</h2>
-                <div className="flex-1 h-px bg-neutral-200" />
-                <span className="text-xs text-neutral-400">{yearProblems.length}문제</span>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                {yearProblems.map((problem) => (
-                  <Link key={problem.id} href={`/problems/${problem.id}`} className="block h-full">
-                    <div className="border border-neutral-200 p-5 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
-                      <div className="flex-1">
-                        <span className="text-[10px] text-neutral-300 font-mono">#{problem.problem_number}</span>
-                        <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 mt-0.5">
-                          {problem.title}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-neutral-400 mt-2">{problem.source}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <YearAccordion problemsByYear={problemsByYear} />
       )}
 
       {contest.years.filter((y) => !problemsByYear.some((g) => g.year === y)).length > 0 && (
