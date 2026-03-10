@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -25,33 +25,46 @@ export default function ProblemDetailPage({
 
   useEffect(() => {
     async function fetchProblem() {
-      const { data } = await supabase
-        .from("problems")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (data) {
-        setProblem({
-          id: data.id,
-          problemNumber: data.problem_number,
-          title: data.title,
-          source: data.source,
-          year: data.year,
-          tags: data.tags,
-          content: data.content,
-          officialSolution: data.official_solution,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        });
+      try {
+        const { data } = await withTimeout(
+          supabase
+            .from("problems")
+            .select("*")
+            .eq("id", id)
+            .single()
+        );
+        if (data) {
+          setProblem({
+            id: data.id,
+            problemNumber: data.problem_number,
+            title: data.title,
+            source: data.source,
+            year: data.year,
+            tags: data.tags,
+            content: data.content,
+            officialSolution: data.official_solution,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          });
+        }
+      } catch {
+        // timeout or network error
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     async function fetchSolvedCount() {
-      const { count } = await supabase
-        .from("user_solved_problems")
-        .select("*", { count: "exact", head: true })
-        .eq("problem_id", id);
-      if (count !== null) setSolvedCount(count);
+      try {
+        const { count } = await withTimeout(
+          supabase
+            .from("user_solved_problems")
+            .select("*", { count: "exact", head: true })
+            .eq("problem_id", id)
+        );
+        if (count !== null) setSolvedCount(count);
+      } catch {
+        // ignore
+      }
     }
     fetchProblem();
     fetchSolvedCount();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 import FilterSidebar from "@/components/FilterSidebar";
@@ -17,21 +17,18 @@ export default function ProblemsPage() {
   const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>({});
   const PER_PAGE = 20;
 
-  const fetchProblems = async (retries = 3) => {
+  const fetchProblems = async (retries = 2) => {
     setError(null);
     setLoading(true);
-    for (let attempt = 0; attempt < retries; attempt++) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const { data, error: fetchError } = await supabase
-          .from("problems")
-          .select("*")
-          .order("problem_number", { ascending: true });
+        const { data, error: fetchError } = await withTimeout(
+          supabase.from("problems").select("*").order("problem_number", { ascending: true })
+        );
         if (fetchError) {
-          console.error(`Supabase problems error (attempt ${attempt + 1}):`, fetchError);
-          if (attempt < retries - 1) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); continue; }
+          if (attempt < retries) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
           setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
-          setLoading(false);
-          return;
+          break;
         }
         if (data) {
           setProblems(data.map((p) => ({
@@ -47,11 +44,9 @@ export default function ProblemsPage() {
             updatedAt: p.updated_at,
           })));
         }
-        setLoading(false);
-        return;
+        break;
       } catch (e) {
-        console.error(`Problems fetch exception (attempt ${attempt + 1}):`, e);
-        if (attempt < retries - 1) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); continue; }
+        if (attempt < retries) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
         setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       }
     }
@@ -60,16 +55,18 @@ export default function ProblemsPage() {
 
   useEffect(() => {
     async function fetchSolvedCounts() {
-      const { data } = await supabase
-        .from("user_solved_problems")
-        .select("problem_id");
-      if (data) {
-        const counts: Record<string, number> = {};
-        for (const row of data) {
-          counts[row.problem_id] = (counts[row.problem_id] || 0) + 1;
+      try {
+        const { data } = await withTimeout(
+          supabase.from("user_solved_problems").select("problem_id")
+        );
+        if (data) {
+          const counts: Record<string, number> = {};
+          for (const row of data) {
+            counts[row.problem_id] = (counts[row.problem_id] || 0) + 1;
+          }
+          setSolvedCounts(counts);
         }
-        setSolvedCounts(counts);
-      }
+      } catch { /* ignore */ }
     }
     fetchProblems();
     fetchSolvedCounts();

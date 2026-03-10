@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 interface Topic {
@@ -43,46 +43,58 @@ export default function TopicDetailPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: topicData } = await supabase
-        .from("topics")
-        .select("*")
-        .eq("id", id)
-        .single();
+      try {
+        const { data: topicData } = await withTimeout(
+          supabase
+            .from("topics")
+            .select("*")
+            .eq("id", id)
+            .single()
+        );
 
-      if (topicData) {
-        setTopic(topicData);
-      }
-
-      const { data: commentsData } = await supabase
-        .from("topic_comments")
-        .select("*")
-        .eq("topic_id", id)
-        .order("created_at", { ascending: true });
-
-      if (commentsData) {
-        setComments(commentsData);
-      }
-
-      // Check user's upvote status
-      if (user) {
-        const { data: topicUpvote } = await supabase
-          .from("topic_upvotes")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("topic_id", id as string)
-          .maybeSingle();
-        setTopicVoted(!!topicUpvote);
-
-        const { data: commentUpvotes } = await supabase
-          .from("comment_upvotes")
-          .select("comment_id")
-          .eq("user_id", user.id);
-        if (commentUpvotes) {
-          setVotedComments(new Set(commentUpvotes.map((u) => u.comment_id)));
+        if (topicData) {
+          setTopic(topicData);
         }
-      }
 
-      setLoading(false);
+        const { data: commentsData } = await withTimeout(
+          supabase
+            .from("topic_comments")
+            .select("*")
+            .eq("topic_id", id)
+            .order("created_at", { ascending: true })
+        );
+
+        if (commentsData) {
+          setComments(commentsData);
+        }
+
+        // Check user's upvote status
+        if (user) {
+          const { data: topicUpvote } = await withTimeout(
+            supabase
+              .from("topic_upvotes")
+              .select("*")
+              .eq("user_id", user.id)
+              .eq("topic_id", id as string)
+              .maybeSingle()
+          );
+          setTopicVoted(!!topicUpvote);
+
+          const { data: commentUpvotes } = await withTimeout(
+            supabase
+              .from("comment_upvotes")
+              .select("comment_id")
+              .eq("user_id", user.id)
+          );
+          if (commentUpvotes) {
+            setVotedComments(new Set(commentUpvotes.map((u) => u.comment_id)));
+          }
+        }
+      } catch {
+        // timeout or network error
+      } finally {
+        setLoading(false);
+      }
     }
     fetchData();
   }, [id, user]);

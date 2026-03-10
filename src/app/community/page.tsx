@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 interface Topic {
@@ -34,10 +34,12 @@ export default function CommunityPage() {
   useEffect(() => {
     async function fetchTopics() {
       try {
-        const { data: topics, error: fetchError } = await supabase
-          .from("topics")
-          .select("*")
-          .order("created_at", { ascending: false });
+        const { data: topics, error: fetchError } = await withTimeout(
+          supabase
+            .from("topics")
+            .select("*")
+            .order("created_at", { ascending: false })
+        );
 
         if (fetchError) {
           setError("토픽을 불러오는 데 실패했습니다.");
@@ -49,10 +51,12 @@ export default function CommunityPage() {
           setAllTopics(topics);
           const counts: Record<string, number> = {};
           for (const topic of topics) {
-            const { count } = await supabase
-              .from("topic_comments")
-              .select("*", { count: "exact", head: true })
-              .eq("topic_id", topic.id);
+            const { count } = await withTimeout(
+              supabase
+                .from("topic_comments")
+                .select("*", { count: "exact", head: true })
+                .eq("topic_id", topic.id)
+            );
             counts[topic.id] = count || 0;
           }
           setCommentCounts(counts);

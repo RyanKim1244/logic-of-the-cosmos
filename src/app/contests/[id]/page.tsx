@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { supabase, withTimeout } from "@/lib/supabase";
 
 interface Contest {
   id: string;
@@ -90,24 +90,33 @@ export default function ContestDetailPage({
 
   useEffect(() => {
     async function fetchData() {
-      const { data: contestData } = await supabase
-        .from("contests")
-        .select("*")
-        .eq("id", id)
-        .single();
+      try {
+        const { data: contestData } = await withTimeout(
+          supabase
+            .from("contests")
+            .select("*")
+            .eq("id", id)
+            .single()
+        );
 
-      if (contestData) {
-        setContest(contestData);
+        if (contestData) {
+          setContest(contestData);
 
-        const { data: problems } = await supabase
-          .from("problems")
-          .select("id, problem_number, title, source, year")
-          .ilike("source", `%${contestData.short_name}%`)
-          .order("year", { ascending: false });
+          const { data: problems } = await withTimeout(
+            supabase
+              .from("problems")
+              .select("id, problem_number, title, source, year")
+              .ilike("source", `%${contestData.short_name}%`)
+              .order("year", { ascending: false })
+          );
 
-        if (problems) setContestProblems(problems);
+          if (problems) setContestProblems(problems);
+        }
+      } catch {
+        // timeout or network error
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchData();
   }, [id]);
