@@ -12,6 +12,8 @@ export default function ProblemsPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PER_PAGE = 20;
 
   useEffect(() => {
     async function fetchProblems() {
@@ -55,6 +57,17 @@ export default function ProblemsPage() {
     });
   }, [problems, selectedTags, selectedSources, searchQuery]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTags, selectedSources, searchQuery]);
+
+  const totalPages = Math.ceil(filteredProblems.length / PER_PAGE);
+  const paginatedProblems = filteredProblems.slice(
+    (currentPage - 1) * PER_PAGE,
+    currentPage * PER_PAGE
+  );
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -88,14 +101,61 @@ export default function ProblemsPage() {
             <>
               <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">
                 {filteredProblems.length}개의 문제
+                {totalPages > 1 && (
+                  <span className="ml-2">· 페이지 {currentPage}/{totalPages}</span>
+                )}
               </p>
               <div className="grid md:grid-cols-2 gap-5">
-                {filteredProblems.map((problem) => (
+                {paginatedProblems.map((problem) => (
                   <div key={problem.id} className="problem-card-hover">
                     <ProblemCard problem={problem} />
                   </div>
                 ))}
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-10">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+                  >
+                    &larr;
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((page) => {
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, i, arr) => {
+                      const showEllipsis = i > 0 && page - arr[i - 1] > 1;
+                      return (
+                        <span key={page} className="flex items-center gap-2">
+                          {showEllipsis && <span className="text-neutral-300 text-sm px-1">···</span>}
+                          <button
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-9 h-9 text-sm border transition-colors ${
+                              page === currentPage
+                                ? "bg-black text-white border-black"
+                                : "border-neutral-200 hover:border-black"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </span>
+                      );
+                    })}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+                  >
+                    &rarr;
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
