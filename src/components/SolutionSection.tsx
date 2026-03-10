@@ -21,7 +21,17 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
   const [isWriting, setIsWriting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const sectionRef = useRef<HTMLDivElement>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const mySolution = solutions.find((s) => s.author_id === user?.id);
 
@@ -162,71 +172,86 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
         </p>
       ) : (
         <div className="space-y-4">
-          {solutions.map((solution) => (
-            <div key={solution.id} className={`border p-6 ${solution.author_id === user?.id ? "border-blue-200 bg-blue-50/20" : "border-neutral-200"}`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 bg-neutral-800 text-white flex items-center justify-center text-xs font-medium shrink-0">
-                    {solution.author_name.charAt(0).toUpperCase()}
-                  </span>
-                  <div>
-                    <span className="font-medium text-black text-sm">{solution.author_name}</span>
-                    {solution.author_id === user?.id && (
-                      <span className="ml-2 text-[10px] text-blue-500 font-medium uppercase tracking-wider">내 풀이</span>
-                    )}
-                    <span className="text-xs text-neutral-400 ml-2">{formatDate(solution.created_at)}</span>
+          {solutions.map((solution) => {
+            const isExpanded = expandedIds.has(solution.id);
+            return (
+              <div key={solution.id} className={`border ${solution.author_id === user?.id ? "border-blue-200 bg-blue-50/20" : "border-neutral-200"}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleExpand(solution.id)}
+                  className="w-full p-4 sm:p-6 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-8 h-8 bg-neutral-800 text-white flex items-center justify-center text-xs font-medium shrink-0">
+                      {solution.author_name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="font-medium text-black text-sm">{solution.author_name}</span>
+                      {solution.author_id === user?.id && (
+                        <span className="ml-2 text-[10px] text-blue-500 font-medium uppercase tracking-wider">내 풀이</span>
+                      )}
+                      <span className="text-xs text-neutral-400 ml-2">{formatDate(solution.created_at)}</span>
+                    </div>
                   </div>
-                </div>
-                {solution.author_id === user?.id && editingId !== solution.id && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
-                      className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDelete(solution.id)}
-                      className="text-xs text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-wider"
-                    >
-                      삭제
-                    </button>
+                  <svg className={`w-4 h-4 text-neutral-400 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isExpanded && (
+                  <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                    {solution.author_id === user?.id && editingId !== solution.id && (
+                      <div className="flex items-center gap-2 mb-3 pl-11">
+                        <button
+                          onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
+                          className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDelete(solution.id)}
+                          className="text-xs text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-wider"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    )}
+
+                    {editingId === solution.id ? (
+                      <form onSubmit={handleEdit}>
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-sm transition-colors font-mono"
+                          rows={8}
+                        />
+                        <div className="flex justify-end gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={() => { setEditingId(null); setEditContent(""); }}
+                            className="px-4 py-1.5 border border-neutral-300 text-neutral-500 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={!editContent.trim()}
+                            className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30"
+                          >
+                            수정 완료
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="pl-11">
+                        <LatexRenderer content={solution.content} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-
-              {editingId === solution.id ? (
-                <form onSubmit={handleEdit}>
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-sm transition-colors font-mono"
-                    rows={8}
-                  />
-                  <div className="flex justify-end gap-2 mt-3">
-                    <button
-                      type="button"
-                      onClick={() => { setEditingId(null); setEditContent(""); }}
-                      className="px-4 py-1.5 border border-neutral-300 text-neutral-500 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
-                    >
-                      취소
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!editContent.trim()}
-                      className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30"
-                    >
-                      수정 완료
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="pl-11">
-                  <LatexRenderer content={solution.content} />
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
