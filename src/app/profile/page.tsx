@@ -88,8 +88,12 @@ export default function ProfilePage() {
   const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>([]);
   const [solveHistory, setSolveHistory] = useState<SolveRecord[]>([]);
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
-  const [solutionCount, setSolutionCount] = useState(0);
-  const [discussionCount, setDiscussionCount] = useState(0);
+  const [solutionCount, setSolutionCount] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("profile_stats") || "{}").solutionCount ?? 0; } catch { return 0; }
+  });
+  const [discussionCount, setDiscussionCount] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("profile_stats") || "{}").discussionCount ?? 0; } catch { return 0; }
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -102,6 +106,7 @@ export default function ProfilePage() {
         if (sig.aborted || !res.data) return;
         setSolutionCount(res.data.solution_count);
         setDiscussionCount(res.data.discussion_count);
+        try { sessionStorage.setItem("profile_stats", JSON.stringify({ solutionCount: res.data.solution_count, discussionCount: res.data.discussion_count })); } catch {}
       })
       .catch(() => {});
 

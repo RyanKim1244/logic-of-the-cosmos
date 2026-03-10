@@ -23,9 +23,15 @@ export default function PublicProfilePage({
   const router = useRouter();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [solvedCount, setSolvedCount] = useState(0);
-  const [solutionCount, setSolutionCount] = useState(0);
-  const [discussionCount, setDiscussionCount] = useState(0);
+  const [solvedCount, setSolvedCount] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(`pub_stats_${id}`) || "{}").solvedCount ?? 0; } catch { return 0; }
+  });
+  const [solutionCount, setSolutionCount] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(`pub_stats_${id}`) || "{}").solutionCount ?? 0; } catch { return 0; }
+  });
+  const [discussionCount, setDiscussionCount] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(`pub_stats_${id}`) || "{}").discussionCount ?? 0; } catch { return 0; }
+  });
 
   // Redirect to own profile page if viewing self
   useEffect(() => {
@@ -51,6 +57,7 @@ export default function PublicProfilePage({
         setSolvedCount(res.data.solved_count);
         setSolutionCount(res.data.solution_count);
         setDiscussionCount(res.data.discussion_count);
+        try { sessionStorage.setItem(`pub_stats_${id}`, JSON.stringify({ solvedCount: res.data.solved_count, solutionCount: res.data.solution_count, discussionCount: res.data.discussion_count })); } catch {}
       })
       .catch(() => {});
 
