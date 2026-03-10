@@ -70,6 +70,7 @@ export interface Database {
           author_name: string;
           content: string;
           parent_id: string | null;
+          is_solution: boolean;
           created_at: string;
         };
         Insert: {
@@ -79,6 +80,7 @@ export interface Database {
           author_name: string;
           content: string;
           parent_id?: string | null;
+          is_solution?: boolean;
           created_at?: string;
         };
         Update: {
