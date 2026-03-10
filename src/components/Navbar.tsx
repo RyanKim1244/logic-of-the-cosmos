@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import SearchModal from "@/components/SearchModal";
 import Logo from "@/components/Logo";
+
+const SearchModal = dynamic(() => import("@/components/SearchModal"), {
+  ssr: false,
+});
 
 export default function Navbar() {
   const { user, loading } = useAuth();

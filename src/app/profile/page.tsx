@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
-import ContributionHeatmap from "@/components/ContributionHeatmap";
+
+const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
+  ssr: false,
+  loading: () => <div className="border border-neutral-200 p-6 h-48 animate-pulse bg-neutral-50" />,
+});
 
 interface ProblemSummary {
   id: string;

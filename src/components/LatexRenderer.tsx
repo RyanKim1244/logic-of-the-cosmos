@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, memo } from "react";
-import DOMPurify from "dompurify";
+import { useEffect, useRef, useState, memo, useMemo } from "react";
 
 declare global {
   interface Window {
@@ -14,6 +13,23 @@ declare global {
     };
   }
 }
+
+// Lazy-loaded DOMPurify — avoids loading the ~15KB library until first render
+let purifyInstance: typeof import("dompurify").default | null = null;
+let purifyPromise: Promise<typeof import("dompurify").default> | null = null;
+
+function getPurify(): Promise<typeof import("dompurify").default> {
+  if (purifyInstance) return Promise.resolve(purifyInstance);
+  if (!purifyPromise) {
+    purifyPromise = import("dompurify").then((mod) => {
+      purifyInstance = mod.default;
+      return purifyInstance;
+    });
+  }
+  return purifyPromise;
+}
+
+const PURIFY_OPTIONS = { ADD_TAGS: ["figure", "figcaption", "u"], ADD_ATTR: ["class"] };
 
 function formatContent(text: string): string {
   const mathBlocks: string[] = [];
@@ -105,10 +121,24 @@ function formatContent(text: string): string {
 
 function LatexRendererInner({ content }: { content: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [sanitizedHtml, setSanitizedHtml] = useState<string | null>(null);
+
+  const formattedHtml = useMemo(() => formatContent(content), [content]);
+
+  // Load DOMPurify lazily and sanitize
+  useEffect(() => {
+    let cancelled = false;
+    getPurify().then((purify) => {
+      if (!cancelled) {
+        setSanitizedHtml(purify.sanitize(formattedHtml, PURIFY_OPTIONS));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [formattedHtml]);
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !window.MathJax) return;
+    if (!el || !window.MathJax || sanitizedHtml === null) return;
 
     const doTypeset = () => {
       window.MathJax?.typesetClear?.([el]);
@@ -120,13 +150,17 @@ function LatexRendererInner({ content }: { content: string }) {
     } else {
       doTypeset();
     }
-  }, [content]);
+  }, [sanitizedHtml]);
+
+  if (sanitizedHtml === null) {
+    return <div className="latex-content prose prose-sm max-w-none animate-pulse h-8 bg-neutral-100 rounded" />;
+  }
 
   return (
     <div
       ref={containerRef}
       className="latex-content prose prose-sm max-w-none"
-      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatContent(content), { ADD_TAGS: ["figure", "figcaption", "u"], ADD_ATTR: ["class"] }) }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );
 }

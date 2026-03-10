@@ -80,13 +80,16 @@ export default function Home() {
       try {
         const sig = controller.signal;
 
+        // All queries in a single parallel batch — no waterfalls
         const results = await Promise.allSettled([
-          withRetry(() => withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 8000, sig), 1, 800, sig),
-          withRetry(() => withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 8000, sig), 1, 800, sig),
-          withRetry(() => withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), 8000, sig), 1, 800, sig),
-          withRetry(() => withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), 8000, sig), 1, 800, sig),
-          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), 8000, sig), 1, 800, sig),
-          withRetry(() => withTimeout(supabase.from("discussions").select("author_name"), 8000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("problems").select("*").order("created_at", { ascending: false }).limit(3), 6000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("contests").select("id, name, short_name, years").limit(4), 6000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("problems").select("*", { count: "exact", head: true }), 6000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("contests").select("*", { count: "exact", head: true }), 6000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("discussions").select("*", { count: "exact", head: true }), 6000, sig), 1, 800, sig),
+          withRetry(() => withTimeout(supabase.from("discussions").select("author_name"), 6000, sig), 1, 800, sig),
+          // Fetch problem sources in parallel (no more waterfall)
+          withRetry(() => withTimeout(supabase.from("problems").select("source"), 6000, sig), 1, 800, sig),
         ]);
 
         if (controller.signal.aborted) return;
@@ -97,18 +100,20 @@ export default function Home() {
         const contestCountRes = results[3].status === "fulfilled" ? results[3].value : null;
         const discussionCountRes = results[4].status === "fulfilled" ? results[4].value : null;
         const authorDataRes = results[5].status === "fulfilled" ? results[5].value : null;
+        const problemSourcesRes = results[6].status === "fulfilled" ? results[6].value : null;
 
         // Only update state if we got real data — never overwrite good data with empty
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        let mappedProblems: Problem[] | undefined;
         if (problemsRes?.data && problemsRes.data.length > 0) {
-          /* eslint-disable @typescript-eslint/no-explicit-any */
-          const mapped: Problem[] = (problemsRes.data as any[]).map((p) => ({
+          mappedProblems = (problemsRes.data as any[]).map((p) => ({
             id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
             year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
             createdAt: p.created_at, updatedAt: p.updated_at,
           }));
           /* eslint-enable @typescript-eslint/no-explicit-any */
-          setRecentProblems(mapped);
-          setCache("homeRecentProblems", mapped);
+          setRecentProblems(mappedProblems);
+          setCache("homeRecentProblems", mappedProblems);
         }
 
         if (contestsRes?.data && contestsRes.data.length > 0) {
@@ -123,41 +128,24 @@ export default function Home() {
           discussions: discussionCountRes?.count ?? 0,
           authors: uniqueAuthors,
         };
-        // Only update stats if at least one value is non-zero (don't overwrite with failed data)
         if (newStats.problems > 0 || newStats.contests > 0 || newStats.discussions > 0) {
           setStats(newStats);
           setCache("homeStats", newStats);
         }
 
-        // Problem counts per contest
+        // Problem counts per contest — computed from already-fetched sources
         let newCounts: Record<string, number> = {};
-        if (contestsRes?.data && contestsRes.data.length > 0) {
-          try {
-            const { data: allProblems } = await withTimeout(
-              supabase.from("problems").select("source"), 8000, sig
-            );
-            if (controller.signal.aborted) return;
-            if (allProblems && allProblems.length > 0) {
-              for (const c of contestsRes.data) {
-                newCounts[c.id] = allProblems.filter((p: { source: string }) => p.source.toLowerCase().includes(c.short_name.toLowerCase())).length;
-              }
-              setProblemCounts(newCounts);
-              setCache("homeProblemCounts", newCounts);
-            }
-          } catch {
-            // Problem counts are non-critical; skip silently
+        if (contestsRes?.data && contestsRes.data.length > 0 && problemSourcesRes?.data && problemSourcesRes.data.length > 0) {
+          const allSources = problemSourcesRes.data;
+          for (const c of contestsRes.data) {
+            const shortLower = c.short_name.toLowerCase();
+            newCounts[c.id] = allSources.filter((p: { source: string }) => p.source.toLowerCase().includes(shortLower)).length;
           }
+          setProblemCounts(newCounts);
+          setCache("homeProblemCounts", newCounts);
         }
 
         // Persist to localStorage for instant restore on next refresh
-        const mappedProblems = problemsRes?.data && problemsRes.data.length > 0
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ? (problemsRes.data as any[]).map((p) => ({
-              id: p.id, problemNumber: p.problem_number, title: p.title, source: p.source,
-              year: p.year, tags: p.tags, content: p.content, officialSolution: p.official_solution,
-              createdAt: p.created_at, updatedAt: p.updated_at,
-            }))
-          : undefined;
         saveHomeCache({
           problems: mappedProblems || localCache?.problems || [],
           contests: contestsRes?.data && contestsRes.data.length > 0 ? contestsRes.data : localCache?.contests || [],

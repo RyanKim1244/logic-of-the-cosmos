@@ -1,12 +1,14 @@
-export default function HeroBackground() {
+import { memo } from "react";
+
+function HeroBackgroundInner() {
   return (
     <svg
       className="absolute inset-0 w-full h-full"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
     >
       <defs>
-        {/* Radial gradients for nebula glow */}
         <radialGradient id="nebula1" cx="30%" cy="40%" r="50%">
           <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.12" />
           <stop offset="50%" stopColor="#6366f1" stopOpacity="0.05" />
@@ -21,31 +23,18 @@ export default function HeroBackground() {
           <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.06" />
           <stop offset="100%" stopColor="transparent" stopOpacity="0" />
         </radialGradient>
-
-        {/* Star glow filter */}
-        <filter id="starGlow">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        {/* Orbit path */}
-        <filter id="orbitGlow">
-          <feGaussianBlur stdDeviation="0.5" />
-        </filter>
+        <linearGradient id="shootingStar" x1="100%" y1="0%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="white" stopOpacity="0" />
+          <stop offset="100%" stopColor="white" stopOpacity="0.8" />
+        </linearGradient>
       </defs>
-
-      {/* Deep space background */}
-      <rect width="100%" height="100%" fill="url(#spaceGrad)" />
 
       {/* Nebula layers */}
       <rect width="100%" height="100%" fill="url(#nebula1)" />
       <rect width="100%" height="100%" fill="url(#nebula2)" />
       <rect width="100%" height="100%" fill="url(#nebula3)" />
 
-      {/* Grid lines - subtle cosmic grid */}
+      {/* Grid lines */}
       <g stroke="rgba(255,255,255,0.02)" strokeWidth="0.5">
         <line x1="25%" y1="0" x2="25%" y2="100%" />
         <line x1="50%" y1="0" x2="50%" y2="100%" />
@@ -55,7 +44,7 @@ export default function HeroBackground() {
         <line x1="0" y1="75%" x2="100%" y2="75%" />
       </g>
 
-      {/* Constellation-like connected stars */}
+      {/* Constellation paths */}
       <g stroke="rgba(147,197,253,0.08)" strokeWidth="0.5" fill="none">
         <path d="M 15% 20% L 22% 35% L 35% 28% L 28% 15% Z" />
         <path d="M 60% 15% L 72% 25% L 80% 18%" />
@@ -63,8 +52,8 @@ export default function HeroBackground() {
         <path d="M 75% 55% L 85% 45% L 90% 60%" />
       </g>
 
-      {/* Static bright stars */}
-      <g filter="url(#starGlow)">
+      {/* Bright stars */}
+      <g>
         <circle cx="12%" cy="18%" r="1.5" fill="white" opacity="0.7" />
         <circle cx="88%" cy="12%" r="1.2" fill="white" opacity="0.6" />
         <circle cx="45%" cy="8%" r="1" fill="#93c5fd" opacity="0.8" />
@@ -105,65 +94,26 @@ export default function HeroBackground() {
         <circle cx="85%" cy="38%" r="0.3" fill="white" />
       </g>
 
-      {/* Animated twinkling stars */}
-      <g filter="url(#starGlow)">
-        <circle cx="22%" cy="22%" r="1" fill="white" opacity="0.6">
-          <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="78%" cy="32%" r="0.8" fill="#93c5fd" opacity="0.5">
-          <animate attributeName="opacity" values="0.5;0.15;0.5" dur="4s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="55%" cy="75%" r="0.9" fill="white" opacity="0.4">
-          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3.5s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="35%" cy="55%" r="0.7" fill="#c4b5fd" opacity="0.5">
-          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="5s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="85%" cy="65%" r="1" fill="white" opacity="0.3">
-          <animate attributeName="opacity" values="0.3;0.08;0.3" dur="4.5s" repeatCount="indefinite" />
-        </circle>
+      {/* Twinkling stars - CSS animation via class is more performant than SMIL */}
+      <g className="hero-twinkle-stars">
+        <circle cx="22%" cy="22%" r="1" fill="white" className="hero-twinkle-1" />
+        <circle cx="78%" cy="32%" r="0.8" fill="#93c5fd" className="hero-twinkle-2" />
+        <circle cx="55%" cy="75%" r="0.9" fill="white" className="hero-twinkle-3" />
+        <circle cx="35%" cy="55%" r="0.7" fill="#c4b5fd" className="hero-twinkle-1" />
+        <circle cx="85%" cy="65%" r="1" fill="white" className="hero-twinkle-2" />
       </g>
 
       {/* Orbit ellipses */}
-      <g fill="none" strokeWidth="0.5">
-        <ellipse cx="50%" cy="50%" rx="30%" ry="20%" stroke="rgba(147,197,253,0.06)" transform="rotate(-15, 50%, 50%)">
-          <animateTransform attributeName="transform" type="rotate" from="0 50% 50%" to="360 50% 50%" dur="120s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="50%" cy="50%" rx="22%" ry="15%" stroke="rgba(196,181,253,0.04)" transform="rotate(30, 50%, 50%)">
-          <animateTransform attributeName="transform" type="rotate" from="360 50% 50%" to="0 50% 50%" dur="90s" repeatCount="indefinite" />
-        </ellipse>
+      <g fill="none" strokeWidth="0.5" className="hero-orbits">
+        <ellipse cx="50%" cy="50%" rx="30%" ry="20%" stroke="rgba(147,197,253,0.06)" className="hero-orbit-1" />
+        <ellipse cx="50%" cy="50%" rx="22%" ry="15%" stroke="rgba(196,181,253,0.04)" className="hero-orbit-2" />
       </g>
 
-      {/* Orbiting dots */}
-      <circle r="2.5" fill="rgba(147,197,253,0.4)">
-        <animateMotion dur="120s" repeatCount="indefinite">
-          <mpath xlinkHref="#orbitPath1" />
-        </animateMotion>
-      </circle>
-      <circle r="2" fill="rgba(196,181,253,0.3)">
-        <animateMotion dur="90s" repeatCount="indefinite">
-          <mpath xlinkHref="#orbitPath2" />
-        </animateMotion>
-      </circle>
-
-      {/* Hidden orbit paths for animateMotion */}
-      <defs>
-        <ellipse id="orbitPath1" cx="50%" cy="50%" rx="30%" ry="20%" transform="rotate(-15)" />
-        <ellipse id="orbitPath2" cx="50%" cy="50%" rx="22%" ry="15%" transform="rotate(30)" />
-      </defs>
-
       {/* Shooting star */}
-      <line x1="0" y1="0" x2="-60" y2="25" stroke="url(#shootingStar)" strokeWidth="1.5" opacity="0">
-        <animate attributeName="opacity" values="0;0;0;0;0.8;0" dur="8s" repeatCount="indefinite" />
-        <animateTransform attributeName="transform" type="translate" values="400,50;100,175" dur="8s" repeatCount="indefinite" />
-      </line>
-
-      <defs>
-        <linearGradient id="shootingStar" x1="100%" y1="0%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="white" stopOpacity="0" />
-          <stop offset="100%" stopColor="white" stopOpacity="0.8" />
-        </linearGradient>
-      </defs>
+      <line x1="0" y1="0" x2="-60" y2="25" stroke="url(#shootingStar)" strokeWidth="1.5" className="hero-shooting-star" />
     </svg>
   );
 }
+
+const HeroBackground = memo(HeroBackgroundInner);
+export default HeroBackground;
