@@ -13,27 +13,37 @@ export default function ProblemsPage() {
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
   const PER_PAGE = 20;
 
   useEffect(() => {
     async function fetchProblems() {
-      const { data } = await supabase
-        .from("problems")
-        .select("*")
-        .order("problem_number", { ascending: true });
-      if (data) {
-        setProblems(data.map((p) => ({
-          id: p.id,
-          problemNumber: p.problem_number,
-          title: p.title,
-          source: p.source,
-          year: p.year,
-          tags: p.tags,
-          content: p.content,
-          officialSolution: p.official_solution,
-          createdAt: p.created_at,
-          updatedAt: p.updated_at,
-        })));
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("problems")
+          .select("*")
+          .order("problem_number", { ascending: true });
+        if (fetchError) {
+          setError("문제 목록을 불러오는 데 실패했습니다.");
+          setLoading(false);
+          return;
+        }
+        if (data) {
+          setProblems(data.map((p) => ({
+            id: p.id,
+            problemNumber: p.problem_number,
+            title: p.title,
+            source: p.source,
+            year: p.year,
+            tags: p.tags,
+            content: p.content,
+            officialSolution: p.official_solution,
+            createdAt: p.created_at,
+            updatedAt: p.updated_at,
+          })));
+        }
+      } catch {
+        setError("문제 목록을 불러오는 데 실패했습니다.");
       }
       setLoading(false);
     }
@@ -72,6 +82,17 @@ export default function ProblemsPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <p className="text-neutral-400 text-center py-20 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-20">
+          <p className="text-red-500 text-sm mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+        </div>
       </div>
     );
   }

@@ -83,62 +83,71 @@ export default function ProfilePage() {
   const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>([]);
   const [solveHistory, setSolveHistory] = useState<SolveRecord[]>([]);
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProblems() {
       if (!user) return;
 
-      if (user.bookmarkedProblems.length > 0) {
-        const { data } = await supabase
-          .from("problems")
-          .select("id, title, source")
-          .in("id", user.bookmarkedProblems);
-        if (data) setBookmarkedProblems(data);
-      }
-
-      if (user.solvedProblems.length > 0) {
-        const { data } = await supabase
-          .from("problems")
-          .select("id, title, source")
-          .in("id", user.solvedProblems);
-        if (data) setSolvedProblems(data);
-      }
-
-      // Fetch solve history with dates
-      const { data: solveData } = await supabase
-        .from("user_solved_problems")
-        .select("problem_id, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (solveData) {
-        setSolvedDates(solveData.map((s) => s.created_at));
-
-        // Fetch problem details for history
-        const problemIds = solveData.map((s) => s.problem_id);
-        if (problemIds.length > 0) {
-          const { data: problemDetails } = await supabase
+      try {
+        if (user.bookmarkedProblems.length > 0) {
+          const { data, error } = await supabase
             .from("problems")
             .select("id, title, source")
-            .in("id", problemIds);
+            .in("id", user.bookmarkedProblems);
+          if (error) { setFetchError("북마크 데이터를 불러오는 데 실패했습니다."); return; }
+          if (data) setBookmarkedProblems(data);
+        }
 
-          if (problemDetails) {
-            const detailMap = new Map(problemDetails.map((p) => [p.id, p]));
-            const history: SolveRecord[] = solveData
-              .map((s) => {
-                const detail = detailMap.get(s.problem_id);
-                if (!detail) return null;
-                return {
-                  problem_id: s.problem_id,
-                  created_at: s.created_at,
-                  title: detail.title,
-                  source: detail.source,
-                };
-              })
-              .filter((r): r is SolveRecord => r !== null);
-            setSolveHistory(history);
+        if (user.solvedProblems.length > 0) {
+          const { data, error } = await supabase
+            .from("problems")
+            .select("id, title, source")
+            .in("id", user.solvedProblems);
+          if (error) { setFetchError("풀이 데이터를 불러오는 데 실패했습니다."); return; }
+          if (data) setSolvedProblems(data);
+        }
+
+        // Fetch solve history with dates
+        const { data: solveData, error: solveError } = await supabase
+          .from("user_solved_problems")
+          .select("problem_id, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (solveError) { setFetchError("풀이 기록을 불러오는 데 실패했습니다."); return; }
+
+        if (solveData) {
+          setSolvedDates(solveData.map((s) => s.created_at));
+
+          // Fetch problem details for history
+          const problemIds = solveData.map((s) => s.problem_id);
+          if (problemIds.length > 0) {
+            const { data: problemDetails } = await supabase
+              .from("problems")
+              .select("id, title, source")
+              .in("id", problemIds);
+
+            if (problemDetails) {
+              const detailMap = new Map(problemDetails.map((p) => [p.id, p]));
+              const history: SolveRecord[] = solveData
+                .map((s) => {
+                  const detail = detailMap.get(s.problem_id);
+                  if (!detail) return null;
+                  return {
+                    problem_id: s.problem_id,
+                    created_at: s.created_at,
+                    title: detail.title,
+                    source: detail.source,
+                  };
+                })
+                .filter((r): r is SolveRecord => r !== null);
+              setSolveHistory(history);
+            }
           }
         }
+      } catch {
+        setFetchError("프로필 데이터를 불러오는 데 실패했습니다.");
       }
     }
     fetchProblems();
@@ -148,6 +157,15 @@ export default function ProfilePage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <p className="text-neutral-400 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+        <p className="text-red-500 text-sm mb-4">{fetchError}</p>
+        <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
       </div>
     );
   }

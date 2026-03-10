@@ -76,14 +76,27 @@ export default function AdminPage() {
   const [editingContestId, setEditingContestId] = useState<string | null>(null);
   const [contestForm, setContestForm] = useState<ContestFormData>(emptyContestForm);
   const [allContests, setAllContests] = useState<ContestRow[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
-      const { data: problems } = await supabase.from("problems").select("*").order("problem_number");
-      if (problems) setAllProblems(problems);
+      try {
+        const { data: problems, error: pErr } = await supabase.from("problems").select("*").order("problem_number");
+        if (pErr) {
+          setFetchError("문제 데이터를 불러오는 데 실패했습니다.");
+          return;
+        }
+        if (problems) setAllProblems(problems);
 
-      const { data: contests } = await supabase.from("contests").select("*");
-      if (contests) setAllContests(contests);
+        const { data: contests, error: cErr } = await supabase.from("contests").select("*");
+        if (cErr) {
+          setFetchError("대회 데이터를 불러오는 데 실패했습니다.");
+          return;
+        }
+        if (contests) setAllContests(contests);
+      } catch {
+        setFetchError("데이터를 불러오는 데 실패했습니다.");
+      }
     }
     if (user?.is_admin) fetchData();
   }, [user]);
@@ -184,6 +197,15 @@ export default function AdminPage() {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <p className="text-neutral-400 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <p className="text-red-500 text-sm mb-4">{fetchError}</p>
+        <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
       </div>
     );
   }

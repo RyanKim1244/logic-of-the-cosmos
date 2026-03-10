@@ -29,25 +29,36 @@ export default function CommunityPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [newTags, setNewTags] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTopics() {
-      const { data: topics } = await supabase
-        .from("topics")
-        .select("*")
-        .order("created_at", { ascending: false });
+      try {
+        const { data: topics, error: fetchError } = await supabase
+          .from("topics")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-      if (topics) {
-        setAllTopics(topics);
-        const counts: Record<string, number> = {};
-        for (const topic of topics) {
-          const { count } = await supabase
-            .from("topic_comments")
-            .select("*", { count: "exact", head: true })
-            .eq("topic_id", topic.id);
-          counts[topic.id] = count || 0;
+        if (fetchError) {
+          setError("토픽을 불러오는 데 실패했습니다.");
+          setLoadingTopics(false);
+          return;
         }
-        setCommentCounts(counts);
+
+        if (topics) {
+          setAllTopics(topics);
+          const counts: Record<string, number> = {};
+          for (const topic of topics) {
+            const { count } = await supabase
+              .from("topic_comments")
+              .select("*", { count: "exact", head: true })
+              .eq("topic_id", topic.id);
+            counts[topic.id] = count || 0;
+          }
+          setCommentCounts(counts);
+        }
+      } catch {
+        setError("토픽을 불러오는 데 실패했습니다.");
       }
       setLoadingTopics(false);
     }
@@ -116,6 +127,17 @@ export default function CommunityPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <p className="text-neutral-400 text-center py-20 text-sm">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-20">
+          <p className="text-red-500 text-sm mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+        </div>
       </div>
     );
   }
