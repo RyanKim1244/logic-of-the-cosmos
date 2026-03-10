@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, memo } from "react";
+import DOMPurify from "dompurify";
 
 declare global {
   interface Window {
@@ -118,7 +119,7 @@ function LatexRendererInner({ content }: { content: string }) {
     <div
       ref={containerRef}
       className="latex-content prose prose-lg max-w-none"
-      dangerouslySetInnerHTML={{ __html: formatContent(content) }}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatContent(content), { ADD_TAGS: ["figure", "figcaption"], ADD_ATTR: ["class"] }) }}
     />
   );
 }

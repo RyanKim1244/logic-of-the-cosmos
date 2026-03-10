@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import { problems } from "@/data/problems";
 import { contests as contestsData } from "@/data/contests";
 import { Problem, Contest } from "@/types";
@@ -42,6 +44,7 @@ const emptyContestForm: ContestFormData = {
 };
 
 export default function AdminPage() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("problems");
 
   // Problem state
@@ -184,6 +187,18 @@ export default function AdminPage() {
   const inputClass = "w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors";
   const labelClass = "block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider";
 
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <h1 className="text-xl font-light text-black mb-4">로그인이 필요합니다</h1>
+        <p className="text-sm text-neutral-400 mb-6">관리자 패널에 접근하려면 로그인해주세요.</p>
+        <Link href="/login" className="px-6 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">
+          로그인
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-3xl font-light text-black mb-8">관리자 패널</h1>
@@ -229,17 +244,17 @@ export default function AdminPage() {
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
                     <label className={labelClass}>제목</label>
-                    <input type="text" required value={problemForm.title} onChange={(e) => setProblemForm({ ...problemForm, title: e.target.value })} className={inputClass} placeholder="문제 제목" />
+                    <input type="text" required maxLength={200} value={problemForm.title} onChange={(e) => setProblemForm({ ...problemForm, title: e.target.value })} className={inputClass} placeholder="문제 제목" />
                   </div>
                   <div>
                     <label className={labelClass}>출처</label>
-                    <input type="text" required value={problemForm.source} onChange={(e) => setProblemForm({ ...problemForm, source: e.target.value })} className={inputClass} placeholder="예: IPhO 2023, KPhO 2022" />
+                    <input type="text" required maxLength={100} value={problemForm.source} onChange={(e) => setProblemForm({ ...problemForm, source: e.target.value })} className={inputClass} placeholder="예: IPhO 2023, KPhO 2022" />
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
                     <label className={labelClass}>연도</label>
-                    <input type="number" required value={problemForm.year} onChange={(e) => setProblemForm({ ...problemForm, year: parseInt(e.target.value) })} className={inputClass} />
+                    <input type="number" required min={1900} max={2100} value={problemForm.year} onChange={(e) => setProblemForm({ ...problemForm, year: parseInt(e.target.value) })} className={inputClass} />
                   </div>
                   <div>
                     <label className={labelClass}>태그 (쉼표로 구분)</label>
@@ -318,11 +333,11 @@ export default function AdminPage() {
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
                     <label className={labelClass}>대회명</label>
-                    <input type="text" required value={contestForm.name} onChange={(e) => setContestForm({ ...contestForm, name: e.target.value })} className={inputClass} placeholder="예: International Physics Olympiad" />
+                    <input type="text" required maxLength={200} value={contestForm.name} onChange={(e) => setContestForm({ ...contestForm, name: e.target.value })} className={inputClass} placeholder="예: International Physics Olympiad" />
                   </div>
                   <div>
                     <label className={labelClass}>약칭</label>
-                    <input type="text" required value={contestForm.shortName} onChange={(e) => setContestForm({ ...contestForm, shortName: e.target.value })} className={inputClass} placeholder="예: IPhO" />
+                    <input type="text" required maxLength={20} value={contestForm.shortName} onChange={(e) => setContestForm({ ...contestForm, shortName: e.target.value })} className={inputClass} placeholder="예: IPhO" />
                   </div>
                 </div>
                 <div>
@@ -332,7 +347,7 @@ export default function AdminPage() {
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
                     <label className={labelClass}>공식 웹사이트 (선택)</label>
-                    <input type="text" value={contestForm.website} onChange={(e) => setContestForm({ ...contestForm, website: e.target.value })} className={inputClass} placeholder="https://..." />
+                    <input type="url" value={contestForm.website} onChange={(e) => setContestForm({ ...contestForm, website: e.target.value })} className={inputClass} placeholder="https://..." />
                   </div>
                   <div>
                     <label className={labelClass}>연도 (쉼표로 구분)</label>
