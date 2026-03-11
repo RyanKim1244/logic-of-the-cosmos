@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Problem } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { getDisplayText } from "@/lib/multilang";
 
 export default function ProblemCard({ problem, solvedCount = 0 }: { problem: Problem; solvedCount?: number }) {
   const { user } = useAuth();
@@ -37,7 +38,7 @@ export default function ProblemCard({ problem, solvedCount = 0 }: { problem: Pro
         <div className="flex-1">
           <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
           <h3 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 mt-1">
-            {problem.title}
+            {getDisplayText(problem.title)}
           </h3>
         </div>
 
