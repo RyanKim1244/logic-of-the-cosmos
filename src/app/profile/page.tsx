@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
+import { getCached, setCache, isCacheStale } from "@/lib/cache";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
   ssr: false,
@@ -84,69 +85,148 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
-  const [bookmarkedProblems, setBookmarkedProblems] = useState<ProblemSummary[]>([]);
-  const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>([]);
-  const [solveHistory, setSolveHistory] = useState<SolveRecord[]>([]);
-  const [solvedDates, setSolvedDates] = useState<string[]>([]);
-  const [solutionCount, setSolutionCount] = useState(0);
-  const [discussionCount, setDiscussionCount] = useState(0);
+  const [bookmarkedProblems, setBookmarkedProblems] = useState<ProblemSummary[]>(
+    () => getCached<ProblemSummary[]>("profile_bookmarked", true) ?? []
+  );
+  const [solvedProblems, setSolvedProblems] = useState<ProblemSummary[]>(
+    () => getCached<ProblemSummary[]>("profile_solved", true) ?? []
+  );
+  const [solveHistory, setSolveHistory] = useState<SolveRecord[]>(
+    () => getCached<SolveRecord[]>("profile_history", true) ?? []
+  );
+  const [solvedDates, setSolvedDates] = useState<string[]>(
+    () => getCached<string[]>("profile_dates", true) ?? []
+  );
+  const [solutionCount, setSolutionCount] = useState(
+    () => getCached<number>("profile_solutionCount", true) ?? 0
+  );
+  const [discussionCount, setDiscussionCount] = useState(
+    () => getCached<number>("profile_discussionCount", true) ?? 0
+  );
 
   useEffect(() => {
     if (!user) return;
-    const controller = new AbortController();
-    const sig = controller.signal;
+    const currentUser = user;
+    let controller = new AbortController();
 
-    // Stats from pre-aggregated user_stats table (single row read — fast)
-    withRetry(() => withTimeout(supabase.from("user_stats").select("solution_count, discussion_count").eq("user_id", user.id).single(), 4000, sig), 1, 500, sig)
-      .then((res) => {
-        if (sig.aborted || !res.data) return;
-        setSolutionCount(res.data.solution_count);
-        setDiscussionCount(res.data.discussion_count);
-      })
-      .catch(() => {});
+    async function fetchAll(sig: AbortSignal) {
+      // Skip if all caches are fresh
+      const allFresh = !isCacheStale("profile_stats") && !isCacheStale("profile_details") && !isCacheStale("profile_history");
+      if (allFresh) return;
 
-    // Bookmarked problems (for list display)
-    if (user.bookmarkedProblems.length > 0) {
-      withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.bookmarkedProblems), 6000, sig), 1, 1000, sig)
-        .then((res) => { if (!sig.aborted && res.data) setBookmarkedProblems(res.data); })
-        .catch(() => {});
+      // Combine all needed problem IDs into one set to avoid duplicate queries
+      const allProblemIds = [...new Set([...currentUser.bookmarkedProblems, ...currentUser.solvedProblems])];
+
+      // All queries in parallel — no waterfall
+      const [statsRes, detailsRes, historyRes, heatmapRes] = await Promise.allSettled([
+        // 1. Stats (single row)
+        withRetry(() => withTimeout(
+          supabase.from("user_stats").select("solution_count, discussion_count").eq("user_id", currentUser.id).single(),
+          4000, sig
+        ), 1, 500, sig),
+        // 2. Problem details for bookmarks + solved (one combined query)
+        allProblemIds.length > 0
+          ? withRetry(() => withTimeout(
+              supabase.from("problems").select("id, title, source").in("id", allProblemIds),
+              6000, sig
+            ), 1, 1000, sig)
+          : Promise.resolve({ data: [] as ProblemSummary[], error: null }),
+        // 3. Solve history (for timeline display)
+        withRetry(() => withTimeout(
+          supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+          6000, sig
+        ), 1, 1000, sig),
+        // 4. Heatmap — server-side aggregation via RPC (returns ~180 rows max instead of N)
+        withTimeout(
+          supabase.rpc("get_solve_heatmap", { p_user_id: currentUser.id, p_days: 183 }),
+          4000, sig
+        ),
+      ]);
+
+      if (sig.aborted) return;
+
+      // Process stats
+      if (statsRes.status === "fulfilled" && statsRes.value.data) {
+        const { solution_count, discussion_count } = statsRes.value.data;
+        setSolutionCount(solution_count);
+        setDiscussionCount(discussion_count);
+        setCache("profile_solutionCount", solution_count);
+        setCache("profile_discussionCount", discussion_count);
+        setCache("profile_stats", true);
+      }
+
+      // Process problem details — split into bookmarked and solved lists
+      let detailMap: Map<string, ProblemSummary> | null = null;
+      if (detailsRes.status === "fulfilled" && detailsRes.value.data) {
+        const details = detailsRes.value.data as ProblemSummary[];
+        detailMap = new Map(details.map((p) => [p.id, p]));
+
+        const bookmarked = currentUser.bookmarkedProblems.map((id) => detailMap!.get(id)).filter((p): p is ProblemSummary => !!p);
+        const solved = currentUser.solvedProblems.map((id) => detailMap!.get(id)).filter((p): p is ProblemSummary => !!p);
+        setBookmarkedProblems(bookmarked);
+        setSolvedProblems(solved);
+        setCache("profile_bookmarked", bookmarked);
+        setCache("profile_solved", solved);
+        setCache("profile_details", true);
+      }
+
+      // Process heatmap — prefer server-aggregated RPC, fallback to raw history
+      let heatmapDates: string[] | null = null;
+      if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
+        // RPC returns [{solve_date, solve_count}] — expand to individual date strings for heatmap
+        const rpcData = heatmapRes.value.data as { solve_date: string; solve_count: number }[];
+        const expanded: string[] = [];
+        for (const row of rpcData) {
+          for (let i = 0; i < row.solve_count; i++) {
+            expanded.push(row.solve_date);
+          }
+        }
+        heatmapDates = expanded;
+        setSolvedDates(expanded);
+        setCache("profile_dates", expanded);
+      }
+
+      // Process solve history + merge with problem details
+      if (historyRes.status === "fulfilled" && historyRes.value.data) {
+        const solveData = historyRes.value.data as { problem_id: string; created_at: string }[];
+
+        // Fallback: if RPC failed, use raw history dates for heatmap
+        if (!heatmapDates) {
+          const dates = solveData.map((s) => s.created_at);
+          setSolvedDates(dates);
+          setCache("profile_dates", dates);
+        }
+
+        if (detailMap) {
+          const history: SolveRecord[] = solveData
+            .map((s) => {
+              const detail = detailMap!.get(s.problem_id);
+              if (!detail) return null;
+              return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
+            })
+            .filter((r): r is SolveRecord => r !== null);
+          setSolveHistory(history);
+          setCache("profile_history", history);
+        }
+      }
     }
 
-    // Solved problems (for list display)
-    if (user.solvedProblems.length > 0) {
-      withRetry(() => withTimeout(supabase.from("problems").select("id, title, source").in("id", user.solvedProblems), 6000, sig), 1, 1000, sig)
-        .then((res) => { if (!sig.aborted && res.data) setSolvedProblems(res.data); })
-        .catch(() => {});
+    fetchAll(controller.signal).catch(() => {});
+
+    // Re-fetch when tab becomes visible
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        controller.abort();
+        controller = new AbortController();
+        fetchAll(controller.signal).catch(() => {});
+      }
     }
+    document.addEventListener("visibilitychange", handleVisibility);
 
-    // Solve history + problem details
-    withRetry(() => withTimeout(supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }), 6000, sig), 1, 1000, sig)
-      .then(async (res) => {
-        if (sig.aborted || !res.data) return;
-        const solveData = res.data as { problem_id: string; created_at: string }[];
-        setSolvedDates(solveData.map((s) => s.created_at));
-
-        const problemIds = solveData.map((s) => s.problem_id);
-        if (problemIds.length === 0) return;
-
-        const { data: problemDetails } = await withTimeout(
-          supabase.from("problems").select("id, title, source").in("id", problemIds), 5000, sig
-        );
-        if (sig.aborted || !problemDetails) return;
-
-        const detailMap = new Map(problemDetails.map((p) => [p.id, p]));
-        const history: SolveRecord[] = solveData
-          .map((s) => {
-            const detail = detailMap.get(s.problem_id);
-            if (!detail) return null;
-            return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
-          })
-          .filter((r): r is SolveRecord => r !== null);
-        setSolveHistory(history);
-      })
-      .catch(() => {});
-
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [user]);
 
   if (authLoading) {

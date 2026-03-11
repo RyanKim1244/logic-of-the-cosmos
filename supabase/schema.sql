@@ -249,4 +249,31 @@ create index if not exists idx_topic_comments_topic_id on topic_comments(topic_i
 create index if not exists idx_problems_source on problems(source);
 create index if not exists idx_problems_year on problems(year);
 create index if not exists idx_user_solved_problem_id on user_solved_problems(problem_id);
+create index if not exists idx_user_solved_created on user_solved_problems(user_id, created_at desc);
+create index if not exists idx_discussions_problem_solution on discussions(problem_id, is_solution);
+create index if not exists idx_topics_created_at on topics(created_at desc);
+create index if not exists idx_topic_comments_topic_created on topic_comments(topic_id, created_at);
 create index if not exists idx_solution_upvotes_solution_id on solution_upvotes(solution_id);
+
+-- ============================================
+-- RPC 함수
+-- ============================================
+
+-- 히트맵용 서버 집계 (날짜별 풀이 수)
+CREATE OR REPLACE FUNCTION public.get_solve_heatmap(
+  p_user_id UUID,
+  p_days INT DEFAULT 183
+)
+RETURNS TABLE(solve_date DATE, solve_count INT) AS $$
+BEGIN
+  RETURN QUERY
+    SELECT
+      (created_at AT TIME ZONE 'UTC')::date AS solve_date,
+      COUNT(*)::int AS solve_count
+    FROM user_solved_problems
+    WHERE user_id = p_user_id
+      AND created_at >= (NOW() - (p_days || ' days')::interval)
+    GROUP BY 1
+    ORDER BY 1;
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
