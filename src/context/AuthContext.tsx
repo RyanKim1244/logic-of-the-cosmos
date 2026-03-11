@@ -127,8 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // For all other events (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED),
-        // fetch fresh profile and update cache.
+        // TOKEN_REFRESHED only means a new access token was issued — the
+        // user profile hasn't changed, so skip the redundant fetchProfile.
+        // This prevents duplicate network requests on every token refresh.
+        if (event === "TOKEN_REFRESHED") return;
+
+        // For INITIAL_SESSION and SIGNED_IN, fetch fresh profile.
         if (session?.user) {
           try {
             const profile = await fetchProfile(session.user);
