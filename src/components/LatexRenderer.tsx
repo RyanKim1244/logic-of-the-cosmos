@@ -58,8 +58,8 @@ function formatContent(text: string): string {
   );
 
   // LaTeX text commands (outside math mode)
-  html = html.replace(/\\section\{([^}]+)\}/g, '<h2 class="text-lg font-bold mt-6 mb-2">$1</h2>');
-  html = html.replace(/\\subsection\{([^}]+)\}/g, '<h3 class="text-base font-semibold mt-4 mb-1">$1</h3>');
+  html = html.replace(/\\section\{([^}]+)\}/g, '<h2 class="text-base font-bold mt-6 mb-2">$1</h2>');
+  html = html.replace(/\\subsection\{([^}]+)\}/g, '<h3 class="text-sm font-semibold mt-4 mb-1">$1</h3>');
   html = html.replace(/\\textbf\{([^}]+)\}/g, "<strong>$1</strong>");
   html = html.replace(/\\textit\{([^}]+)\}/g, "<em>$1</em>");
   html = html.replace(/\\underline\{([^}]+)\}/g, '<u>$1</u>');
@@ -159,7 +159,7 @@ function LatexRendererInner({ content }: { content: string }) {
   return (
     <div
       ref={containerRef}
-      className="latex-content prose prose-sm max-w-none"
+      className="latex-content prose prose-sm max-w-none text-[13px]"
       dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );
