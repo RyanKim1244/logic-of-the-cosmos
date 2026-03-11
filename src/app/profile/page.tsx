@@ -104,48 +104,67 @@ export default function ProfilePage() {
     () => getCached<number>("profile_discussionCount", true) ?? 0
   );
 
-  // Use user.id as dependency instead of the full user object.
-  // The user object is recreated on every fetchProfile (new reference),
-  // which would re-trigger this effect even when nothing meaningful changed.
+  // Read userId from localStorage cache immediately — no need to wait for
+  // auth to complete. This lets us prefetch user-specific data in parallel
+  // with the auth flow instead of waiting for it to finish first.
   const userId = user?.id;
+  const cachedUserId = useState(() => {
+    try {
+      const raw = localStorage.getItem("lotc_profile_cache");
+      if (!raw) return null;
+      return (JSON.parse(raw) as { id?: string }).id ?? null;
+    } catch { return null; }
+  })[0];
+  const effectiveUserId = userId ?? cachedUserId;
+
   useEffect(() => {
-    if (!user || !userId) return;
-    const currentUser = user;
-    let controller = new AbortController();
+    if (!effectiveUserId) return;
+    const controller = new AbortController();
 
     async function fetchAll(sig: AbortSignal) {
       // Skip if all caches are fresh
       const allFresh = !isCacheStale("profile_stats") && !isCacheStale("profile_details") && !isCacheStale("profile_history");
       if (allFresh) return;
 
-      // Combine all needed problem IDs into one set to avoid duplicate queries
-      const allProblemIds = [...new Set([...currentUser.bookmarkedProblems, ...currentUser.solvedProblems])];
-
-      // All queries in parallel — no waterfall
-      const [statsRes, detailsRes, historyRes, heatmapRes] = await Promise.allSettled([
-        // 1. Stats (single row)
+      // Phase 1: Queries that only need userId — can start immediately,
+      // even before auth completes. These run in parallel with auth init.
+      const [statsRes, historyRes, heatmapRes] = await Promise.allSettled([
         withRetry(() => withTimeout(
-          supabase.from("user_stats").select("solution_count, discussion_count").eq("user_id", currentUser.id).single(),
+          supabase.from("user_stats").select("solution_count, discussion_count").eq("user_id", effectiveUserId).single(),
           4000, sig
         ), 1, 500, sig),
-        // 2. Problem details for bookmarks + solved (one combined query)
-        allProblemIds.length > 0
-          ? withRetry(() => withTimeout(
-              supabase.from("problems").select("id, title, source").in("id", allProblemIds),
-              6000, sig
-            ), 1, 1000, sig)
-          : Promise.resolve({ data: [] as ProblemSummary[], error: null }),
-        // 3. Solve history with timestamps (for timeline display)
         withRetry(() => withTimeout(
-          supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+          supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", effectiveUserId).order("created_at", { ascending: false }),
           6000, sig
         ), 1, 1000, sig),
-        // 4. Heatmap — server-side aggregation via RPC (returns ~180 rows max)
         withTimeout(
-          supabase.rpc("get_solve_heatmap", { p_user_id: currentUser.id, p_days: 183 }),
+          supabase.rpc("get_solve_heatmap", { p_user_id: effectiveUserId, p_days: 183 }),
           4000, sig
         ),
       ]);
+
+      if (sig.aborted) return;
+
+      // Phase 2: Problem details need bookmark/solved IDs from the user object.
+      // If user isn't ready yet (still loading from auth), use cached IDs.
+      const currentUser = user;
+      const cachedProfile = !currentUser ? (() => {
+        try {
+          const raw = localStorage.getItem("lotc_profile_cache");
+          return raw ? JSON.parse(raw) as { solvedProblems?: string[]; bookmarkedProblems?: string[] } : null;
+        } catch { return null; }
+      })() : null;
+
+      const solvedIds = currentUser?.solvedProblems ?? cachedProfile?.solvedProblems ?? [];
+      const bookmarkedIds = currentUser?.bookmarkedProblems ?? cachedProfile?.bookmarkedProblems ?? [];
+      const allProblemIds = [...new Set([...bookmarkedIds, ...solvedIds])];
+
+      const detailsRes = allProblemIds.length > 0
+        ? await withRetry(() => withTimeout(
+            supabase.from("problems").select("id, title, source").in("id", allProblemIds),
+            6000, sig
+          ), 1, 1000, sig).then(r => ({ status: "fulfilled" as const, value: r })).catch(() => ({ status: "rejected" as const, reason: undefined }))
+        : { status: "fulfilled" as const, value: { data: [] as ProblemSummary[], error: null } };
 
       if (sig.aborted) return;
 
@@ -165,8 +184,8 @@ export default function ProfilePage() {
         const details = detailsRes.value.data as ProblemSummary[];
         detailMap = new Map(details.map((p) => [p.id, p]));
 
-        const bookmarked = currentUser.bookmarkedProblems.map((id) => detailMap!.get(id)).filter((p): p is ProblemSummary => !!p);
-        const solved = currentUser.solvedProblems.map((id) => detailMap!.get(id)).filter((p): p is ProblemSummary => !!p);
+        const bookmarked = bookmarkedIds.map((id) => detailMap!.get(id)).filter((p): p is ProblemSummary => !!p);
+        const solved = solvedIds.map((id) => detailMap!.get(id)).filter((p): p is ProblemSummary => !!p);
         setBookmarkedProblems(bookmarked);
         setSolvedProblems(solved);
         setCache("profile_bookmarked", bookmarked);
@@ -215,15 +234,11 @@ export default function ProfilePage() {
 
     fetchAll(controller.signal).catch(() => {});
 
-    // No visibility re-fetch needed here — fetchAll already checks
-    // isCacheStale and skips if data is fresh. AuthContext handles
-    // session re-sync on tab focus with its own cooldown.
-
     return () => {
       controller.abort();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [effectiveUserId]);
 
   if (authLoading) {
     return (
