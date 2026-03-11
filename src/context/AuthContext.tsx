@@ -145,14 +145,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Mark loading done after INITIAL_SESSION is processed
         if (isMounted) setLoading(false);
+
+        // Start auto-refresh AFTER the initial session is fully processed.
+        // Calling it earlier (or outside the callback) races with
+        // onAuthStateChange's internal _initialize() for the same
+        // navigator lock, causing the "Lock not released within 5000ms" warning.
+        if (event === "INITIAL_SESSION") {
+          supabase.auth.startAutoRefresh();
+        }
       }
     );
-
-    // Use Supabase's built-in auto-refresh instead of manual getUser() polling.
-    // getUser() acquires the same navigator lock as onAuthStateChange's internal
-    // token refresh — running both causes lock contention and the
-    // "Lock not released within 5000ms" warning.
-    supabase.auth.startAutoRefresh();
 
     // When the tab becomes visible again after being idle, re-sync profile.
     // Use getSession() (local read, no lock) instead of getUser() (network + lock).
