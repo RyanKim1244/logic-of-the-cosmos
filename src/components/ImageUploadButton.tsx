@@ -26,7 +26,11 @@ export default function ImageUploadButton({ onInsert, className }: ImageUploadBu
       setError(result.error);
     } else {
       const alt = file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ");
-      onInsert(`![${alt}](${result.url})`);
+      const caption = prompt("캡션을 입력하세요 (선택사항):", "")?.trim() || "";
+      const markdown = caption
+        ? `![${alt}](${result.url} "${caption}")`
+        : `![${alt}](${result.url})`;
+      onInsert(markdown);
     }
 
     setUploading(false);

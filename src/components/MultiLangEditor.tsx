@@ -160,7 +160,7 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border border-neutral-300 bg-neutral-50">
         <ImageUploadButton onInsert={handleImageInsert} />
-        <span className="text-[10px] text-neutral-400 ml-auto">Markdown 이미지: ![설명](URL)</span>
+        <span className="text-[10px] text-neutral-400 ml-auto">이미지: ![설명](URL) · 캡션: ![설명](URL &quot;캡션&quot;)</span>
       </div>
 
       {langs.length > 1 && (
