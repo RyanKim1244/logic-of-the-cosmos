@@ -107,6 +107,23 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   // fetch profile stats/history directly from the browser.
   const [clientData, setClientData] = useState<ProfileData | null>(null);
 
+  // Debug: log data sources
+  useEffect(() => {
+    console.log("[Profile Debug] initialData:", initialData ? "provided" : "null");
+    console.log("[Profile Debug] user:", user?.id ?? "null");
+    console.log("[Profile Debug] clientData:", clientData ? "provided" : "null");
+    if (initialData) {
+      console.log("[Profile Debug] server solvedDates:", initialData.solvedDates.length);
+      console.log("[Profile Debug] server solveHistory:", initialData.solveHistory.length);
+      console.log("[Profile Debug] server solvedCount:", initialData.solvedCount);
+    }
+    if (clientData) {
+      console.log("[Profile Debug] client solvedDates:", clientData.solvedDates.length);
+      console.log("[Profile Debug] client solveHistory:", clientData.solveHistory.length);
+      console.log("[Profile Debug] client solvedCount:", clientData.solvedCount);
+    }
+  }, [initialData, clientData, user?.id]);
+
   useEffect(() => {
     // Only fetch client-side if server didn't provide data and user is logged in
     if (initialData || !user?.id) return;
@@ -114,6 +131,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
     let cancelled = false;
     (async () => {
       const userId = user.id;
+      console.log("[Profile Debug] Starting client-side fetch for userId:", userId);
 
       const [statsRes, heatmapRes, historyRes, bookmarkedRes] = await Promise.allSettled([
         supabase
@@ -135,13 +153,16 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       if (cancelled) return;
 
-      // Log errors for debugging (visible in browser console)
+      // Log ALL results for debugging (visible in browser console)
       const queryNames = ["user_stats", "get_solve_heatmap", "user_solved_problems", "user_bookmarked_problems"];
       [statsRes, heatmapRes, historyRes, bookmarkedRes].forEach((res, i) => {
         if (res.status === "rejected") {
-          console.error(`[Profile] ${queryNames[i]} rejected:`, res.reason);
+          console.error(`[Profile] ${queryNames[i]} REJECTED:`, res.reason);
         } else if (res.value.error) {
-          console.error(`[Profile] ${queryNames[i]} error:`, res.value.error.message);
+          console.error(`[Profile] ${queryNames[i]} ERROR:`, res.value.error.message);
+        } else {
+          const data = res.value.data;
+          console.log(`[Profile] ${queryNames[i]} OK:`, Array.isArray(data) ? `${data.length} rows` : data);
         }
       });
 
