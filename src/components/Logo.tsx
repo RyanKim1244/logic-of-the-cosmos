@@ -16,23 +16,8 @@ export default function Logo({ size = 28, className = "" }: { size?: number; cla
         strokeLinecap="round"
         fill="none"
       />
-      {/* Orbital ring - centered at (50,50), tilted ellipse through the C opening */}
-      <ellipse
-        cx="50"
-        cy="50"
-        rx="14"
-        ry="36"
-        transform="rotate(-30 50 50)"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeDasharray="4 6"
-        fill="none"
-        opacity="0.5"
-      />
       {/* Center dot */}
       <circle cx="50" cy="50" r="3.5" fill="currentColor" />
-      {/* Orbiting dot */}
-      <circle cx="69" cy="19" r="2.5" fill="currentColor" opacity="0.6" />
     </svg>
   );
 }
