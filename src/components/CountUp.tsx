@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 export default function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const lastTarget = useRef(0);
+  const [count, setCount] = useState(target);
+  const lastTarget = useRef(target);
   const animFrame = useRef(0);
 
   useEffect(() => {
-    if (target === 0 || target === lastTarget.current) return;
+    if (target === lastTarget.current) return;
     const prevTarget = lastTarget.current;
     lastTarget.current = target;
 
