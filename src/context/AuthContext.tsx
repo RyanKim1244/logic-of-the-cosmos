@@ -64,19 +64,16 @@ async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
 }
 
 async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", authUser.id)
-    .single();
-
-  if (!profile) return null;
-
-  // Fetch solved and bookmarked in parallel — failures here are non-critical
-  const [solvedResult, bookmarkedResult] = await Promise.allSettled([
+  // Run all three queries in parallel to eliminate the sequential waterfall
+  const [profileResult, solvedResult, bookmarkedResult] = await Promise.allSettled([
+    supabase.from("profiles").select("id, email, name, created_at, bio, is_admin").eq("id", authUser.id).single(),
     supabase.from("user_solved_problems").select("problem_id").eq("user_id", authUser.id),
     supabase.from("user_bookmarked_problems").select("problem_id").eq("user_id", authUser.id),
   ]);
+
+  // Profile is critical — if it fails, return null
+  if (profileResult.status !== "fulfilled" || !profileResult.value.data) return null;
+  const profile = profileResult.value.data;
 
   const solved = solvedResult.status === "fulfilled" ? solvedResult.value.data : null;
   const bookmarked = bookmarkedResult.status === "fulfilled" ? bookmarkedResult.value.data : null;
