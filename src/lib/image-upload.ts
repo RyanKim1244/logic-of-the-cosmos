@@ -1,6 +1,3 @@
-import { supabase } from "./supabase";
-
-const BUCKET = "problem-images";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
 
@@ -14,29 +11,6 @@ export interface UploadError {
   error: string;
 }
 
-let bucketReady = false;
-
-async function ensureBucket(): Promise<string | null> {
-  if (bucketReady) return null;
-
-  const { data: buckets } = await supabase.storage.listBuckets();
-  const exists = buckets?.some((b) => b.id === BUCKET);
-
-  if (!exists) {
-    const { error } = await supabase.storage.createBucket(BUCKET, {
-      public: true,
-      fileSizeLimit: MAX_FILE_SIZE,
-      allowedMimeTypes: ALLOWED_TYPES,
-    });
-    if (error) {
-      return `버킷 생성 실패: ${error.message}`;
-    }
-  }
-
-  bucketReady = true;
-  return null;
-}
-
 export async function uploadImage(file: File): Promise<UploadResult | UploadError> {
   if (!ALLOWED_TYPES.includes(file.type)) {
     return { error: "지원하지 않는 파일 형식입니다. (PNG, JPG, GIF, WebP, SVG만 가능)" };
@@ -46,25 +20,25 @@ export async function uploadImage(file: File): Promise<UploadResult | UploadErro
     return { error: "파일 크기가 5MB를 초과합니다." };
   }
 
-  const bucketError = await ensureBucket();
-  if (bucketError) {
-    return { error: bucketError };
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/upload-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { error: data.error || "업로드에 실패했습니다." };
+    }
+
+    return { url: data.url };
+  } catch {
+    return { error: "네트워크 오류가 발생했습니다." };
   }
-
-  const ext = file.name.split(".").pop() || "png";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    cacheControl: "31536000",
-    upsert: false,
-  });
-
-  if (error) {
-    return { error: `업로드 실패: ${error.message}` };
-  }
-
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return { url: urlData.publicUrl };
 }
 
 /**
@@ -81,7 +55,6 @@ export function insertImageMarkdown(
   const before = text.slice(0, cursorPos);
   const after = text.slice(cursorPos);
 
-  // Add newlines around image if not at line boundaries
   const prefix = before.length > 0 && !before.endsWith("\n") ? "\n" : "";
   const suffix = after.length > 0 && !after.startsWith("\n") ? "\n" : "";
 
