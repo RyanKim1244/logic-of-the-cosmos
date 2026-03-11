@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { getDisplayText } from "@/lib/multilang";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
   ssr: false,
@@ -21,6 +22,7 @@ interface PublicProfile {
 interface SolveRecord {
   problem_id: string;
   created_at: string;
+  problem_number: number;
   title: string;
   source: string;
 }
@@ -127,11 +129,21 @@ export default function PublicProfileContent({
                     <Link
                       key={`${record.problem_id}-${i}`}
                       href={`/problems/${record.problem_id}`}
-                      className="block border border-neutral-200 p-3 hover:border-black transition-colors"
+                      className="block border border-emerald-300 p-3 hover:border-black transition-colors"
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{record.title}</span>
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0" title="풀이 완료">
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            {record.problem_number > 0 && <span className="text-[10px] text-neutral-300 font-mono shrink-0">#{record.problem_number}</span>}
+                            <span className="text-sm font-medium truncate">{getDisplayText(record.title)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
                           <span className="text-xs text-neutral-400">{record.source}</span>
                           <span className="text-[10px] text-neutral-300">
                             {new Date(record.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}

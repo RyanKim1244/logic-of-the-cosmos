@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { getDisplayText } from "@/lib/multilang";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
   ssr: false,
@@ -14,6 +15,7 @@ const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatm
 
 interface ProblemSummary {
   id: string;
+  problem_number: number;
   title: string;
   source: string;
 }
@@ -21,6 +23,7 @@ interface ProblemSummary {
 interface SolveRecord {
   problem_id: string;
   created_at: string;
+  problem_number: number;
   title: string;
   source: string;
 }
@@ -44,10 +47,12 @@ export interface ProfileData {
 }
 
 function CollapsibleSection({
-  title, count, emptyText, emptyLink, emptyLinkText, items,
+  title, count, emptyText, emptyLink, emptyLinkText, items, solvedIds, bookmarkedIds,
 }: {
   title: string; count: number; emptyText: string; emptyLink: string; emptyLinkText: string;
   items: ProblemSummary[];
+  solvedIds?: Set<string>;
+  bookmarkedIds?: Set<string>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -80,14 +85,41 @@ function CollapsibleSection({
           </button>
           {isOpen && (
             <div className="px-6 pb-5 space-y-2 animate-fade-slide-up">
-              {items.map((p) => (
-                <Link key={p.id} href={`/problems/${p.id}`} className="block border border-neutral-200 p-4 hover:border-black transition-colors">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{p.title}</span>
-                    <span className="text-xs text-neutral-400">{p.source}</span>
-                  </div>
-                </Link>
-              ))}
+              {items.map((p) => {
+                const isSolved = solvedIds?.has(p.id) ?? false;
+                const isBookmarked = bookmarkedIds?.has(p.id) ?? false;
+                return (
+                  <Link key={p.id} href={`/problems/${p.id}`} className={`block border p-4 hover:border-black transition-colors ${isSolved ? "border-emerald-300" : "border-neutral-200"}`}>
+                    <div className="flex items-center gap-3">
+                      {(isSolved || isBookmarked) && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          {isSolved && (
+                            <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title="풀이 완료">
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </span>
+                          )}
+                          {isBookmarked && (
+                            <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title="북마크">
+                              <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          {p.problem_number > 0 && <span className="text-[10px] text-neutral-300 font-mono shrink-0">#{p.problem_number}</span>}
+                          <span className="text-sm font-medium truncate">{getDisplayText(p.title)}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-neutral-400 shrink-0">{p.source}</span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
@@ -164,13 +196,13 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       const detailsData =
         allIds.length > 0
-          ? (await supabase.from("problems").select("id, title, source").in("id", allIds)).data ?? []
+          ? (await supabase.from("problems").select("id, problem_number, title, source").in("id", allIds)).data ?? []
           : [];
 
       if (cancelled) return;
 
       const detailMap = new Map(
-        detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
+        detailsData.map((p: { id: string; problem_number: number; title: string; source: string }) => [p.id, p])
       );
 
       // Heatmap: try RPC first, fall back to raw timestamps
@@ -192,6 +224,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
           created_at: s.created_at,
           title: detail?.title ?? "(삭제된 문제)",
           source: detail?.source ?? "",
+          problem_number: detail?.problem_number ?? 0,
         };
       });
 
@@ -210,7 +243,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         bookmarkedProblems: bookmarkedIds.map((id: string) => detailMap.get(id)).filter((p): p is ProblemSummary => !!p),
         solvedProblems: solvedIds.map((id: string) => {
           const detail = detailMap.get(id);
-          return detail ?? { id, title: "(삭제된 문제)", source: "" };
+          return detail ?? { id, problem_number: 0, title: "(삭제된 문제)", source: "" };
         }),
       });
     })();
@@ -228,6 +261,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   const solveHistory = data?.solveHistory ?? [];
   const bookmarkedProblems = data?.bookmarkedProblems ?? [];
   const solvedProblems = data?.solvedProblems ?? [];
+  const solvedIdSet = new Set(solvedProblems.map((p) => p.id));
+  const bookmarkedIdSet = new Set(bookmarkedProblems.map((p) => p.id));
 
   // Only show loading/login states when there's no data at all to display.
   // When initialData or clientData exists, render immediately.
@@ -383,23 +418,45 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                   <span className="text-xs text-neutral-400">{records.length}문제</span>
                 </div>
                 <div className="space-y-1.5 ml-5 border-l border-neutral-200 pl-4">
-                  {records.map((record, i) => (
-                    <Link
-                      key={`${record.problem_id}-${i}`}
-                      href={`/problems/${record.problem_id}`}
-                      className="block border border-neutral-200 p-3 hover:border-black transition-colors"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{record.title}</span>
+                  {records.map((record, i) => {
+                    const isBookmarked = profile?.bookmarkedProblems?.includes(record.problem_id) ?? false;
+                    return (
+                      <Link
+                        key={`${record.problem_id}-${i}`}
+                        href={`/problems/${record.problem_id}`}
+                        className="block border border-emerald-300 p-3 hover:border-black transition-colors"
+                      >
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-neutral-400">{record.source}</span>
-                          <span className="text-[10px] text-neutral-300">
-                            {new Date(record.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
-                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title="풀이 완료">
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </span>
+                            {isBookmarked && (
+                              <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title="북마크">
+                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                </svg>
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-2">
+                              {record.problem_number > 0 && <span className="text-[10px] text-neutral-300 font-mono shrink-0">#{record.problem_number}</span>}
+                              <span className="text-sm font-medium truncate">{getDisplayText(record.title)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-xs text-neutral-400">{record.source}</span>
+                            <span className="text-[10px] text-neutral-300">
+                              {new Date(record.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -415,6 +472,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         emptyLink="/problems"
         emptyLinkText="문제 목록 보기"
         items={bookmarkedProblems}
+        solvedIds={solvedIdSet}
+        bookmarkedIds={bookmarkedIdSet}
       />
 
       {/* Solved Problems */}
@@ -425,6 +484,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         emptyLink="/problems"
         emptyLinkText="문제 풀러 가기"
         items={solvedProblems}
+        solvedIds={solvedIdSet}
+        bookmarkedIds={bookmarkedIdSet}
       />
     </div>
   );
