@@ -193,10 +193,10 @@ export default function HomeContent({
             Logic of The <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-blue-400 bg-clip-text text-transparent">Cosmos</span>
           </h1>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent mx-auto mb-8 hero-line" />
-          <p className="text-xl md:text-2xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
+          <p className="text-2xl md:text-3xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
             과학의 모든 영역을 탐구하는 거대한 토론의 장
           </p>
-          <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-base font-light hero-subtitle-delay">
+          <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-lg font-light hero-subtitle-delay">
             올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
           </p>
           <div className="flex items-center justify-center gap-4 hero-cta">
@@ -212,19 +212,19 @@ export default function HomeContent({
           <ScrollReveal>
             <blockquote className="relative">
               <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-8xl text-neutral-200/60 font-serif select-none">&ldquo;</span>
-              <p className="text-xl md:text-2xl font-light text-neutral-800 leading-relaxed italic mb-5">
+              <p className="text-2xl md:text-3xl font-light text-neutral-800 leading-relaxed italic mb-5">
                 &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
               </p>
-              <p className="text-base md:text-lg text-neutral-600 font-light mb-8 leading-relaxed">
+              <p className="text-lg md:text-xl text-neutral-600 font-light mb-8 leading-relaxed">
                 &ldquo;지구는 인류의 요람이다. 그러나 영원히 요람 속에 머물 수는 없다.&rdquo;
               </p>
               <div className="w-12 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-5" />
-              <footer className="text-sm text-neutral-400 tracking-wide">
+              <footer className="text-base text-neutral-400 tracking-wide">
                 <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
                 <span className="mx-2 text-neutral-300">|</span>
                 <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
                 <span className="mx-2 text-neutral-300">|</span>
-                <span className="text-neutral-400 text-xs tracking-widest">1857 – 1935</span>
+                <span className="text-neutral-400 text-sm tracking-widest">1857 – 1935</span>
               </footer>
             </blockquote>
           </ScrollReveal>
@@ -235,7 +235,7 @@ export default function HomeContent({
       <section className="py-24 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <h2 className="text-center text-xs text-neutral-400 uppercase tracking-[0.3em] mb-14">Platform Overview</h2>
+            <h2 className="text-center text-sm md:text-base text-neutral-400 uppercase tracking-[0.3em] mb-14">Platform Overview</h2>
           </ScrollReveal>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -246,10 +246,10 @@ export default function HomeContent({
             ].map((stat, i) => (
               <ScrollReveal key={stat.label} delay={i * 100}>
                 <div className="p-8 text-center border border-neutral-200 bg-white stat-card">
-                  <div className="text-4xl md:text-5xl font-extralight text-black">
+                  <div className="text-5xl md:text-6xl font-extralight text-black">
                     {statsConfirmed ? <CountUp target={stat.value} /> : <span className="inline-block w-12 h-10 bg-neutral-100 animate-pulse rounded" />}
                   </div>
-                  <div className="text-xs text-neutral-400 mt-3 uppercase tracking-[0.2em]">{stat.label}</div>
+                  <div className="text-sm text-neutral-400 mt-3 uppercase tracking-[0.2em]">{stat.label}</div>
                 </div>
               </ScrollReveal>
             ))}
@@ -263,8 +263,8 @@ export default function HomeContent({
           <ScrollReveal>
             <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-2xl font-light text-black mb-1">기출문제 아카이브</h2>
-                <p className="text-sm text-neutral-400">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
+                <h2 className="text-3xl md:text-4xl font-light text-black mb-2">기출문제 아카이브</h2>
+                <p className="text-base text-neutral-400">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
               </div>
               <Link href="/contests" className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2">
                 전체 보기 <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
@@ -277,7 +277,7 @@ export default function HomeContent({
                 <Link href={`/contests/${contest.id}`}>
                   <div className="border border-neutral-200 p-6 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
                     <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-widest mb-2">{contest.short_name}</span>
-                    <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors mb-2 flex-1">{contest.name}</h3>
+                    <h3 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors mb-2 flex-1">{contest.name}</h3>
                     <div className="flex items-center justify-between text-xs text-neutral-400 pt-3 border-t border-neutral-100">
                       <span>{contest.years.length > 0 ? `${contest.years[contest.years.length - 1]}–${contest.years[0]}` : ""}</span>
                       <span className="font-medium text-neutral-500">{problemCounts[contest.id] || 0}문제</span>
@@ -296,8 +296,8 @@ export default function HomeContent({
           <ScrollReveal>
             <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-2xl font-light text-black mb-1">최근 문제</h2>
-                <p className="text-sm text-neutral-400">새로 등록된 문제들을 확인하세요</p>
+                <h2 className="text-3xl md:text-4xl font-light text-black mb-2">최근 문제</h2>
+                <p className="text-base text-neutral-400">새로 등록된 문제들을 확인하세요</p>
               </div>
               <Link href="/problems" className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2">
                 전체 보기 <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
@@ -320,8 +320,8 @@ export default function HomeContent({
       <section className="py-24 bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <h2 className="text-2xl font-light text-center mb-4">열린 과학 토론의 장</h2>
-            <p className="text-neutral-500 text-sm text-center mb-16">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
+            <h2 className="text-3xl md:text-5xl font-light text-center mb-5">열린 과학 토론의 장</h2>
+            <p className="text-neutral-500 text-base md:text-lg text-center mb-16">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -331,11 +331,11 @@ export default function HomeContent({
             ].map((feature, i) => (
               <ScrollReveal key={feature.title} delay={i * 150}>
                 <div className="p-8 border border-neutral-800 feature-card group">
-                  <div className="w-12 h-12 border border-neutral-700 flex items-center justify-center mb-6 group-hover:border-white transition-colors">
-                    <span className="text-xl font-light text-neutral-400 group-hover:text-white transition-colors">{feature.icon}</span>
+                  <div className="w-14 h-14 border border-neutral-700 flex items-center justify-center mb-6 group-hover:border-white transition-colors">
+                    <span className="text-2xl font-light text-neutral-400 group-hover:text-white transition-colors">{feature.icon}</span>
                   </div>
-                  <h3 className="font-medium text-sm uppercase tracking-widest mb-4">{feature.title}</h3>
-                  <p className="text-neutral-500 text-sm leading-relaxed group-hover:text-neutral-400 transition-colors">{feature.desc}</p>
+                  <h3 className="font-medium text-base uppercase tracking-widest mb-4">{feature.title}</h3>
+                  <p className="text-neutral-500 text-base leading-relaxed group-hover:text-neutral-400 transition-colors">{feature.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -347,7 +347,7 @@ export default function HomeContent({
       <section className="py-24 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <h2 className="text-2xl font-light text-center text-black mb-14">빠른 탐색</h2>
+            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-14">빠른 탐색</h2>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-6">
             <ScrollReveal delay={0}>
@@ -356,9 +356,9 @@ export default function HomeContent({
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">?</span>
                   </div>
-                  <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.problems : "—"}개의 문제 &rarr;</span>
+                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
+                  <span className="inline-block mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.problems : "—"}개의 문제 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -368,9 +368,9 @@ export default function HomeContent({
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">#</span>
                   </div>
-                  <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.contests : "—"}개의 대회 &rarr;</span>
+                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
+                  <span className="inline-block mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.contests : "—"}개의 대회 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -380,9 +380,9 @@ export default function HomeContent({
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">&gt;</span>
                   </div>
-                  <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">커뮤니티</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed">자유 토론과 질문을 통해 다른 학습자들과 소통하세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">토론 참여하기 &rarr;</span>
+                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">커뮤니티</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">자유 토론과 질문을 통해 다른 학습자들과 소통하세요.</p>
+                  <span className="inline-block mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">토론 참여하기 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -394,12 +394,12 @@ export default function HomeContent({
       <section className="py-24 border-t border-neutral-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <ScrollReveal>
-            <h2 className="text-2xl md:text-3xl font-light text-black mb-4">과학의 경계를 넓혀보세요</h2>
-            <p className="text-neutral-400 text-sm mb-10 max-w-lg mx-auto">문제를 풀고, 풀이를 공유하고, 함께 성장하세요.</p>
+            <h2 className="text-3xl md:text-5xl font-light text-black mb-5">과학의 경계를 넓혀보세요</h2>
+            <p className="text-neutral-400 text-base md:text-lg mb-10 max-w-lg mx-auto">문제를 풀고, 풀이를 공유하고, 함께 성장하세요.</p>
             <div className="flex items-center justify-center gap-4">
-              <Link href="/problems" className="px-8 py-3 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">문제 풀기</Link>
+              <Link href="/problems" className="px-10 py-3.5 bg-black text-white text-sm font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">문제 풀기</Link>
               {!user && (
-                <Link href="/login" className="px-8 py-3 border border-neutral-300 text-neutral-700 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors">계정 만들기</Link>
+                <Link href="/login" className="px-10 py-3.5 border border-neutral-300 text-neutral-700 text-sm font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors">계정 만들기</Link>
               )}
             </div>
           </ScrollReveal>
