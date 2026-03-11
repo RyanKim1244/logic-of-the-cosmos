@@ -11,7 +11,7 @@ import { createServerClient } from "@supabase/ssr";
  *  3. Writing refreshed tokens to both request (for server components)
  *     and response (for the browser)
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -41,7 +41,7 @@ export function proxy(request: NextRequest) {
   // Always use getUser() (not getSession()) — getUser() contacts the
   // Supabase Auth server to verify and refresh the token.
   // getSession() only reads from cookies without verification.
-  supabase.auth.getUser();
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
