@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
   ssr: false,
@@ -101,17 +102,112 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
 
-  const solutionCount = initialData?.solutionCount ?? 0;
-  const discussionCount = initialData?.discussionCount ?? 0;
-  const solvedDates = initialData?.solvedDates ?? [];
-  const solveHistory = initialData?.solveHistory ?? [];
-  const bookmarkedProblems = initialData?.bookmarkedProblems ?? [];
-  const solvedProblems = initialData?.solvedProblems ?? [];
+  // Client-side fallback: when server data is unavailable but user is authenticated,
+  // fetch profile stats/history directly from the browser.
+  const [clientData, setClientData] = useState<ProfileData | null>(null);
 
-  // Only show loading/login states when there's no server data to display.
-  // When initialData exists, render immediately to avoid replacing
-  // server-rendered HTML with a loading spinner (hydration flash).
-  if (!initialData) {
+  useEffect(() => {
+    // Only fetch client-side if server didn't provide data and user is logged in
+    if (initialData || !user?.id) return;
+
+    let cancelled = false;
+    (async () => {
+      const userId = user.id;
+
+      const [statsRes, heatmapRes, historyRes, bookmarkedRes] = await Promise.allSettled([
+        supabase
+          .from("user_stats")
+          .select("solution_count, discussion_count")
+          .eq("user_id", userId)
+          .single(),
+        supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 183 }),
+        supabase
+          .from("user_solved_problems")
+          .select("problem_id, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("user_bookmarked_problems")
+          .select("problem_id")
+          .eq("user_id", userId),
+      ]);
+
+      if (cancelled) return;
+
+      const solvedIds =
+        historyRes.status === "fulfilled"
+          ? (historyRes.value.data?.map((s: { problem_id: string }) => s.problem_id) ?? [])
+          : [];
+      const bookmarkedIds =
+        bookmarkedRes.status === "fulfilled"
+          ? (bookmarkedRes.value.data?.map((b: { problem_id: string }) => b.problem_id) ?? [])
+          : [];
+      const allIds = [...new Set([...solvedIds, ...bookmarkedIds])];
+
+      const detailsData =
+        allIds.length > 0
+          ? (await supabase.from("problems").select("id, title, source").in("id", allIds)).data ?? []
+          : [];
+
+      if (cancelled) return;
+
+      const detailMap = new Map(
+        detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
+      );
+
+      let dates: string[] = [];
+      if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
+        for (const row of heatmapRes.value.data as { solve_date: string; solve_count: number }[]) {
+          for (let i = 0; i < row.solve_count; i++) dates.push(row.solve_date);
+        }
+      }
+
+      let history: SolveRecord[] = [];
+      if (historyRes.status === "fulfilled" && historyRes.value.data) {
+        const histData = historyRes.value.data as { problem_id: string; created_at: string }[];
+        if (dates.length === 0) dates = histData.map((s) => s.created_at);
+        history = histData
+          .map((s) => {
+            const detail = detailMap.get(s.problem_id);
+            if (!detail) return null;
+            return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
+          })
+          .filter((r): r is NonNullable<typeof r> => r !== null);
+      }
+
+      setClientData({
+        userProfile: { name: user.name, email: user.email, bio: user.bio, createdAt: user.createdAt },
+        solutionCount:
+          statsRes.status === "fulfilled" && statsRes.value.data
+            ? statsRes.value.data.solution_count
+            : 0,
+        discussionCount:
+          statsRes.status === "fulfilled" && statsRes.value.data
+            ? statsRes.value.data.discussion_count
+            : 0,
+        solvedDates: dates,
+        solveHistory: history,
+        bookmarkedProblems: bookmarkedIds.map((id: string) => detailMap.get(id)).filter((p): p is ProblemSummary => !!p),
+        solvedProblems: solvedIds.map((id: string) => detailMap.get(id)).filter((p): p is ProblemSummary => !!p),
+      });
+    })();
+
+    return () => { cancelled = true; };
+  }, [initialData, user?.id]);
+
+  // Use server data first, then client-fetched fallback
+  const data = initialData ?? clientData;
+
+  const solutionCount = data?.solutionCount ?? 0;
+  const discussionCount = data?.discussionCount ?? 0;
+  const solvedDates = data?.solvedDates ?? [];
+  const solveHistory = data?.solveHistory ?? [];
+  const bookmarkedProblems = data?.bookmarkedProblems ?? [];
+  const solvedProblems = data?.solvedProblems ?? [];
+
+  // Only show loading/login states when there's no data at all to display.
+  // When initialData or clientData exists, render immediately.
+  if (!data) {
     if (authLoading) {
       return (
         <div className="min-h-[60vh] flex items-center justify-center">
@@ -133,12 +229,12 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   }
 
   // Prefer live AuthContext user, fall back to server-fetched profile
-  const profile = user ?? (initialData?.userProfile ? {
+  const profile = user ?? (data?.userProfile ? {
     id: "",
-    email: initialData.userProfile.email,
-    name: initialData.userProfile.name,
-    createdAt: initialData.userProfile.createdAt,
-    bio: initialData.userProfile.bio,
+    email: data.userProfile.email,
+    name: data.userProfile.name,
+    createdAt: data.userProfile.createdAt,
+    bio: data.userProfile.bio,
     is_admin: false,
     solvedProblems: solvedProblems.map(p => p.id),
     bookmarkedProblems: bookmarkedProblems.map(p => p.id),
