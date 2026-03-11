@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import LatexRenderer from "@/components/LatexRenderer";
+import ImageUploadButton from "@/components/ImageUploadButton";
 
 interface Solution {
   id: string;
@@ -26,6 +27,31 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
   const [upvoteCounts, setUpvoteCounts] = useState<Record<string, number>>({});
   const [votedSolutions, setVotedSolutions] = useState<Set<string>>(new Set());
   const sectionRef = useRef<HTMLDivElement>(null);
+  const newSolutionRef = useRef<HTMLTextAreaElement>(null);
+  const editSolutionRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertImageAt = useCallback((
+    markdown: string,
+    text: string,
+    setText: (v: string) => void,
+    taRef: React.RefObject<HTMLTextAreaElement | null>,
+  ) => {
+    const ta = taRef.current;
+    const cursorPos = ta ? ta.selectionStart : text.length;
+    const before = text.slice(0, cursorPos);
+    const after = text.slice(cursorPos);
+    const prefix = before.length > 0 && !before.endsWith("\n") ? "\n" : "";
+    const suffix = after.length > 0 && !after.startsWith("\n") ? "\n" : "";
+    const newText = before + prefix + markdown + suffix + after;
+    setText(newText);
+    requestAnimationFrame(() => {
+      if (ta) {
+        const newPos = before.length + prefix.length + markdown.length + suffix.length;
+        ta.focus();
+        ta.setSelectionRange(newPos, newPos);
+      }
+    });
+  }, []);
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -218,13 +244,17 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
             <span className="text-xs font-medium text-black">{user?.name}</span>
           </div>
           <textarea
+            ref={newSolutionRef}
             value={newSolution}
             onChange={(e) => setNewSolution(e.target.value)}
             placeholder={"나만의 풀이를 작성하세요. LaTeX 수식을 사용할 수 있습니다.\n인라인: $E = mc^2$\n블록: $$\\int_0^\\infty e^{-x} dx = 1$$"}
-            className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-xs transition-colors bg-neutral-50 focus:bg-white font-mono"
+            className="w-full px-4 py-3 border border-neutral-200 border-b-0 focus:border-black focus:outline-none resize-none text-xs transition-colors bg-neutral-50 focus:bg-white font-mono"
             rows={8}
           />
-          <div className="flex justify-end gap-2 mt-3">
+          <div className="flex items-center gap-2 px-3 py-2 border border-neutral-200 bg-neutral-50 mb-3">
+            <ImageUploadButton onInsert={(md) => insertImageAt(md, newSolution, setNewSolution, newSolutionRef)} />
+          </div>
+          <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => { setIsWriting(false); setNewSolution(""); }}
@@ -325,12 +355,16 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                         {editingId === solution.id ? (
                           <form onSubmit={handleEdit} className="animate-fade-slide-up">
                             <textarea
+                              ref={editSolutionRef}
                               value={editContent}
                               onChange={(e) => setEditContent(e.target.value)}
-                              className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-xs transition-colors font-mono"
+                              className="w-full px-4 py-3 border border-neutral-200 border-b-0 focus:border-black focus:outline-none resize-none text-xs transition-colors font-mono"
                               rows={8}
                             />
-                            <div className="flex justify-end gap-2 mt-3">
+                            <div className="flex items-center gap-2 px-3 py-2 border border-neutral-200 bg-neutral-50 mb-3">
+                              <ImageUploadButton onInsert={(md) => insertImageAt(md, editContent, setEditContent, editSolutionRef)} />
+                            </div>
+                            <div className="flex justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => { setEditingId(null); setEditContent(""); }}

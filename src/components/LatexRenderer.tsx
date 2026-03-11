@@ -29,7 +29,7 @@ function getPurify(): Promise<typeof import("dompurify").default> {
   return purifyPromise;
 }
 
-const PURIFY_OPTIONS = { ADD_TAGS: ["figure", "figcaption", "u"], ADD_ATTR: ["class"] };
+const PURIFY_OPTIONS = { ADD_TAGS: ["figure", "figcaption", "u"], ADD_ATTR: ["class", "loading", "decoding"] };
 
 function formatContent(text: string): string {
   const mathBlocks: string[] = [];
