@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { type MultiLangContent, LANG_LABELS, getLangLabel } from "@/lib/multilang";
+import ImageUploadButton from "@/components/ImageUploadButton";
 
 interface MultiLangEditorProps {
   label: string;
@@ -47,9 +48,32 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
     }
   };
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleImageInsert = useCallback((markdown: string) => {
+    const ta = textareaRef.current;
+    const cursorPos = ta ? ta.selectionStart : (value[activeLang] || "").length;
+    const currentText = value[activeLang] || "";
+    const before = currentText.slice(0, cursorPos);
+    const after = currentText.slice(cursorPos);
+    const prefix = before.length > 0 && !before.endsWith("\n") ? "\n" : "";
+    const suffix = after.length > 0 && !after.startsWith("\n") ? "\n" : "";
+    const newText = before + prefix + markdown + suffix + after;
+    onChange({ ...value, [activeLang]: newText });
+
+    // Restore focus and cursor position after React re-render
+    requestAnimationFrame(() => {
+      if (ta) {
+        const newPos = before.length + prefix.length + markdown.length + suffix.length;
+        ta.focus();
+        ta.setSelectionRange(newPos, newPos);
+      }
+    });
+  }, [value, activeLang, onChange]);
+
   const unusedLangs = AVAILABLE_LANGS.filter((l) => !langs.includes(l));
 
-  const inputClass = "w-full px-4 py-2.5 border border-neutral-300 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors font-mono resize-none";
+  const inputClass = "w-full px-4 py-2.5 border border-neutral-300 border-b-0 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors font-mono resize-none";
   const labelClass = "block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider";
 
   return (
@@ -124,6 +148,7 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
 
       {/* Textarea for active language */}
       <textarea
+        ref={textareaRef}
         required={required && !Object.values(value).some((v) => v.trim())}
         value={value[activeLang] || ""}
         onChange={(e) => onChange({ ...value, [activeLang]: e.target.value })}
@@ -131,6 +156,12 @@ export default function MultiLangEditor({ label, value, onChange, rows = 10, pla
         rows={rows}
         placeholder={placeholder ? `[${getLangLabel(activeLang)}] ${placeholder}` : `${getLangLabel(activeLang)}로 작성...`}
       />
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-3 py-2 border border-neutral-300 bg-neutral-50">
+        <ImageUploadButton onInsert={handleImageInsert} />
+        <span className="text-[10px] text-neutral-400 ml-auto">Markdown 이미지: ![설명](URL)</span>
+      </div>
 
       {langs.length > 1 && (
         <p className="text-[10px] text-neutral-400 mt-1">
