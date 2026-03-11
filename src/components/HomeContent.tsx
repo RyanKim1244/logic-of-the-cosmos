@@ -358,7 +358,7 @@ export default function HomeContent({
                   </div>
                   <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
                   <p className="text-xs text-neutral-400 leading-relaxed">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? `${stats.problems}개의 문제` : "—"} &rarr;</span>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.problems : "—"}개의 문제 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -370,7 +370,7 @@ export default function HomeContent({
                   </div>
                   <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
                   <p className="text-xs text-neutral-400 leading-relaxed">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? `${stats.contests}개의 대회` : "—"} &rarr;</span>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.contests : "—"}개의 대회 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
