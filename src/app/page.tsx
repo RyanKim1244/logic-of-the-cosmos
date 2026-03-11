@@ -58,16 +58,26 @@ export default async function Home() {
       ? contestsRes.value.data
       : [];
 
+  // Log errors for debugging
+  const queryNames = ["problems", "contests", "problemCount", "contestCount", "discussionCount", "authorData", "problemSources"];
+  [problemsRes, contestsRes, problemCountRes, contestCountRes, discussionCountRes, authorDataRes, problemSourcesRes].forEach((res, i) => {
+    if (res.status === "rejected") {
+      console.error(`[Home] ${queryNames[i]} rejected:`, res.reason);
+    } else if (res.value.error) {
+      console.error(`[Home] ${queryNames[i]} error:`, res.value.error.message);
+    }
+  });
+
   const authorData =
-    authorDataRes.status === "fulfilled" && authorDataRes.value.data
+    authorDataRes.status === "fulfilled" && authorDataRes.value.data && !authorDataRes.value.error
       ? authorDataRes.value.data
       : [];
   const uniqueAuthors = new Set(authorData.map((d: { author_name: string }) => d.author_name)).size;
 
   const stats = {
-    problems: problemCountRes.status === "fulfilled" ? (problemCountRes.value.count ?? 0) : 0,
-    contests: contestCountRes.status === "fulfilled" ? (contestCountRes.value.count ?? 0) : 0,
-    discussions: discussionCountRes.status === "fulfilled" ? (discussionCountRes.value.count ?? 0) : 0,
+    problems: problemCountRes.status === "fulfilled" && !problemCountRes.value.error ? (problemCountRes.value.count ?? 0) : 0,
+    contests: contestCountRes.status === "fulfilled" && !contestCountRes.value.error ? (contestCountRes.value.count ?? 0) : 0,
+    discussions: discussionCountRes.status === "fulfilled" && !discussionCountRes.value.error ? (discussionCountRes.value.count ?? 0) : 0,
     authors: uniqueAuthors,
   };
 
