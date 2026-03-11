@@ -104,8 +104,12 @@ export default function ProfilePage() {
     () => getCached<number>("profile_discussionCount", true) ?? 0
   );
 
+  // Use user.id as dependency instead of the full user object.
+  // The user object is recreated on every fetchProfile (new reference),
+  // which would re-trigger this effect even when nothing meaningful changed.
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
+    if (!user || !userId) return;
     const currentUser = user;
     let controller = new AbortController();
 
@@ -131,12 +135,12 @@ export default function ProfilePage() {
               6000, sig
             ), 1, 1000, sig)
           : Promise.resolve({ data: [] as ProblemSummary[], error: null }),
-        // 3. Solve history (for timeline display)
+        // 3. Solve history with timestamps (for timeline display)
         withRetry(() => withTimeout(
           supabase.from("user_solved_problems").select("problem_id, created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
           6000, sig
         ), 1, 1000, sig),
-        // 4. Heatmap — server-side aggregation via RPC (returns ~180 rows max instead of N)
+        // 4. Heatmap — server-side aggregation via RPC (returns ~180 rows max)
         withTimeout(
           supabase.rpc("get_solve_heatmap", { p_user_id: currentUser.id, p_days: 183 }),
           4000, sig
@@ -173,7 +177,6 @@ export default function ProfilePage() {
       // Process heatmap — prefer server-aggregated RPC, fallback to raw history
       let heatmapDates: string[] | null = null;
       if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
-        // RPC returns [{solve_date, solve_count}] — expand to individual date strings for heatmap
         const rpcData = heatmapRes.value.data as { solve_date: string; solve_count: number }[];
         const expanded: string[] = [];
         for (const row of rpcData) {
@@ -190,7 +193,6 @@ export default function ProfilePage() {
       if (historyRes.status === "fulfilled" && historyRes.value.data) {
         const solveData = historyRes.value.data as { problem_id: string; created_at: string }[];
 
-        // Fallback: if RPC failed, use raw history dates for heatmap
         if (!heatmapDates) {
           const dates = solveData.map((s) => s.created_at);
           setSolvedDates(dates);
@@ -227,7 +229,8 @@ export default function ProfilePage() {
       controller.abort();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   if (authLoading) {
     return (
