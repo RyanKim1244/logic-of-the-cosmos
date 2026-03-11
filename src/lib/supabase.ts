@@ -11,7 +11,16 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholde
  * The proxy.ts (server-side) still uses createServerClient for cookie
  * refresh on navigation.
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Default is 5000ms — reduce so orphaned locks are stolen faster.
+    // React Strict Mode double-mount and backgrounded tabs frequently
+    // cause the Web Locks API lock to be orphaned; a shorter timeout
+    // means faster automatic recovery instead of a 5s+ stall.
+    // (Supported by auth-js but not yet exposed in supabase-js types.)
+    lockAcquireTimeout: 2000,
+  } as Record<string, unknown>,
+});
 
 export function getSupabase() {
   return supabase;

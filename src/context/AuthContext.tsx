@@ -64,19 +64,16 @@ async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
 }
 
 async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", authUser.id)
-    .single();
-
-  if (!profile) return null;
-
-  // Fetch solved and bookmarked in parallel — failures here are non-critical
-  const [solvedResult, bookmarkedResult] = await Promise.allSettled([
+  // Run all three queries in parallel to eliminate the sequential waterfall
+  const [profileResult, solvedResult, bookmarkedResult] = await Promise.allSettled([
+    supabase.from("profiles").select("id, email, name, created_at, bio, is_admin").eq("id", authUser.id).single(),
     supabase.from("user_solved_problems").select("problem_id").eq("user_id", authUser.id),
     supabase.from("user_bookmarked_problems").select("problem_id").eq("user_id", authUser.id),
   ]);
+
+  // Profile is critical — if it fails, return null
+  if (profileResult.status !== "fulfilled" || !profileResult.value.data) return null;
+  const profile = profileResult.value.data;
 
   const solved = solvedResult.status === "fulfilled" ? solvedResult.value.data : null;
   const bookmarked = bookmarkedResult.status === "fulfilled" ? bookmarkedResult.value.data : null;
@@ -151,28 +148,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // --- Session keepalive ---
-    // Supabase access tokens expire after ~1 hour by default.
-    // Proactively refresh every 4 minutes so they never go stale,
-    // even if the user leaves the tab open without navigating.
-    const KEEPALIVE_MS = 4 * 60 * 1000;
-    const keepalive = setInterval(() => {
-      if (!isMounted) return;
-      supabase.auth.getUser().catch(() => {});
-    }, KEEPALIVE_MS);
+    // Use Supabase's built-in auto-refresh instead of manual getUser() polling.
+    // getUser() acquires the same navigator lock as onAuthStateChange's internal
+    // token refresh — running both causes lock contention and the
+    // "Lock not released within 5000ms" warning.
+    supabase.auth.startAutoRefresh();
 
-    // When the tab becomes visible again after being idle, immediately
-    // refresh the session and re-sync profile data.
+    // When the tab becomes visible again after being idle, re-sync profile.
+    // Use getSession() (local read, no lock) instead of getUser() (network + lock).
     function handleVisibilityChange() {
       if (document.visibilityState !== "visible" || !isMounted) return;
-      supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      supabase.auth.startAutoRefresh();
+      supabase.auth.getSession().then(({ data: { session } }) => {
         if (!isMounted) return;
-        if (authUser) {
-          fetchProfile(authUser).then((profile) => {
+        if (session?.user) {
+          fetchProfile(session.user).then((profile) => {
             if (profile && isMounted) setUser(profile);
           }).catch(() => { /* keep existing user */ });
         } else {
-          // Session truly expired — clear user
           setUser(null);
         }
       }).catch(() => { /* network hiccup — keep existing user */ });
@@ -181,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
-      clearInterval(keepalive);
+      supabase.auth.stopAutoRefresh();
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };

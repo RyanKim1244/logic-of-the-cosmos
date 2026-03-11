@@ -17,8 +17,6 @@ type ProblemRow = {
   source: string;
   year: number;
   tags: string[];
-  content: string;
-  official_solution: string;
   created_at: string;
   updated_at: string;
 };
@@ -93,7 +91,7 @@ export default function AdminPage() {
     setFetchError(null);
     try {
       const [pRes, cRes] = await Promise.allSettled([
-        withRetry(async () => withTimeout(supabase.from("problems").select("*").order("problem_number"), 10000, sig)),
+        withRetry(async () => withTimeout(supabase.from("problems").select("id, problem_number, title, source, year, tags, created_at, updated_at").order("problem_number"), 10000, sig)),
         withRetry(async () => withTimeout(supabase.from("contests").select("*"), 8000, sig)),
       ]);
 
@@ -149,8 +147,14 @@ export default function AdminPage() {
 
   // Problem handlers
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
-  const openEditProblem = (p: ProblemRow) => {
-    setProblemForm({ title: p.title, source: p.source, year: p.year, tags: p.tags.join(", "), content: parseMultiLang(p.content), officialSolution: parseMultiLang(p.official_solution) });
+  const openEditProblem = async (p: ProblemRow) => {
+    // Fetch content & official_solution on demand (not loaded in list query)
+    const { data } = await supabase.from("problems").select("content, official_solution").eq("id", p.id).single();
+    setProblemForm({
+      title: p.title, source: p.source, year: p.year, tags: p.tags.join(", "),
+      content: parseMultiLang(data?.content ?? ""),
+      officialSolution: parseMultiLang(data?.official_solution ?? ""),
+    });
     setEditingProblemId(p.id); setProblemMode("edit");
   };
   const closeProblemForm = () => { setProblemMode("none"); setEditingProblemId(null); setProblemForm(emptyProblemForm); };
@@ -175,7 +179,7 @@ export default function AdminPage() {
         return;
       }
       setAllProblems(allProblems.map((p) =>
-        p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, content: contentStr, official_solution: solutionStr, updated_at: now } : p
+        p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, updated_at: now } : p
       ));
     } else {
       const id = `custom-${Date.now()}`;
@@ -186,7 +190,7 @@ export default function AdminPage() {
       const { data, error } = await supabase.from("problems").insert({
         id, problem_number: nextNumber, title: problemForm.title, source: problemForm.source, year: problemForm.year,
         tags, content: contentStr, official_solution: solutionStr,
-      }).select().single();
+      }).select("id, problem_number, title, source, year, tags, created_at, updated_at").single();
 
       if (error) {
         setSubmitError(`문제 등록 실패: ${error.message}`);
