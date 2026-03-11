@@ -34,6 +34,7 @@ interface UserProfile {
 
 export interface ProfileData {
   userProfile: UserProfile;
+  solvedCount: number;
   solutionCount: number;
   discussionCount: number;
   solvedDates: string[];
@@ -117,7 +118,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       const [statsRes, heatmapRes, historyRes, bookmarkedRes] = await Promise.allSettled([
         supabase
           .from("user_stats")
-          .select("solution_count, discussion_count")
+          .select("solved_count, solution_count, discussion_count")
           .eq("user_id", userId)
           .single(),
         supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 183 }),
@@ -177,6 +178,10 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       setClientData({
         userProfile: { name: user.name, email: user.email, bio: user.bio, createdAt: user.createdAt },
+        solvedCount:
+          statsRes.status === "fulfilled" && statsRes.value.data
+            ? statsRes.value.data.solved_count
+            : 0,
         solutionCount:
           statsRes.status === "fulfilled" && statsRes.value.data
             ? statsRes.value.data.solution_count
@@ -198,6 +203,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   // Use server data first, then client-fetched fallback
   const data = initialData ?? clientData;
 
+  const solvedCount = data?.solvedCount ?? 0;
   const solutionCount = data?.solutionCount ?? 0;
   const discussionCount = data?.discussionCount ?? 0;
   const solvedDates = data?.solvedDates ?? [];
@@ -323,7 +329,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="border border-neutral-200 p-6 text-center">
-          <div className="text-3xl font-extralight">{solvedProblems.length}</div>
+          <div className="text-3xl font-extralight">{solvedCount}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">

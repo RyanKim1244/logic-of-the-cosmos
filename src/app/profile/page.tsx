@@ -26,7 +26,7 @@ export default async function ProfilePage() {
       .single(),
     supabase
       .from("user_stats")
-      .select("solution_count, discussion_count")
+      .select("solved_count, solution_count, discussion_count")
       .eq("user_id", userId)
       .single(),
     supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 183 }),
@@ -105,6 +105,10 @@ export default async function ProfilePage() {
       bio: profileData.bio || "",
       createdAt: profileData.created_at,
     },
+    solvedCount:
+      statsRes.status === "fulfilled" && statsRes.value.data
+        ? statsRes.value.data.solved_count
+        : 0,
     solutionCount:
       statsRes.status === "fulfilled" && statsRes.value.data
         ? statsRes.value.data.solution_count
