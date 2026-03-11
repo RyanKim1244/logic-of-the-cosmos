@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { getDisplayText } from "@/lib/multilang";
 import ContestDetailContent from "@/components/ContestDetailContent";
 
 export default async function ContestDetailPage({
@@ -26,10 +27,15 @@ export default async function ContestDetailPage({
     .ilike("source", `%${contest.short_name}%`)
     .order("year", { ascending: false });
 
+  const parsedProblems = (problems ?? []).map((p) => ({
+    ...p,
+    title: getDisplayText(p.title),
+  }));
+
   return (
     <ContestDetailContent
       contest={contest}
-      contestProblems={problems ?? []}
+      contestProblems={parsedProblems}
     />
   );
 }
