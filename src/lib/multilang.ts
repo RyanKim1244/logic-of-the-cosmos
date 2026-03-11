@@ -80,3 +80,15 @@ export function getLanguages(content: MultiLangContent): string[] {
 export function getLangLabel(code: string): string {
   return LANG_LABELS[code] || code.toUpperCase();
 }
+
+/**
+ * Get the display text from a stored value that may be multi-lang JSON or plain string.
+ * Returns the first available language value (priority: ko > en > first key).
+ */
+export function getDisplayText(raw: string): string {
+  if (!raw) return "";
+  const langs = parseMultiLang(raw);
+  const keys = getLanguages(langs);
+  if (keys.length === 0) return raw;
+  return langs[keys[0]] || raw;
+}

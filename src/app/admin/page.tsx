@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, isCacheStale } from "@/lib/cache";
-import { parseMultiLang, serializeMultiLang, type MultiLangContent } from "@/lib/multilang";
+import { parseMultiLang, serializeMultiLang, getDisplayText, type MultiLangContent } from "@/lib/multilang";
 import MultiLangEditor from "@/components/MultiLangEditor";
 
 type Tab = "problems" | "contests";
@@ -31,7 +31,7 @@ type ContestRow = {
 };
 
 type ProblemFormData = {
-  title: string;
+  title: MultiLangContent;
   source: string;
   year: number;
   tags: string;
@@ -48,7 +48,7 @@ type ContestFormData = {
 };
 
 const emptyProblemForm: ProblemFormData = {
-  title: "",
+  title: { ko: "" },
   source: "",
   year: new Date().getFullYear(),
   tags: "",
@@ -149,9 +149,9 @@ export default function AdminPage() {
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
   const openEditProblem = async (p: ProblemRow) => {
     // Fetch content & official_solution on demand (not loaded in list query)
-    const { data } = await supabase.from("problems").select("content, official_solution").eq("id", p.id).single();
+    const { data } = await supabase.from("problems").select("title, content, official_solution").eq("id", p.id).single();
     setProblemForm({
-      title: p.title, source: p.source, year: p.year, tags: p.tags.join(", "),
+      title: parseMultiLang(data?.title ?? p.title), source: p.source, year: p.year, tags: p.tags.join(", "),
       content: parseMultiLang(data?.content ?? ""),
       officialSolution: parseMultiLang(data?.official_solution ?? ""),
     });
@@ -165,12 +165,13 @@ export default function AdminPage() {
     const tags = problemForm.tags.split(",").map((t) => t.trim()).filter(Boolean);
     const now = new Date().toISOString();
 
+    const titleStr = serializeMultiLang(problemForm.title);
     const contentStr = serializeMultiLang(problemForm.content);
     const solutionStr = serializeMultiLang(problemForm.officialSolution);
 
     if (problemMode === "edit" && editingProblemId) {
       const { error } = await supabase.from("problems").update({
-        title: problemForm.title, source: problemForm.source, year: problemForm.year,
+        title: titleStr, source: problemForm.source, year: problemForm.year,
         tags, content: contentStr, official_solution: solutionStr, updated_at: now,
       }).eq("id", editingProblemId);
 
@@ -179,7 +180,7 @@ export default function AdminPage() {
         return;
       }
       setAllProblems(allProblems.map((p) =>
-        p.id === editingProblemId ? { ...p, title: problemForm.title, source: problemForm.source, year: problemForm.year, tags, updated_at: now } : p
+        p.id === editingProblemId ? { ...p, title: titleStr, source: problemForm.source, year: problemForm.year, tags, updated_at: now } : p
       ));
     } else {
       const id = `custom-${Date.now()}`;
@@ -188,7 +189,7 @@ export default function AdminPage() {
         : 999;
       const nextNumber = Math.max(maxNum + 1, 1000);
       const { data, error } = await supabase.from("problems").insert({
-        id, problem_number: nextNumber, title: problemForm.title, source: problemForm.source, year: problemForm.year,
+        id, problem_number: nextNumber, title: titleStr, source: problemForm.source, year: problemForm.year,
         tags, content: contentStr, official_solution: solutionStr,
       }).select("id, problem_number, title, source, year, tags, created_at, updated_at").single();
 
@@ -324,8 +325,8 @@ export default function AdminPage() {
             <div className="border border-neutral-200 p-8 mb-8">
               <h2 className="text-lg font-light text-black mb-6">{problemMode === "edit" ? "문제 수정" : "새 문제 추가"}</h2>
               <form onSubmit={handleProblemSubmit} className="space-y-5">
+                <MultiLangEditor label="제목" value={problemForm.title} onChange={(title) => setProblemForm({ ...problemForm, title })} rows={1} placeholder="문제 제목" required />
                 <div className="grid md:grid-cols-2 gap-5">
-                  <div><label className={labelClass}>제목</label><input type="text" required maxLength={200} value={problemForm.title} onChange={(e) => setProblemForm({ ...problemForm, title: e.target.value })} className={inputClass} placeholder="문제 제목" /></div>
                   <div><label className={labelClass}>출처</label><input type="text" required maxLength={100} value={problemForm.source} onChange={(e) => setProblemForm({ ...problemForm, source: e.target.value })} className={inputClass} placeholder="예: IPhO 2023, KPhO 2022" /></div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-5">
@@ -350,7 +351,7 @@ export default function AdminPage() {
               {allProblems.map((problem) => (
                 <div key={problem.id} className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-black text-sm truncate">{problem.title}</h3>
+                    <h3 className="font-medium text-black text-sm truncate">{getDisplayText(problem.title)}</h3>
                     <p className="text-xs text-neutral-400 mt-1">{problem.source} ({problem.year})</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {problem.tags.slice(0, 4).map((tag) => (<span key={tag} className="text-xs text-neutral-400">#{tag}</span>))}

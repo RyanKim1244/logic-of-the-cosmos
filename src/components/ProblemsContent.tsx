@@ -268,7 +268,7 @@ export default function ProblemsContent({
                   <span className="ml-2">· 페이지 {currentPage}/{totalPages}</span>
                 )}
               </p>
-              <div className="grid md:grid-cols-2 gap-5">
+              <div className="space-y-2">
                 {paginatedProblems.map((problem) => (
                   <div key={problem.id} className="problem-card-hover">
                     <ProblemCard problem={problem} solvedCount={solvedCounts[problem.id] || 0} />

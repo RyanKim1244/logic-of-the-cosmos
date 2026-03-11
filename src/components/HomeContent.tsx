@@ -304,9 +304,9 @@ export default function HomeContent({
               </Link>
             </div>
           </ScrollReveal>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-2">
             {recentProblems.map((problem, i) => (
-              <ScrollReveal key={problem.id} delay={i * 120}>
+              <ScrollReveal key={problem.id} delay={i * 80}>
                 <div className="problem-card-hover">
                   <ProblemCard problem={problem} />
                 </div>
