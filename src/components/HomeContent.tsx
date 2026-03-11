@@ -43,6 +43,9 @@ export default function HomeContent({
   const [topContests, setTopContests] = useState<ContestPreview[]>(initialContests);
   const [stats, setStats] = useState<HomeStats>(initialStats);
   const [problemCounts, setProblemCounts] = useState<Record<string, number>>(initialProblemCounts);
+  const [statsConfirmed, setStatsConfirmed] = useState(
+    initialStats.problems > 0 || initialStats.contests > 0 || initialStats.discussions > 0 || initialStats.authors > 0
+  );
 
   useEffect(() => {
     // Seed in-memory cache with server data so SPA navigations are instant
@@ -72,7 +75,10 @@ export default function HomeContent({
 
       if (cachedProblems) setRecentProblems(cachedProblems);
       if (cachedContests) setTopContests(cachedContests);
-      if (cachedStats) setStats(cachedStats);
+      if (cachedStats) {
+        setStats(cachedStats);
+        setStatsConfirmed(true);
+      }
       if (cachedCounts) setProblemCounts(cachedCounts);
 
       // If all caches are fresh, no need to refetch
@@ -140,10 +146,9 @@ export default function HomeContent({
           discussions: discussionCountRes?.count ?? 0,
           authors: uniqueAuthors,
         };
-        if (newStats.problems > 0 || newStats.contests > 0 || newStats.discussions > 0) {
-          setStats(newStats);
-          setCache("homeStats", newStats);
-        }
+        setStats(newStats);
+        setStatsConfirmed(true);
+        setCache("homeStats", newStats);
 
         let newCounts: Record<string, number> = {};
         if (contestsRes?.data && contestsRes.data.length > 0 && problemSourcesRes?.data && problemSourcesRes.data.length > 0) {
@@ -234,15 +239,15 @@ export default function HomeContent({
           </ScrollReveal>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "총 문제 수", value: stats?.problems ?? null },
-              { label: "등록 대회", value: stats?.contests ?? null },
-              { label: "토론 댓글 수", value: stats?.discussions ?? null },
-              { label: "참여자 수", value: stats?.authors ?? null },
+              { label: "총 문제 수", value: stats?.problems ?? 0 },
+              { label: "등록 대회", value: stats?.contests ?? 0 },
+              { label: "토론 댓글 수", value: stats?.discussions ?? 0 },
+              { label: "참여자 수", value: stats?.authors ?? 0 },
             ].map((stat, i) => (
               <ScrollReveal key={stat.label} delay={i * 100}>
                 <div className="p-8 text-center border border-neutral-200 bg-white stat-card">
                   <div className="text-4xl md:text-5xl font-extralight text-black">
-                    {stat.value !== null ? <CountUp target={stat.value} /> : <span className="inline-block w-12 h-10 bg-neutral-100 animate-pulse rounded" />}
+                    {statsConfirmed ? <CountUp target={stat.value} /> : <span className="inline-block w-12 h-10 bg-neutral-100 animate-pulse rounded" />}
                   </div>
                   <div className="text-xs text-neutral-400 mt-3 uppercase tracking-[0.2em]">{stat.label}</div>
                 </div>
@@ -353,7 +358,7 @@ export default function HomeContent({
                   </div>
                   <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
                   <p className="text-xs text-neutral-400 leading-relaxed">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{stats?.problems ?? "—"}개의 문제 &rarr;</span>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? `${stats.problems}개의 문제` : "—"} &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -365,7 +370,7 @@ export default function HomeContent({
                   </div>
                   <h3 className="text-base font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
                   <p className="text-xs text-neutral-400 leading-relaxed">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
-                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{stats?.contests ?? "—"}개의 대회 &rarr;</span>
+                  <span className="inline-block mt-4 text-xs text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? `${stats.contests}개의 대회` : "—"} &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
