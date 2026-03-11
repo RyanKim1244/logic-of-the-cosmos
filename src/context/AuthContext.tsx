@@ -54,14 +54,6 @@ function clearProfileCache() {
   } catch { /* ignore */ }
 }
 
-function setUserIdCookie(id: string) {
-  document.cookie = `lotc_user_id=${encodeURIComponent(id)}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-}
-
-function clearUserIdCookie() {
-  document.cookie = "lotc_user_id=; path=/; max-age=0";
-}
-
 async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
   // Race against a timeout so the caller never hangs forever
   const timeout = new Promise<never>((_, reject) =>
@@ -107,10 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserRaw(u);
     if (u) {
       saveProfileToCache(u);
-      setUserIdCookie(u.id);
     } else {
       clearProfileCache();
-      clearUserIdCookie();
     }
   };
 
@@ -122,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cached = loadProfileFromCache();
     if (cached) {
       setUserRaw(cached);
-      setUserIdCookie(cached.id);
       setLoading(false);
     }
 
