@@ -107,7 +107,7 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
           <span>{contest.years.length}개 연도</span>
           {contest.website && (
             <a href={contest.website} target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">
-              공식 사이트 &nearr;
+              공식 사이트 &#x2197;
             </a>
           )}
         </div>
