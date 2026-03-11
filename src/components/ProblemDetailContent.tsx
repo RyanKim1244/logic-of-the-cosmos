@@ -103,8 +103,8 @@ export default function ProblemDetailContent({
         )}
 
         <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
-        <h1 className="text-xl sm:text-2xl font-light text-black mt-1 mb-3 pr-16 sm:pr-0">{problem.title}</h1>
-        <div className="flex items-center gap-3 text-sm text-neutral-400 mb-4">
+        <h1 className="text-lg sm:text-xl font-light text-black mt-1 mb-3 pr-16 sm:pr-0">{problem.title}</h1>
+        <div className="flex items-center gap-3 text-xs text-neutral-400 mb-4">
           <span>{problem.source} &middot; {problem.year}</span>
           {solvedCount > 0 && (
             <>
@@ -160,7 +160,7 @@ export default function ProblemDetailContent({
       {/* Solution Section */}
       <div className="border border-neutral-200 p-6 mb-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-light text-black">공식 풀이</h2>
+          <h2 className="text-lg font-light text-black">공식 풀이</h2>
           <button
             onClick={() => setShowSolution(!showSolution)}
             className={`px-5 py-2 text-xs font-medium transition-colors uppercase tracking-wider ${

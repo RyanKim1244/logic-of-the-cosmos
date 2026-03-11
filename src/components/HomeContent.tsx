@@ -330,12 +330,12 @@ export default function HomeContent({
               { icon: "\u03A3", title: "LaTeX 수식 지원", desc: "수학적 논증을 정확하게 표현할 수 있습니다. 토론과 풀이에서 자유롭게 LaTeX 수식을 사용하세요." },
             ].map((feature, i) => (
               <ScrollReveal key={feature.title} delay={i * 150}>
-                <div className="p-8 border border-neutral-800 feature-card group">
+                <div className="p-8 border border-neutral-800 feature-card group h-full flex flex-col">
                   <div className="w-14 h-14 border border-neutral-700 flex items-center justify-center mb-6 group-hover:border-white transition-colors">
                     <span className="text-2xl font-light text-neutral-400 group-hover:text-white transition-colors">{feature.icon}</span>
                   </div>
                   <h3 className="font-medium text-base uppercase tracking-widest mb-4">{feature.title}</h3>
-                  <p className="text-neutral-500 text-base leading-relaxed group-hover:text-neutral-400 transition-colors">{feature.desc}</p>
+                  <p className="text-neutral-500 text-base leading-relaxed group-hover:text-neutral-400 transition-colors flex-1">{feature.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -351,37 +351,37 @@ export default function HomeContent({
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-6">
             <ScrollReveal delay={0}>
-              <Link href="/problems" className="block">
-                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group">
+              <Link href="/problems" className="block h-full">
+                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group h-full flex flex-col">
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">?</span>
                   </div>
                   <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
+                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
                   <span className="inline-block mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.problems : "—"}개의 문제 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
             <ScrollReveal delay={100}>
-              <Link href="/contests" className="block">
-                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group">
+              <Link href="/contests" className="block h-full">
+                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group h-full flex flex-col">
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">#</span>
                   </div>
                   <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
+                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
                   <span className="inline-block mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.contests : "—"}개의 대회 &rarr;</span>
                 </div>
               </Link>
             </ScrollReveal>
             <ScrollReveal delay={200}>
-              <Link href="/community" className="block">
-                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group">
+              <Link href="/community" className="block h-full">
+                <div className="border border-neutral-200 bg-white p-8 hover:border-black transition-all group h-full flex flex-col">
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black transition-colors">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-black transition-colors">&gt;</span>
                   </div>
                   <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">커뮤니티</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">자유 토론과 질문을 통해 다른 학습자들과 소통하세요.</p>
+                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">자유 토론과 질문을 통해 다른 학습자들과 소통하세요.</p>
                   <span className="inline-block mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">토론 참여하기 &rarr;</span>
                 </div>
               </Link>

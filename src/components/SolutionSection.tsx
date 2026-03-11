@@ -195,7 +195,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
     <div ref={sectionRef}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-light text-black">풀이 공유</h2>
+          <h2 className="text-lg font-light text-black">풀이 공유</h2>
           <span className="text-xs text-neutral-400">{solutions.length}개의 풀이</span>
         </div>
         {user && !mySolution && !isWriting && (
