@@ -54,17 +54,19 @@ function YearAccordion({ problemsByYear }: { problemsByYear: { year: number; pro
               </svg>
             </button>
             {isOpen && (
-              <div className="px-6 pb-5 grid md:grid-cols-2 gap-4">
+              <div className="px-6 pb-5 space-y-2">
                 {yearProblems.map((problem) => (
-                  <Link key={problem.id} href={`/problems/${problem.id}`} className="block h-full">
-                    <div className="border border-neutral-200 p-5 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
-                      <div className="flex-1">
-                        <span className="text-[10px] text-neutral-300 font-mono">#{problem.problem_number}</span>
-                        <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors line-clamp-2 mt-0.5">
-                          {problem.title}
-                        </h3>
+                  <Link key={problem.id} href={`/problems/${problem.id}`} className="block">
+                    <div className="border border-neutral-200 px-4 py-3 hover:border-black transition-all duration-200 bg-white group flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-[10px] text-neutral-300 font-mono shrink-0">#{problem.problem_number}</span>
+                          <h3 className="text-sm font-medium text-neutral-900 group-hover:text-black transition-colors truncate">
+                            {problem.title}
+                          </h3>
+                        </div>
                       </div>
-                      <p className="text-xs text-neutral-400 mt-2">{problem.source}</p>
+                      <span className="text-[11px] text-neutral-400 shrink-0">{problem.source}</span>
                     </div>
                   </Link>
                 ))}
