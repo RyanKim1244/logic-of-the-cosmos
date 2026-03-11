@@ -241,6 +241,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // Stop auto-refresh BEFORE signOut to avoid Web Locks collision.
+    // signOut() acquires the same navigator lock with { steal: true },
+    // which breaks the lock held by startAutoRefresh and throws
+    // "Lock broken by another request with the 'steal' option."
+    supabase.auth.stopAutoRefresh();
     await supabase.auth.signOut();
     setUser(null);
     // Clear all caches so next login gets fresh data
