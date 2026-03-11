@@ -124,16 +124,23 @@ export default function HomeContent({
         }
 
         const uniqueAuthors = authorDataRes?.data ? new Set(authorDataRes.data.map((d: { author_name: string }) => d.author_name)).size : 0;
-        const newStats = {
-          problems: problemCountRes?.count ?? 0,
-          contests: contestCountRes?.count ?? 0,
-          discussions: discussionCountRes?.count ?? 0,
-          authors: uniqueAuthors,
-        };
-        if (newStats.problems > 0 || newStats.contests > 0 || newStats.discussions > 0) {
-          setStats(newStats);
-          setCache("homeStats", newStats);
-        }
+        const freshProblems = problemCountRes?.count;
+        const freshContests = contestCountRes?.count;
+        const freshDiscussions = discussionCountRes?.count;
+
+        // Only update individual stats that actually returned data.
+        // Prevents partial query failures (e.g. after auth state change)
+        // from overwriting correct ISR-provided values with 0.
+        setStats((prev) => {
+          const merged = {
+            problems: freshProblems != null ? freshProblems : prev.problems,
+            contests: freshContests != null ? freshContests : prev.contests,
+            discussions: freshDiscussions != null ? freshDiscussions : prev.discussions,
+            authors: uniqueAuthors > 0 ? uniqueAuthors : prev.authors,
+          };
+          setCache("homeStats", merged);
+          return merged;
+        });
 
         let newCounts: Record<string, number> = {};
         if (contestsRes?.data && contestsRes.data.length > 0 && problemSourcesRes?.data && problemSourcesRes.data.length > 0) {
