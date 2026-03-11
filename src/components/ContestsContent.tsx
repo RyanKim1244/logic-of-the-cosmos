@@ -117,7 +117,7 @@ export default function ContestsContent({
       </p>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {contests.map((contest) => {
+        {[...contests].sort((a, b) => a.name.localeCompare(b.name)).map((contest) => {
           const yearRange =
             contest.years.length > 0
               ? `${contest.years[contest.years.length - 1]}–${contest.years[0]}`

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
-import MultiLangViewer from "@/components/MultiLangViewer";
+import { parseMultiLang, getLanguages, getLangLabel } from "@/lib/multilang";
+import LatexRenderer from "@/components/LatexRenderer";
 
 const DiscussionSection = dynamic(() => import("@/components/DiscussionSection"), {
   ssr: false,
@@ -30,9 +31,37 @@ export default function ProblemDetailContent({
   const [showSolution, setShowSolution] = useState(false);
   const [problem, setProblem] = useState<Problem>(initialProblem);
   const [solvedCount, setSolvedCount] = useState(initialSolvedCount);
+  const [activeLang, setActiveLang] = useState<string | null>(null);
   const id = problem.id;
   const isSolved = user?.solvedProblems.includes(id) ?? false;
   const isBookmarked = user?.bookmarkedProblems.includes(id) ?? false;
+
+  // Parse multi-lang for title, content, solution
+  const titleLangs = useMemo(() => parseMultiLang(problem.title), [problem.title]);
+  const contentLangs = useMemo(() => parseMultiLang(problem.content), [problem.content]);
+  const solutionLangs = useMemo(() => parseMultiLang(problem.officialSolution), [problem.officialSolution]);
+
+  // Merge available languages from all fields
+  const availableLangs = useMemo(() => {
+    const allKeys = new Set([
+      ...Object.keys(titleLangs),
+      ...Object.keys(contentLangs),
+      ...Object.keys(solutionLangs),
+    ]);
+    // Filter to only include languages that have at least some content
+    const withContent = [...allKeys].filter(
+      (k) => (titleLangs[k]?.trim() || contentLangs[k]?.trim() || solutionLangs[k]?.trim())
+    );
+    return getLanguages(Object.fromEntries(withContent.map((k) => [k, "x"])));
+  }, [titleLangs, contentLangs, solutionLangs]);
+
+  const currentLang = activeLang && availableLangs.includes(activeLang)
+    ? activeLang
+    : availableLangs[0] || "ko";
+
+  const displayTitle = titleLangs[currentLang] || Object.values(titleLangs)[0] || problem.title;
+  const displayContent = contentLangs[currentLang] || Object.values(contentLangs)[0] || "";
+  const displaySolution = solutionLangs[currentLang] || Object.values(solutionLangs)[0] || "";
 
   // Background refresh when tab becomes visible
   useEffect(() => {
@@ -103,7 +132,7 @@ export default function ProblemDetailContent({
         )}
 
         <span className="text-[10px] text-neutral-300 font-mono">#{problem.problemNumber}</span>
-        <h1 className="text-lg sm:text-xl font-light text-black mt-1 mb-3 pr-16 sm:pr-0">{problem.title}</h1>
+        <h1 className="text-lg sm:text-xl font-light text-black mt-1 mb-3 pr-16 sm:pr-0">{displayTitle}</h1>
         <div className="flex items-center gap-3 text-xs text-neutral-400 mb-4">
           <span>{problem.source} &middot; {problem.year}</span>
           {solvedCount > 0 && (
@@ -153,7 +182,24 @@ export default function ProblemDetailContent({
         )}
 
         <div className="border-t border-neutral-100 pt-6">
-          <MultiLangViewer content={problem.content} />
+          {availableLangs.length > 1 && (
+            <div className="flex items-center gap-0 mb-4 border-b border-neutral-200">
+              {availableLangs.map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setActiveLang(lang)}
+                  className={`px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px ${
+                    currentLang === lang
+                      ? "border-black text-black"
+                      : "border-transparent text-neutral-400 hover:text-neutral-600"
+                  }`}
+                >
+                  {getLangLabel(lang)}
+                </button>
+              ))}
+            </div>
+          )}
+          <LatexRenderer content={displayContent} />
         </div>
       </div>
 
@@ -172,7 +218,7 @@ export default function ProblemDetailContent({
         </div>
 
         <div className={showSolution ? "border-t border-neutral-100 pt-6 mt-4 animate-fade-slide-up" : "hidden"}>
-          <MultiLangViewer content={problem.officialSolution} />
+          <LatexRenderer content={displaySolution} />
         </div>
       </div>
 
