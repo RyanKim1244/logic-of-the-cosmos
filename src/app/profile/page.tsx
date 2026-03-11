@@ -1,19 +1,29 @@
-import { cookies } from "next/headers";
-import { createServerSupabase } from "@/lib/supabase-server";
+import { createAuthServerSupabase } from "@/lib/supabase-server";
 import ProfilePageContent, { type ProfileData } from "@/components/ProfilePageContent";
 
 export default async function ProfilePage() {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("lotc_user_id")?.value;
+  // Authenticated server client — reads auth cookies set by the browser
+  // and refreshed by the middleware. auth.uid() works, so RLS applies correctly.
+  const supabase = await createAuthServerSupabase();
 
-  if (!userId) {
+  // Verify the user's session (getUser() contacts the auth server)
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+
+  if (!authUser) {
     return <ProfilePageContent initialData={null} />;
   }
 
-  const supabase = createServerSupabase();
+  const userId = authUser.id;
 
   // Phase 1: All independent queries in parallel (server → Supabase, same region = fast)
-  const [statsRes, heatmapRes, historyRes, bookmarkedIdsRes] = await Promise.allSettled([
+  // All queries now run with a real auth.uid(), so RLS policies work correctly
+  // (including user_bookmarked_problems which requires auth).
+  const [profileRes, statsRes, heatmapRes, historyRes, bookmarkedIdsRes] = await Promise.allSettled([
+    supabase
+      .from("profiles")
+      .select("name, email, bio, created_at")
+      .eq("id", userId)
+      .single(),
     supabase
       .from("user_stats")
       .select("solution_count, discussion_count")
@@ -78,7 +88,23 @@ export default async function ProfilePage() {
       .filter((r): r is NonNullable<typeof r> => r !== null);
   }
 
+  // If we can't fetch the user profile, fall back to unauthenticated view
+  const profileData =
+    profileRes.status === "fulfilled" && profileRes.value.data
+      ? profileRes.value.data
+      : null;
+
+  if (!profileData) {
+    return <ProfilePageContent initialData={null} />;
+  }
+
   const data: ProfileData = {
+    userProfile: {
+      name: profileData.name,
+      email: profileData.email,
+      bio: profileData.bio || "",
+      createdAt: profileData.created_at,
+    },
     solutionCount:
       statsRes.status === "fulfilled" && statsRes.value.data
         ? statsRes.value.data.solution_count

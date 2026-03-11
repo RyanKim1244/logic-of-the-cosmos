@@ -1,30 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
 
 /**
- * Single Supabase client instance.
- * Uses createClient (localStorage for auth tokens) instead of
- * createBrowserClient (cookie-based) — the cookie approach was causing
- * REST API requests to hang after signInWithPassword in Next.js 16.
- * The proxy.ts (server-side) still uses createServerClient for cookie
- * refresh on navigation.
+ * Singleton browser Supabase client (cookie-based auth).
+ *
+ * Auth tokens are stored in cookies instead of localStorage so the
+ * server (middleware + server components) can read them and maintain
+ * the user's authenticated session server-side.
+ *
+ * The Web Locks hang issue that previously blocked this approach
+ * was fixed in supabase-js >=2.86.0 (PR #2106).
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    // Default is 5000ms — reduce so orphaned locks are stolen faster.
-    // React Strict Mode double-mount and backgrounded tabs frequently
-    // cause the Web Locks API lock to be orphaned; a shorter timeout
-    // means faster automatic recovery instead of a 5s+ stall.
-    // (Supported by auth-js but not yet exposed in supabase-js types.)
-    lockAcquireTimeout: 2000,
-  } as Record<string, unknown>,
-});
-
-export function getSupabase() {
-  return supabase;
-}
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Wraps a Supabase query with a timeout and optional external AbortSignal.

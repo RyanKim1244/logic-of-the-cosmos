@@ -211,7 +211,7 @@ create policy "Anyone can view solved problems" on user_solved_problems for sele
 create policy "Users can insert own solved" on user_solved_problems for insert with check (user_id = auth.uid());
 create policy "Users can delete own solved" on user_solved_problems for delete using (user_id = auth.uid());
 
--- User Bookmarked Problems
+-- User Bookmarked Problems (본인만 조회 — 서버는 쿠키 기반 auth.uid()로 접근)
 alter table user_bookmarked_problems enable row level security;
 create policy "Users can view own bookmarks" on user_bookmarked_problems for select using (user_id = auth.uid());
 create policy "Users can insert own bookmarks" on user_bookmarked_problems for insert with check (user_id = auth.uid());
