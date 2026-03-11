@@ -196,29 +196,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: "비밀번호는 6자 이상이어야 합니다." };
     }
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
+    // Retry once for transient database errors (e.g. trigger timeouts)
+    const MAX_ATTEMPTS = 2;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      });
 
-    if (error) {
-      console.error("[Register] signUp error:", error.message, error.status);
+      if (!error) return { success: true };
+
+      console.error(`[Register] signUp error (attempt ${attempt}/${MAX_ATTEMPTS}):`, error.message, error.status);
+
       if (error.message.includes("already registered")) {
         return { success: false, error: "이미 등록된 이메일입니다." };
-      }
-      if (error.message.toLowerCase().includes("database")) {
-        return {
-          success: false,
-          error: "회원가입 중 데이터베이스 오류가 발생했습니다. 관리자에게 문의해주세요.",
-        };
       }
       if (error.message.includes("rate") || error.status === 429) {
         return { success: false, error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." };
       }
+
+      // Retry transient database errors once
+      if (error.message.toLowerCase().includes("database") && attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+
+      if (error.message.toLowerCase().includes("database")) {
+        return {
+          success: false,
+          error: "회원가입 중 데이터베이스 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        };
+      }
       return { success: false, error: error.message };
     }
-    return { success: true };
+    return { success: false, error: "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요." };
   };
 
   const logout = async () => {
