@@ -14,6 +14,29 @@ export interface UploadError {
   error: string;
 }
 
+let bucketReady = false;
+
+async function ensureBucket(): Promise<string | null> {
+  if (bucketReady) return null;
+
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets?.some((b) => b.id === BUCKET);
+
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(BUCKET, {
+      public: true,
+      fileSizeLimit: MAX_FILE_SIZE,
+      allowedMimeTypes: ALLOWED_TYPES,
+    });
+    if (error) {
+      return `버킷 생성 실패: ${error.message}`;
+    }
+  }
+
+  bucketReady = true;
+  return null;
+}
+
 export async function uploadImage(file: File): Promise<UploadResult | UploadError> {
   if (!ALLOWED_TYPES.includes(file.type)) {
     return { error: "지원하지 않는 파일 형식입니다. (PNG, JPG, GIF, WebP, SVG만 가능)" };
@@ -21,6 +44,11 @@ export async function uploadImage(file: File): Promise<UploadResult | UploadErro
 
   if (file.size > MAX_FILE_SIZE) {
     return { error: "파일 크기가 5MB를 초과합니다." };
+  }
+
+  const bucketError = await ensureBucket();
+  if (bucketError) {
+    return { error: bucketError };
   }
 
   const ext = file.name.split(".").pop() || "png";
