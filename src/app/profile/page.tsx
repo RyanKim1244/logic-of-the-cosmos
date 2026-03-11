@@ -215,19 +215,12 @@ export default function ProfilePage() {
 
     fetchAll(controller.signal).catch(() => {});
 
-    // Re-fetch when tab becomes visible
-    function handleVisibility() {
-      if (document.visibilityState === "visible") {
-        controller.abort();
-        controller = new AbortController();
-        fetchAll(controller.signal).catch(() => {});
-      }
-    }
-    document.addEventListener("visibilitychange", handleVisibility);
+    // No visibility re-fetch needed here — fetchAll already checks
+    // isCacheStale and skips if data is fresh. AuthContext handles
+    // session re-sync on tab focus with its own cooldown.
 
     return () => {
       controller.abort();
-      document.removeEventListener("visibilitychange", handleVisibility);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);

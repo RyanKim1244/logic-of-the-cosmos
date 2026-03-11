@@ -160,14 +160,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // When the tab becomes visible again after being idle, re-sync profile.
-    // Use getSession() (local read, no lock) instead of getUser() (network + lock).
+    // When the tab becomes visible again, only re-sync if it's been idle
+    // for a meaningful duration. Without this cooldown, every quick tab
+    // switch fires 3 network requests (fetchProfile) that cascade into
+    // 4 more from the profile page — 7 wasted requests per tab switch.
+    let lastFetchTime = Date.now();
+    const VISIBILITY_COOLDOWN = 5 * 60 * 1000; // match cache TTL (5 min)
+
     function handleVisibilityChange() {
       if (document.visibilityState !== "visible" || !isMounted) return;
       supabase.auth.startAutoRefresh();
+
+      // Skip re-fetch if we fetched recently
+      if (Date.now() - lastFetchTime < VISIBILITY_COOLDOWN) return;
+
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!isMounted) return;
         if (session?.user) {
+          lastFetchTime = Date.now();
           fetchProfile(session.user).then((profile) => {
             if (profile && isMounted) setUser(profile);
           }).catch(() => { /* keep existing user */ });
