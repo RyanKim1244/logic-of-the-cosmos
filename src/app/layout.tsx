@@ -44,6 +44,21 @@ export default function RootLayout({
             tex: {
               inlineMath: [['$', '$']],
               displayMath: [['$$', '$$']],
+              packages: {'[+]': ['ams', 'newcommand', 'configmacros', 'boldsymbol']},
+              tags: 'ams',
+              macros: {
+                RR: '\\\\mathbb{R}',
+                NN: '\\\\mathbb{N}',
+                ZZ: '\\\\mathbb{Z}',
+                CC: '\\\\mathbb{C}',
+                QQ: '\\\\mathbb{Q}',
+                dd: ['\\\\mathrm{d}#1', 1],
+                dv: ['\\\\frac{\\\\mathrm{d}#1}{\\\\mathrm{d}#2}', 2],
+                pdv: ['\\\\frac{\\\\partial #1}{\\\\partial #2}', 2],
+                bra: ['\\\\langle #1 |', 1],
+                ket: ['| #1 \\\\rangle', 1],
+                braket: ['\\\\langle #1 | #2 \\\\rangle', 2],
+              },
             },
             svg: {
               fontCache: 'global'
