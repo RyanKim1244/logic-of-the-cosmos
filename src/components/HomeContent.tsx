@@ -97,13 +97,23 @@ export default function HomeContent({
 
         if (controller.signal.aborted) return;
 
-        const problemsRes = results[0].status === "fulfilled" ? results[0].value : null;
-        const contestsRes = results[1].status === "fulfilled" ? results[1].value : null;
-        const problemCountRes = results[2].status === "fulfilled" ? results[2].value : null;
-        const contestCountRes = results[3].status === "fulfilled" ? results[3].value : null;
-        const discussionCountRes = results[4].status === "fulfilled" ? results[4].value : null;
-        const authorDataRes = results[5].status === "fulfilled" ? results[5].value : null;
-        const problemSourcesRes = results[6].status === "fulfilled" ? results[6].value : null;
+        // Log errors for debugging
+        const queryNames = ["problems", "contests", "problemCount", "contestCount", "discussionCount", "authorData", "problemSources"];
+        results.forEach((res, i) => {
+          if (res.status === "rejected") {
+            console.error(`[Home] ${queryNames[i]} rejected:`, res.reason);
+          } else if (res.value.error) {
+            console.error(`[Home] ${queryNames[i]} error:`, res.value.error.message);
+          }
+        });
+
+        const problemsRes = results[0].status === "fulfilled" && !results[0].value.error ? results[0].value : null;
+        const contestsRes = results[1].status === "fulfilled" && !results[1].value.error ? results[1].value : null;
+        const problemCountRes = results[2].status === "fulfilled" && !results[2].value.error ? results[2].value : null;
+        const contestCountRes = results[3].status === "fulfilled" && !results[3].value.error ? results[3].value : null;
+        const discussionCountRes = results[4].status === "fulfilled" && !results[4].value.error ? results[4].value : null;
+        const authorDataRes = results[5].status === "fulfilled" && !results[5].value.error ? results[5].value : null;
+        const problemSourcesRes = results[6].status === "fulfilled" && !results[6].value.error ? results[6].value : null;
 
         /* eslint-disable @typescript-eslint/no-explicit-any */
         let mappedProblems: Problem[] | undefined;

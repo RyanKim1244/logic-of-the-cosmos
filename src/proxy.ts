@@ -41,16 +41,7 @@ export async function proxy(request: NextRequest) {
   // Always use getUser() (not getSession()) — getUser() contacts the
   // Supabase Auth server to verify and refresh the token.
   // getSession() only reads from cookies without verification.
-  const { data: { user }, error } = await supabase.auth.getUser();
-
-  if (request.nextUrl.pathname === "/profile" || request.nextUrl.pathname.startsWith("/api/debug")) {
-    if (error) {
-      console.error("[Proxy] auth error on", request.nextUrl.pathname, ":", error.message);
-      console.error("[Proxy] auth cookies present:", request.cookies.getAll().filter(c => c.name.startsWith("sb-")).map(c => c.name));
-    } else {
-      console.log("[Proxy] auth OK for", request.nextUrl.pathname, "user:", user?.id);
-    }
-  }
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
