@@ -159,37 +159,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // When the tab becomes visible again, only re-sync if it's been idle
-    // for a meaningful duration. Without this cooldown, every quick tab
-    // switch fires 3 network requests (fetchProfile) that cascade into
-    // 4 more from the profile page — 7 wasted requests per tab switch.
-    let lastFetchTime = Date.now();
-    const VISIBILITY_COOLDOWN = 5 * 60 * 1000; // match cache TTL (5 min)
-
-    function handleVisibilityChange() {
-      if (document.visibilityState !== "visible" || !isMounted) return;
-
-      // Skip re-fetch if we fetched recently
-      if (Date.now() - lastFetchTime < VISIBILITY_COOLDOWN) return;
-
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!isMounted) return;
-        if (session?.user) {
-          lastFetchTime = Date.now();
-          fetchProfile(session.user).then((profile) => {
-            if (profile && isMounted) setUser(profile);
-          }).catch(() => { /* keep existing user */ });
-        } else {
-          setUser(null);
-        }
-      }).catch(() => { /* network hiccup — keep existing user */ });
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    // createBrowserClient already handles auto-refresh and visibility-based
+    // token renewal internally. A custom visibilitychange handler that calls
+    // getSession() races with the built-in auto-refresh for the same Web Lock,
+    // causing "Lock broken by another request with the 'steal' option" errors.
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
