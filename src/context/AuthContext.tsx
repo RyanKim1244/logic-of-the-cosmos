@@ -203,8 +203,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (error) {
+      console.error("[Register] signUp error:", error.message, error.status);
       if (error.message.includes("already registered")) {
         return { success: false, error: "이미 등록된 이메일입니다." };
+      }
+      if (error.message.toLowerCase().includes("database")) {
+        return {
+          success: false,
+          error: "회원가입 중 데이터베이스 오류가 발생했습니다. 관리자에게 문의해주세요.",
+        };
+      }
+      if (error.message.includes("rate") || error.status === 429) {
+        return { success: false, error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." };
       }
       return { success: false, error: error.message };
     }
