@@ -13,7 +13,15 @@ export default async function ProfilePage() {
   const supabase = createServerSupabase();
 
   // Phase 1: All independent queries in parallel (server → Supabase, same region = fast)
-  const [statsRes, heatmapRes, historyRes, bookmarkedIdsRes] = await Promise.allSettled([
+  // Note: profiles, user_stats, user_solved_problems have public SELECT RLS.
+  // user_bookmarked_problems requires auth — we query it but it may return empty;
+  // client-side AuthContext will provide bookmarks as fallback.
+  const [profileRes, statsRes, heatmapRes, historyRes, bookmarkedIdsRes] = await Promise.allSettled([
+    supabase
+      .from("profiles")
+      .select("name, email, bio, created_at")
+      .eq("id", userId)
+      .single(),
     supabase
       .from("user_stats")
       .select("solution_count, discussion_count")
@@ -78,7 +86,23 @@ export default async function ProfilePage() {
       .filter((r): r is NonNullable<typeof r> => r !== null);
   }
 
+  // If we can't even fetch the user profile, fall back to unauthenticated view
+  const profileData =
+    profileRes.status === "fulfilled" && profileRes.value.data
+      ? profileRes.value.data
+      : null;
+
+  if (!profileData) {
+    return <ProfilePageContent initialData={null} />;
+  }
+
   const data: ProfileData = {
+    userProfile: {
+      name: profileData.name,
+      email: profileData.email,
+      bio: profileData.bio || "",
+      createdAt: profileData.created_at,
+    },
     solutionCount:
       statsRes.status === "fulfilled" && statsRes.value.data
         ? statsRes.value.data.solution_count

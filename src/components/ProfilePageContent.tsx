@@ -24,7 +24,15 @@ interface SolveRecord {
   source: string;
 }
 
+interface UserProfile {
+  name: string;
+  email: string;
+  bio: string;
+  createdAt: string;
+}
+
 export interface ProfileData {
+  userProfile: UserProfile;
   solutionCount: number;
   discussionCount: number;
   solvedDates: string[];
@@ -100,15 +108,44 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   const bookmarkedProblems = initialData?.bookmarkedProblems ?? [];
   const solvedProblems = initialData?.solvedProblems ?? [];
 
-  if (authLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <p className="text-neutral-400 text-sm">로딩 중...</p>
-      </div>
-    );
+  // Only show loading/login states when there's no server data to display.
+  // When initialData exists, render immediately to avoid replacing
+  // server-rendered HTML with a loading spinner (hydration flash).
+  if (!initialData) {
+    if (authLoading) {
+      return (
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <p className="text-neutral-400 text-sm">로딩 중...</p>
+        </div>
+      );
+    }
+
+    if (!user) {
+      return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+          <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
+          <Link href="/login" className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors">
+            로그인
+          </Link>
+        </div>
+      );
+    }
   }
 
-  if (!user) {
+  // Prefer live AuthContext user, fall back to server-fetched profile
+  const profile = user ?? (initialData?.userProfile ? {
+    id: "",
+    email: initialData.userProfile.email,
+    name: initialData.userProfile.name,
+    createdAt: initialData.userProfile.createdAt,
+    bio: initialData.userProfile.bio,
+    is_admin: false,
+    solvedProblems: solvedProblems.map(p => p.id),
+    bookmarkedProblems: bookmarkedProblems.map(p => p.id),
+  } : null);
+
+  // If we have neither server data nor auth user, redirect to login
+  if (!profile) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
         <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
@@ -119,7 +156,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
     );
   }
 
-  const joinDate = new Date(user.createdAt).toLocaleDateString("ko-KR", {
+  const joinDate = new Date(profile.createdAt).toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -131,8 +168,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   };
 
   const startEdit = () => {
-    setEditName(user.name);
-    setEditBio(user.bio);
+    setEditName(profile.name);
+    setEditBio(profile.bio);
     setIsEditing(true);
   };
 
@@ -155,10 +192,10 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-black text-white flex items-center justify-center text-2xl font-light">
-              {user.name.charAt(0).toUpperCase()}
+              {profile.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              {isEditing ? (
+              {isEditing && user ? (
                 <div className="space-y-3">
                   <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="block text-xl font-light border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none" />
                   <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="자기소개를 입력하세요" rows={2} className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none" />
@@ -169,16 +206,16 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                 </div>
               ) : (
                 <>
-                  <h1 className="text-2xl font-light mb-1">{user.name}</h1>
-                  {user.bio && <p className="text-sm text-neutral-500 mb-2">{user.bio}</p>}
-                  <p className="text-xs text-neutral-400">{user.email}</p>
+                  <h1 className="text-2xl font-light mb-1">{profile.name}</h1>
+                  {profile.bio && <p className="text-sm text-neutral-500 mb-2">{profile.bio}</p>}
+                  <p className="text-xs text-neutral-400">{profile.email}</p>
                   <p className="text-xs text-neutral-400 mt-1">가입일: {joinDate}</p>
                 </>
               )}
             </div>
           </div>
 
-          {!isEditing && (
+          {!isEditing && user && (
             <div className="flex gap-2">
               <button onClick={startEdit} className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">편집</button>
               <button onClick={async () => { await logout(); router.push("/"); }} className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors">로그아웃</button>
@@ -190,7 +227,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="border border-neutral-200 p-6 text-center">
-          <div className="text-3xl font-extralight">{user.solvedProblems.length}</div>
+          <div className="text-3xl font-extralight">{solvedProblems.length}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
