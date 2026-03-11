@@ -22,6 +22,16 @@ export default async function PublicProfilePage({
       .order("created_at", { ascending: false }),
   ]);
 
+  // Log errors for debugging
+  const queryNames = ["profiles", "user_stats", "get_solve_heatmap", "user_solved_problems"];
+  [profileRes, statsRes, heatmapRes, historyRes].forEach((res, i) => {
+    if (res.status === "rejected") {
+      console.error(`[PublicProfile] ${queryNames[i]} rejected:`, res.reason);
+    } else if (res.value.error) {
+      console.error(`[PublicProfile] ${queryNames[i]} error:`, res.value.error.message);
+    }
+  });
+
   const profile =
     profileRes.status === "fulfilled" && profileRes.value.data
       ? profileRes.value.data
@@ -32,17 +42,19 @@ export default async function PublicProfilePage({
   }
 
   const statsData =
-    statsRes.status === "fulfilled" && statsRes.value.data
+    statsRes.status === "fulfilled" && statsRes.value.data && !statsRes.value.error
       ? statsRes.value.data
       : null;
 
-  // Extract solved problem IDs for Phase 2
-  const solvedIds =
-    historyRes.status === "fulfilled"
-      ? (historyRes.value.data?.map((s: { problem_id: string }) => s.problem_id) ?? [])
+  // Extract solved data — check for errors explicitly
+  const historyData =
+    historyRes.status === "fulfilled" && historyRes.value.data && !historyRes.value.error
+      ? (historyRes.value.data as { problem_id: string; created_at: string }[])
       : [];
 
-  // Phase 2: Fetch problem details (needs IDs from Phase 1)
+  const solvedIds = historyData.map((s) => s.problem_id);
+
+  // Phase 2: Fetch problem details
   const detailsData =
     solvedIds.length > 0
       ? ((await supabase.from("problems").select("id, title, source").in("id", solvedIds)).data ?? [])
@@ -52,7 +64,7 @@ export default async function PublicProfilePage({
     detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
   );
 
-  // Process heatmap
+  // Heatmap: try RPC first, fall back to raw timestamps
   let solvedDates: string[] = [];
   if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
     for (const row of heatmapRes.value.data as { solve_date: string; solve_count: number }[]) {
@@ -61,27 +73,25 @@ export default async function PublicProfilePage({
       }
     }
   }
-
-  // Process solve history
-  let solveHistory: { problem_id: string; created_at: string; title: string; source: string }[] = [];
-  if (historyRes.status === "fulfilled" && historyRes.value.data) {
-    const histData = historyRes.value.data as { problem_id: string; created_at: string }[];
-    if (solvedDates.length === 0) {
-      solvedDates = histData.map((s) => s.created_at);
-    }
-    solveHistory = histData
-      .map((s) => {
-        const detail = detailMap.get(s.problem_id);
-        if (!detail) return null;
-        return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+  if (solvedDates.length === 0 && historyData.length > 0) {
+    solvedDates = historyData.map((s) => s.created_at);
   }
+
+  // Solve history — show records even if problem detail is missing
+  const solveHistory = historyData.map((s) => {
+    const detail = detailMap.get(s.problem_id);
+    return {
+      problem_id: s.problem_id,
+      created_at: s.created_at,
+      title: detail?.title ?? "(삭제된 문제)",
+      source: detail?.source ?? "",
+    };
+  });
 
   return (
     <PublicProfileContent
       profile={profile}
-      solvedCount={statsData?.solved_count ?? 0}
+      solvedCount={statsData?.solved_count ?? historyData.length}
       solutionCount={statsData?.solution_count ?? 0}
       discussionCount={statsData?.discussion_count ?? 0}
       solvedDates={solvedDates}

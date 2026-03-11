@@ -135,13 +135,26 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       if (cancelled) return;
 
-      const solvedIds =
-        historyRes.status === "fulfilled"
-          ? (historyRes.value.data?.map((s: { problem_id: string }) => s.problem_id) ?? [])
+      // Log errors for debugging (visible in browser console)
+      const queryNames = ["user_stats", "get_solve_heatmap", "user_solved_problems", "user_bookmarked_problems"];
+      [statsRes, heatmapRes, historyRes, bookmarkedRes].forEach((res, i) => {
+        if (res.status === "rejected") {
+          console.error(`[Profile] ${queryNames[i]} rejected:`, res.reason);
+        } else if (res.value.error) {
+          console.error(`[Profile] ${queryNames[i]} error:`, res.value.error.message);
+        }
+      });
+
+      // Extract solved data — check for Supabase errors explicitly
+      const historyData =
+        historyRes.status === "fulfilled" && historyRes.value.data && !historyRes.value.error
+          ? (historyRes.value.data as { problem_id: string; created_at: string }[])
           : [];
+
+      const solvedIds = historyData.map((s) => s.problem_id);
       const bookmarkedIds =
-        bookmarkedRes.status === "fulfilled"
-          ? (bookmarkedRes.value.data?.map((b: { problem_id: string }) => b.problem_id) ?? [])
+        bookmarkedRes.status === "fulfilled" && bookmarkedRes.value.data && !bookmarkedRes.value.error
+          ? bookmarkedRes.value.data.map((b: { problem_id: string }) => b.problem_id)
           : [];
       const allIds = [...new Set([...solvedIds, ...bookmarkedIds])];
 
@@ -156,44 +169,45 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
       );
 
+      // Heatmap: try RPC first, fall back to raw timestamps
       let dates: string[] = [];
       if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
         for (const row of heatmapRes.value.data as { solve_date: string; solve_count: number }[]) {
           for (let i = 0; i < row.solve_count; i++) dates.push(row.solve_date);
         }
       }
-
-      let history: SolveRecord[] = [];
-      if (historyRes.status === "fulfilled" && historyRes.value.data) {
-        const histData = historyRes.value.data as { problem_id: string; created_at: string }[];
-        if (dates.length === 0) dates = histData.map((s) => s.created_at);
-        history = histData
-          .map((s) => {
-            const detail = detailMap.get(s.problem_id);
-            if (!detail) return null;
-            return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
-          })
-          .filter((r): r is NonNullable<typeof r> => r !== null);
+      if (dates.length === 0 && historyData.length > 0) {
+        dates = historyData.map((s) => s.created_at);
       }
+
+      // Solve history — show records even if problem detail is missing
+      const history: SolveRecord[] = historyData.map((s) => {
+        const detail = detailMap.get(s.problem_id);
+        return {
+          problem_id: s.problem_id,
+          created_at: s.created_at,
+          title: detail?.title ?? "(삭제된 문제)",
+          source: detail?.source ?? "",
+        };
+      });
+
+      const statsData =
+        statsRes.status === "fulfilled" && statsRes.value.data && !statsRes.value.error
+          ? statsRes.value.data
+          : null;
 
       setClientData({
         userProfile: { name: user.name, email: user.email, bio: user.bio, createdAt: user.createdAt },
-        solvedCount:
-          statsRes.status === "fulfilled" && statsRes.value.data
-            ? statsRes.value.data.solved_count
-            : 0,
-        solutionCount:
-          statsRes.status === "fulfilled" && statsRes.value.data
-            ? statsRes.value.data.solution_count
-            : 0,
-        discussionCount:
-          statsRes.status === "fulfilled" && statsRes.value.data
-            ? statsRes.value.data.discussion_count
-            : 0,
+        solvedCount: statsData?.solved_count ?? historyData.length,
+        solutionCount: statsData?.solution_count ?? 0,
+        discussionCount: statsData?.discussion_count ?? 0,
         solvedDates: dates,
         solveHistory: history,
         bookmarkedProblems: bookmarkedIds.map((id: string) => detailMap.get(id)).filter((p): p is ProblemSummary => !!p),
-        solvedProblems: solvedIds.map((id: string) => detailMap.get(id)).filter((p): p is ProblemSummary => !!p),
+        solvedProblems: solvedIds.map((id: string) => {
+          const detail = detailMap.get(id);
+          return detail ?? { id, title: "(삭제된 문제)", source: "" };
+        }),
       });
     })();
 

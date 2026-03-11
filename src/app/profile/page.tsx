@@ -1,12 +1,11 @@
 import { createAuthServerSupabase } from "@/lib/supabase-server";
 import ProfilePageContent, { type ProfileData } from "@/components/ProfilePageContent";
 
-export default async function ProfilePage() {
-  // Authenticated server client — reads auth cookies set by the browser
-  // and refreshed by the middleware. auth.uid() works, so RLS applies correctly.
-  const supabase = await createAuthServerSupabase();
+// Profile page must always render fresh (user-specific, cookie-based auth)
+export const dynamic = "force-dynamic";
 
-  // Verify the user's session (getUser() contacts the auth server)
+export default async function ProfilePage() {
+  const supabase = await createAuthServerSupabase();
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
   if (!authUser) {
@@ -15,9 +14,7 @@ export default async function ProfilePage() {
 
   const userId = authUser.id;
 
-  // Phase 1: All independent queries in parallel (server → Supabase, same region = fast)
-  // All queries now run with a real auth.uid(), so RLS policies work correctly
-  // (including user_bookmarked_problems which requires auth).
+  // Phase 1: All independent queries in parallel
   const [profileRes, statsRes, heatmapRes, historyRes, bookmarkedIdsRes] = await Promise.allSettled([
     supabase
       .from("profiles")
@@ -41,15 +38,29 @@ export default async function ProfilePage() {
       .eq("user_id", userId),
   ]);
 
-  // Extract IDs for Phase 2
-  const solvedIds =
-    historyRes.status === "fulfilled"
-      ? (historyRes.value.data?.map((s: { problem_id: string }) => s.problem_id) ?? [])
+  // Log errors for debugging (visible in the dev server terminal)
+  const queryNames = ["profiles", "user_stats", "get_solve_heatmap", "user_solved_problems", "user_bookmarked_problems"];
+  [profileRes, statsRes, heatmapRes, historyRes, bookmarkedIdsRes].forEach((res, i) => {
+    if (res.status === "rejected") {
+      console.error(`[Profile] ${queryNames[i]} rejected:`, res.reason);
+    } else if (res.value.error) {
+      console.error(`[Profile] ${queryNames[i]} error:`, res.value.error.message);
+    }
+  });
+
+  // Extract solved data from history query
+  const historyData =
+    historyRes.status === "fulfilled" && historyRes.value.data && !historyRes.value.error
+      ? (historyRes.value.data as { problem_id: string; created_at: string }[])
       : [];
+
+  const solvedIds = historyData.map((s) => s.problem_id);
+
   const bookmarkedIds =
-    bookmarkedIdsRes.status === "fulfilled"
-      ? (bookmarkedIdsRes.value.data?.map((b: { problem_id: string }) => b.problem_id) ?? [])
+    bookmarkedIdsRes.status === "fulfilled" && bookmarkedIdsRes.value.data && !bookmarkedIdsRes.value.error
+      ? bookmarkedIdsRes.value.data.map((b: { problem_id: string }) => b.problem_id)
       : [];
+
   const allProblemIds = [...new Set([...solvedIds, ...bookmarkedIds])];
 
   // Phase 2: Fetch problem details (needs IDs from Phase 1)
@@ -62,7 +73,7 @@ export default async function ProfilePage() {
     detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
   );
 
-  // Process heatmap
+  // Process heatmap — try RPC first, fall back to raw created_at timestamps
   let solvedDates: string[] = [];
   if (heatmapRes.status === "fulfilled" && heatmapRes.value.data && !heatmapRes.value.error) {
     for (const row of heatmapRes.value.data as { solve_date: string; solve_count: number }[]) {
@@ -71,22 +82,21 @@ export default async function ProfilePage() {
       }
     }
   }
-
-  // Process solve history
-  let solveHistory: ProfileData["solveHistory"] = [];
-  if (historyRes.status === "fulfilled" && historyRes.value.data) {
-    const histData = historyRes.value.data as { problem_id: string; created_at: string }[];
-    if (solvedDates.length === 0) {
-      solvedDates = histData.map((s) => s.created_at);
-    }
-    solveHistory = histData
-      .map((s) => {
-        const detail = detailMap.get(s.problem_id);
-        if (!detail) return null;
-        return { problem_id: s.problem_id, created_at: s.created_at, title: detail.title, source: detail.source };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+  // Always fall back to raw timestamps if RPC returned nothing
+  if (solvedDates.length === 0 && historyData.length > 0) {
+    solvedDates = historyData.map((s) => s.created_at);
   }
+
+  // Process solve history — show records even if problem detail is missing
+  const solveHistory: ProfileData["solveHistory"] = historyData.map((s) => {
+    const detail = detailMap.get(s.problem_id);
+    return {
+      problem_id: s.problem_id,
+      created_at: s.created_at,
+      title: detail?.title ?? "(삭제된 문제)",
+      source: detail?.source ?? "",
+    };
+  });
 
   // If we can't fetch the user profile, fall back to unauthenticated view
   const profileData =
@@ -98,6 +108,11 @@ export default async function ProfilePage() {
     return <ProfilePageContent initialData={null} />;
   }
 
+  const statsData =
+    statsRes.status === "fulfilled" && statsRes.value.data && !statsRes.value.error
+      ? statsRes.value.data
+      : null;
+
   const data: ProfileData = {
     userProfile: {
       name: profileData.name,
@@ -105,26 +120,19 @@ export default async function ProfilePage() {
       bio: profileData.bio || "",
       createdAt: profileData.created_at,
     },
-    solvedCount:
-      statsRes.status === "fulfilled" && statsRes.value.data
-        ? statsRes.value.data.solved_count
-        : 0,
-    solutionCount:
-      statsRes.status === "fulfilled" && statsRes.value.data
-        ? statsRes.value.data.solution_count
-        : 0,
-    discussionCount:
-      statsRes.status === "fulfilled" && statsRes.value.data
-        ? statsRes.value.data.discussion_count
-        : 0,
+    solvedCount: statsData?.solved_count ?? historyData.length,
+    solutionCount: statsData?.solution_count ?? 0,
+    discussionCount: statsData?.discussion_count ?? 0,
     solvedDates,
     solveHistory,
     bookmarkedProblems: bookmarkedIds
       .map((id: string) => detailMap.get(id))
       .filter((p): p is { id: string; title: string; source: string } => !!p),
     solvedProblems: solvedIds
-      .map((id: string) => detailMap.get(id))
-      .filter((p): p is { id: string; title: string; source: string } => !!p),
+      .map((id: string) => {
+        const detail = detailMap.get(id);
+        return detail ?? { id, title: "(삭제된 문제)", source: "" };
+      }),
   };
 
   return <ProfilePageContent initialData={data} />;
