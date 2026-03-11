@@ -57,11 +57,11 @@ export default async function PublicProfilePage({
   // Phase 2: Fetch problem details
   const detailsData =
     solvedIds.length > 0
-      ? ((await supabase.from("problems").select("id, title, source").in("id", solvedIds)).data ?? [])
+      ? ((await supabase.from("problems").select("id, problem_number, title, source").in("id", solvedIds)).data ?? [])
       : [];
 
   const detailMap = new Map(
-    detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
+    detailsData.map((p: { id: string; problem_number: number; title: string; source: string }) => [p.id, p])
   );
 
   // Heatmap: try RPC first, fall back to raw timestamps
@@ -85,6 +85,7 @@ export default async function PublicProfilePage({
       created_at: s.created_at,
       title: detail?.title ?? "(삭제된 문제)",
       source: detail?.source ?? "",
+      problem_number: detail?.problem_number ?? 0,
     };
   });
 

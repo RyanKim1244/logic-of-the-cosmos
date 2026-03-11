@@ -66,11 +66,11 @@ export default async function ProfilePage() {
   // Phase 2: Fetch problem details (needs IDs from Phase 1)
   const detailsData =
     allProblemIds.length > 0
-      ? ((await supabase.from("problems").select("id, title, source").in("id", allProblemIds)).data ?? [])
+      ? ((await supabase.from("problems").select("id, problem_number, title, source").in("id", allProblemIds)).data ?? [])
       : [];
 
   const detailMap = new Map(
-    detailsData.map((p: { id: string; title: string; source: string }) => [p.id, p])
+    detailsData.map((p: { id: string; problem_number: number; title: string; source: string }) => [p.id, p])
   );
 
   // Process heatmap — try RPC first, fall back to raw created_at timestamps
@@ -95,6 +95,7 @@ export default async function ProfilePage() {
       created_at: s.created_at,
       title: detail?.title ?? "(삭제된 문제)",
       source: detail?.source ?? "",
+      problem_number: detail?.problem_number ?? 0,
     };
   });
 
@@ -127,11 +128,11 @@ export default async function ProfilePage() {
     solveHistory,
     bookmarkedProblems: bookmarkedIds
       .map((id: string) => detailMap.get(id))
-      .filter((p): p is { id: string; title: string; source: string } => !!p),
+      .filter((p): p is { id: string; problem_number: number; title: string; source: string } => !!p),
     solvedProblems: solvedIds
       .map((id: string) => {
         const detail = detailMap.get(id);
-        return detail ?? { id, title: "(삭제된 문제)", source: "" };
+        return detail ?? { id, problem_number: 0, title: "(삭제된 문제)", source: "" };
       }),
   };
 
