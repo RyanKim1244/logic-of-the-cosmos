@@ -53,7 +53,7 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex flex-col items-center gap-2">
             <Logo size={48} className="text-black" />
-            <span className="text-2xl font-light tracking-[0.2em] uppercase text-black">LoTC</span>
+            <span className="text-2xl font-light tracking-[0.2em] uppercase text-black">Lot<span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 bg-clip-text text-transparent">C</span></span>
           </Link>
           <p className="text-neutral-400 text-sm mt-2">Logic of The Cosmos</p>
         </div>

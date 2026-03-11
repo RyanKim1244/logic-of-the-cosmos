@@ -329,7 +329,7 @@ export default function AdminPage() {
                   <div><label className={labelClass}>출처</label><input type="text" required maxLength={100} value={problemForm.source} onChange={(e) => setProblemForm({ ...problemForm, source: e.target.value })} className={inputClass} placeholder="예: IPhO 2023, KPhO 2022" /></div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-5">
-                  <div><label className={labelClass}>연도</label><input type="number" required min={1900} max={2100} value={problemForm.year} onChange={(e) => setProblemForm({ ...problemForm, year: parseInt(e.target.value) })} className={inputClass} /></div>
+                  <div><label className={labelClass}>연도</label><input type="number" required min={1900} max={2100} value={problemForm.year} onChange={(e) => { const v = e.target.valueAsNumber; if (!isNaN(v)) setProblemForm({ ...problemForm, year: v }); }} onWheel={(e) => e.currentTarget.blur()} className={inputClass} /></div>
                   <div><label className={labelClass}>태그 (쉼표로 구분)</label><input type="text" value={problemForm.tags} onChange={(e) => setProblemForm({ ...problemForm, tags: e.target.value })} className={inputClass} placeholder="예: electromagnetism, special-relativity" /></div>
                 </div>
                 <MultiLangEditor label="문제 내용 (LaTeX 지원)" value={problemForm.content} onChange={(content) => setProblemForm({ ...problemForm, content })} rows={10} placeholder="LaTeX 수식을 포함한 문제 내용을 입력하세요." required />

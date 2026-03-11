@@ -55,7 +55,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-14 sm:h-16">
             <Link href="/" className="flex items-center space-x-2.5 hover:opacity-80 transition-opacity">
               <Logo size={28} />
-              <span className="text-xl font-light tracking-[0.2em] uppercase">LoTC</span>
+              <span className="text-xl font-light tracking-[0.2em] uppercase">Lot<span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 bg-clip-text text-transparent">C</span></span>
               <span className="hidden sm:inline text-sm text-neutral-400 font-light">Logic of The Cosmos</span>
             </Link>
 
