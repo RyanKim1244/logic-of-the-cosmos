@@ -153,13 +153,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Mark loading done after INITIAL_SESSION is processed
         if (isMounted) setLoading(false);
 
-        // Start auto-refresh AFTER the initial session is fully processed.
-        // Calling it earlier (or outside the callback) races with
-        // onAuthStateChange's internal _initialize() for the same
-        // navigator lock, causing the "Lock not released within 5000ms" warning.
-        if (event === "INITIAL_SESSION") {
-          supabase.auth.startAutoRefresh();
-        }
+        // Note: createBrowserClient sets autoRefreshToken: true internally,
+        // so there's no need to call startAutoRefresh() manually.
+        // Doing so causes a Web Locks collision ("Lock broken by steal").
       }
     );
 
@@ -172,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     function handleVisibilityChange() {
       if (document.visibilityState !== "visible" || !isMounted) return;
-      supabase.auth.startAutoRefresh();
 
       // Skip re-fetch if we fetched recently
       if (Date.now() - lastFetchTime < VISIBILITY_COOLDOWN) return;
@@ -193,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
-      supabase.auth.stopAutoRefresh();
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
@@ -241,11 +235,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    // Stop auto-refresh BEFORE signOut to avoid Web Locks collision.
-    // signOut() acquires the same navigator lock with { steal: true },
-    // which breaks the lock held by startAutoRefresh and throws
-    // "Lock broken by another request with the 'steal' option."
-    supabase.auth.stopAutoRefresh();
+    // createBrowserClient manages auto-refresh internally.
+    // signOut() cleans up the session and cookies automatically.
     await supabase.auth.signOut();
     setUser(null);
     // Clear all caches so next login gets fresh data
