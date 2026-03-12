@@ -217,21 +217,30 @@ html {
 
 /* ── Hero background CSS animations (replaces SMIL for better GPU compositing) ── */
 @keyframes heroTwinkle1 {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.2; }
-}
-@keyframes heroTwinkle2 {
-  0%, 100% { opacity: 0.5; }
+  0%, 100% { opacity: 0.7; }
   50% { opacity: 0.15; }
 }
+@keyframes heroTwinkle2 {
+  0%, 100% { opacity: 0.55; }
+  40% { opacity: 0.1; }
+}
 @keyframes heroTwinkle3 {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.1; }
+  0%, 100% { opacity: 0.45; }
+  60% { opacity: 0.08; }
 }
 
-.hero-twinkle-1 { animation: heroTwinkle1 3s ease-in-out infinite; }
-.hero-twinkle-2 { animation: heroTwinkle2 4s ease-in-out infinite; }
-.hero-twinkle-3 { animation: heroTwinkle3 3.5s ease-in-out infinite; }
+.hero-twinkle-1 { animation: heroTwinkle1 2.8s ease-in-out infinite; }
+.hero-twinkle-2 { animation: heroTwinkle2 3.6s ease-in-out infinite; }
+.hero-twinkle-3 { animation: heroTwinkle3 4.2s ease-in-out infinite; }
+
+@keyframes heroNebulaPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.08); }
+}
+
+.hero-nebula-pulse {
+  animation: heroNebulaPulse 12s ease-in-out infinite;
+}
 
 @keyframes heroOrbit1 {
   from { transform: rotate(0deg); }
@@ -251,14 +260,51 @@ html {
   animation: heroOrbit2 90s linear infinite;
 }
 
-@keyframes heroShoot {
-  0%, 60% { opacity: 0; transform: translate(400px, 50px); }
-  75% { opacity: 0.8; }
-  100% { opacity: 0; transform: translate(100px, 175px); }
+/* Shooting star 1 — long diagonal, top-right to mid */
+@keyframes heroShoot1 {
+  0%, 65% { opacity: 0; transform: translate(500px, 40px); }
+  78% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(80px, 200px); }
+}
+/* Shooting star 2 — fast, short, upper area */
+@keyframes heroShoot2 {
+  0%, 70% { opacity: 0; transform: translate(350px, 80px); }
+  82% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(150px, 160px); }
+}
+/* Shooting star 3 — gentle arc, mid-right */
+@keyframes heroShoot3 {
+  0%, 55% { opacity: 0; transform: translate(420px, 120px); }
+  72% { opacity: 0.6; }
+  100% { opacity: 0; transform: translate(200px, 250px); }
+}
+/* Shooting star 4 — steep drop, left side */
+@keyframes heroShoot4 {
+  0%, 75% { opacity: 0; transform: translate(250px, 30px); }
+  88% { opacity: 0.8; }
+  100% { opacity: 0; transform: translate(120px, 220px); }
+}
+/* Shooting star 5 — faint, fast streak */
+@keyframes heroShoot5 {
+  0%, 80% { opacity: 0; transform: translate(380px, 60px); }
+  90% { opacity: 0.5; }
+  100% { opacity: 0; transform: translate(220px, 140px); }
 }
 
-.hero-shooting-star {
-  animation: heroShoot 8s ease-in-out infinite;
+.hero-shooting-star-1 {
+  animation: heroShoot1 6s ease-in-out infinite;
+}
+.hero-shooting-star-2 {
+  animation: heroShoot2 4.5s ease-in-out 2s infinite;
+}
+.hero-shooting-star-3 {
+  animation: heroShoot3 9s ease-in-out 4s infinite;
+}
+.hero-shooting-star-4 {
+  animation: heroShoot4 7s ease-in-out 1s infinite;
+}
+.hero-shooting-star-5 {
+  animation: heroShoot5 3.5s ease-in-out 5.5s infinite;
 }
 
 /* Pause hero animations when not visible for GPU savings */
@@ -266,9 +312,14 @@ html {
   .hero-twinkle-1,
   .hero-twinkle-2,
   .hero-twinkle-3,
+  .hero-nebula-pulse,
   .hero-orbit-1,
   .hero-orbit-2,
-  .hero-shooting-star {
+  .hero-shooting-star-1,
+  .hero-shooting-star-2,
+  .hero-shooting-star-3,
+  .hero-shooting-star-4,
+  .hero-shooting-star-5 {
     animation: none !important;
   }
 }
