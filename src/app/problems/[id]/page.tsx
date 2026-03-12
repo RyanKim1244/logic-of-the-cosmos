@@ -1,6 +1,30 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
 import ProblemDetailContent from "@/components/ProblemDetailContent";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("problems")
+    .select("title, source, year, problem_number")
+    .eq("id", id)
+    .single();
+
+  if (!data) return { title: "문제를 찾을 수 없습니다" };
+
+  const title = `${data.source} ${data.year} #${data.problem_number}`;
+  return {
+    title,
+    description: `${data.title} — ${data.source} ${data.year}년 ${data.problem_number}번 문제`,
+    openGraph: { title },
+  };
+}
 
 export default async function ProblemDetailPage({
   params,
