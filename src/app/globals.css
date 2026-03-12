@@ -307,7 +307,7 @@ html {
   animation: heroShoot5 3.5s ease-in-out 5.5s infinite;
 }
 
-/* Pause hero animations when not visible for GPU savings */
+/* Pause animations when not visible for GPU savings */
 @media (prefers-reduced-motion: reduce) {
   .hero-twinkle-1,
   .hero-twinkle-2,
@@ -319,30 +319,184 @@ html {
   .hero-shooting-star-2,
   .hero-shooting-star-3,
   .hero-shooting-star-4,
-  .hero-shooting-star-5 {
+  .hero-shooting-star-5,
+  .hero-gradient-text,
+  .quote-float-1,
+  .quote-float-2,
+  .quote-mark,
+  .features-glow-1,
+  .features-glow-2,
+  .cta-glow {
     animation: none !important;
   }
 }
 
-/* Stat cards */
+/* ── Hero gradient text animation ── */
+.hero-gradient-text {
+  background: linear-gradient(90deg, #93c5fd, #c4b5fd, #93c5fd, #60a5fa);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: heroGradientShift 6s ease-in-out infinite;
+}
+
+@keyframes heroGradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ── Hero buttons ── */
+.hero-btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-btn-primary:hover {
+  background: #e5e5e5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.2em;
+}
+
+.hero-btn-outline:hover {
+  border-color: white;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.08);
+}
+
+/* ── Quote section floating blobs ── */
+@keyframes quoteFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-15px, 15px) scale(0.95); }
+}
+@keyframes quoteFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-25px, 15px) scale(0.95); }
+  66% { transform: translate(20px, -10px) scale(1.05); }
+}
+
+.quote-float-1 { animation: quoteFloat1 15s ease-in-out infinite; }
+.quote-float-2 { animation: quoteFloat2 18s ease-in-out infinite; }
+
+.quote-mark {
+  animation: heroTwinkle1 4s ease-in-out infinite;
+}
+
+/* ── Grid pattern background ── */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Stat cards ── */
 .stat-card {
   transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
+  transition: left 0.5s ease;
+}
+
+.stat-card:hover::before {
+  left: 100%;
 }
 
 .stat-card:hover {
   border-color: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 }
 
-/* Feature cards */
+/* ── Contest cards ── */
+.contest-card {
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.contest-card:hover {
+  border-color: #000;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Feature cards ── */
 .feature-card {
-  transition: border-color 0.3s ease, transform 0.3s ease;
+  transition: border-color 0.4s ease, transform 0.3s ease, box-shadow 0.4s ease;
 }
 
 .feature-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(99, 102, 241, 0.08);
+}
+
+.feature-icon-box {
+  transition: border-color 0.3s, background-color 0.3s, transform 0.3s;
+}
+
+.feature-card:hover .feature-icon-box {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: scale(1.05);
+}
+
+/* ── Features section floating glow ── */
+@keyframes featuresGlow1 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+  50% { transform: translate(40px, 20px); opacity: 0.8; }
+}
+@keyframes featuresGlow2 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+  50% { transform: translate(-30px, -15px); opacity: 0.8; }
+}
+
+.features-glow-1 { animation: featuresGlow1 20s ease-in-out infinite; }
+.features-glow-2 { animation: featuresGlow2 25s ease-in-out infinite; }
+
+/* ── Quick link cards ── */
+.quick-link-card {
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.quick-link-card:hover {
+  border-color: #000;
   transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* ── CTA section ── */
+@keyframes ctaGlow {
+  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.cta-glow {
+  animation: ctaGlow 8s ease-in-out infinite;
+}
+
+.cta-btn-primary:hover {
+  background: #262626;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.cta-btn-outline:hover {
+  border-color: #000;
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 
 /* Solved badge animation */

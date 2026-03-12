@@ -42,20 +42,21 @@ function HeroBackgroundInner() {
           </feMerge>
         </filter>
 
-        <linearGradient id="shootingStar" x1="100%" y1="0%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="white" stopOpacity="0" />
-          <stop offset="30%" stopColor="white" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="white" stopOpacity="0.9" />
+        {/* Head at 0% (x1,y1), tail fading out toward 100% (x2,y2) */}
+        <linearGradient id="shootingStar" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+          <stop offset="70%" stopColor="white" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="shootingStar2" x1="100%" y1="0%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#93c5fd" stopOpacity="0" />
-          <stop offset="40%" stopColor="#93c5fd" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="white" stopOpacity="0.7" />
+        <linearGradient id="shootingStar2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.7" />
+          <stop offset="60%" stopColor="#93c5fd" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#93c5fd" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="shootingStar3" x1="100%" y1="0%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#c4b5fd" stopOpacity="0" />
-          <stop offset="25%" stopColor="#c4b5fd" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="white" stopOpacity="0.6" />
+        <linearGradient id="shootingStar3" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.6" />
+          <stop offset="75%" stopColor="#c4b5fd" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#c4b5fd" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -184,12 +185,12 @@ function HeroBackgroundInner() {
         <ellipse cx="50%" cy="50%" rx="22%" ry="15%" stroke="rgba(196,181,253,0.04)" className="hero-orbit-2" />
       </g>
 
-      {/* Multiple shooting stars with different trajectories */}
-      <line x1="0" y1="0" x2="-70" y2="28" stroke="url(#shootingStar)" strokeWidth="1.5" strokeLinecap="round" className="hero-shooting-star-1" />
-      <line x1="0" y1="0" x2="-50" y2="20" stroke="url(#shootingStar2)" strokeWidth="1" strokeLinecap="round" className="hero-shooting-star-2" />
-      <line x1="0" y1="0" x2="-40" y2="16" stroke="url(#shootingStar3)" strokeWidth="0.8" strokeLinecap="round" className="hero-shooting-star-3" />
-      <line x1="0" y1="0" x2="-55" y2="22" stroke="url(#shootingStar)" strokeWidth="1.2" strokeLinecap="round" className="hero-shooting-star-4" />
-      <line x1="0" y1="0" x2="-35" y2="14" stroke="url(#shootingStar2)" strokeWidth="0.7" strokeLinecap="round" className="hero-shooting-star-5" />
+      {/* Multiple shooting stars — tail (x2,y2) points opposite to movement direction */}
+      <line x1="0" y1="0" x2="65" y2="-25" stroke="url(#shootingStar)" strokeWidth="1.5" strokeLinecap="round" className="hero-shooting-star-1" />
+      <line x1="0" y1="0" x2="46" y2="-19" stroke="url(#shootingStar2)" strokeWidth="1" strokeLinecap="round" className="hero-shooting-star-2" />
+      <line x1="0" y1="0" x2="35" y2="-20" stroke="url(#shootingStar3)" strokeWidth="0.8" strokeLinecap="round" className="hero-shooting-star-3" />
+      <line x1="0" y1="0" x2="31" y2="-45" stroke="url(#shootingStar)" strokeWidth="1.2" strokeLinecap="round" className="hero-shooting-star-4" />
+      <line x1="0" y1="0" x2="31" y2="-16" stroke="url(#shootingStar2)" strokeWidth="0.7" strokeLinecap="round" className="hero-shooting-star-5" />
     </svg>
   );
 }
