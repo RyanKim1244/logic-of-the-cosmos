@@ -40,6 +40,12 @@ export default function Navbar() {
       <Link href="/community" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
         커뮤니티
       </Link>
+      <Link href="/problem-sets" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
+        문제 세트
+      </Link>
+      <Link href="/study-groups" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
+        스터디
+      </Link>
       {user?.is_admin && (
         <Link href="/admin" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
           관리자

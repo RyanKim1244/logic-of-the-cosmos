@@ -13,6 +13,11 @@ const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatm
   loading: () => <div className="border border-neutral-200 p-6 h-48 animate-pulse bg-neutral-50" />,
 });
 
+const ContestProgressBars = dynamic(() => import("@/components/ContestProgressBars"), {
+  ssr: false,
+  loading: () => <div className="border border-neutral-200 p-6 h-40 animate-pulse bg-neutral-50" />,
+});
+
 interface ProblemSummary {
   id: string;
   problem_number: number;
@@ -399,6 +404,9 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       <section className="mb-8">
         <ContributionHeatmap solvedDates={solvedDates} />
       </section>
+
+      {/* Contest Progress Bars */}
+      <ContestProgressBars solvedProblemIds={solvedProblems.map((p) => p.id)} />
 
       {/* Solve History */}
       <section className="mb-8">
