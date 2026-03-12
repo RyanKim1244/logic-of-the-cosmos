@@ -186,7 +186,7 @@ export default function HomeContent({
   return (
     <div>
       {/* Hero Section */}
-      <section className="hero-gradient text-white py-36 md:py-52 relative overflow-hidden">
+      <section className="hero-gradient text-white py-28 md:py-40 relative overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-extralight mb-8 tracking-tight hero-title">
@@ -196,7 +196,7 @@ export default function HomeContent({
           <p className="text-2xl md:text-3xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
             과학의 모든 영역을 탐구하는 거대한 토론의 장
           </p>
-          <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-lg font-light hero-subtitle-delay">
+          <p className="text-neutral-500 mb-10 max-w-xl mx-auto text-lg font-light hero-subtitle-delay">
             올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
           </p>
           <div className="flex items-center justify-center gap-4 hero-cta">
@@ -206,39 +206,12 @@ export default function HomeContent({
         </div>
       </section>
 
-      {/* Quote Section */}
-      <section className="py-28 quote-section border-b border-neutral-100 relative overflow-hidden">
-        <div className="quote-float-1 absolute top-10 left-[10%] w-72 h-72 bg-blue-100/20 rounded-full blur-3xl" />
-        <div className="quote-float-2 absolute bottom-10 right-[10%] w-60 h-60 bg-purple-100/20 rounded-full blur-3xl" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <ScrollReveal>
-            <blockquote className="relative">
-              <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-8xl text-neutral-200/60 font-serif select-none quote-mark">&ldquo;</span>
-              <p className="text-2xl md:text-3xl font-light text-neutral-800 leading-relaxed italic mb-5">
-                &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
-              </p>
-              <p className="text-lg md:text-xl text-neutral-600 font-light mb-8 leading-relaxed">
-                &ldquo;지구는 인류의 요람이다. 그러나 영원히 요람 속에 머물 수는 없다.&rdquo;
-              </p>
-              <div className="w-12 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-5" />
-              <footer className="text-base text-neutral-400 tracking-wide">
-                <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
-                <span className="mx-2 text-neutral-300">|</span>
-                <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
-                <span className="mx-2 text-neutral-300">|</span>
-                <span className="text-neutral-400 text-sm tracking-widest">1857 – 1935</span>
-              </footer>
-            </blockquote>
-          </ScrollReveal>
-        </div>
-      </section>
-
       {/* Stats */}
-      <section className="py-24 bg-neutral-50 relative overflow-hidden">
+      <section className="py-16 bg-neutral-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <h2 className="text-center text-sm md:text-base text-neutral-400 uppercase tracking-[0.3em] mb-14">Platform Overview</h2>
+            <h2 className="text-center text-sm md:text-base text-neutral-400 uppercase tracking-[0.3em] mb-10">Platform Overview</h2>
           </ScrollReveal>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -260,8 +233,35 @@ export default function HomeContent({
         </div>
       </section>
 
+      {/* Quote Section */}
+      <section className="py-20 quote-section border-b border-neutral-100 relative overflow-hidden">
+        <div className="quote-float-1 absolute top-10 left-[10%] w-72 h-72 bg-blue-100/20 rounded-full blur-3xl" />
+        <div className="quote-float-2 absolute bottom-10 right-[10%] w-60 h-60 bg-purple-100/20 rounded-full blur-3xl" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <ScrollReveal>
+            <blockquote className="relative">
+              <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-8xl text-neutral-200/60 font-serif select-none quote-mark">&ldquo;</span>
+              <p className="text-2xl md:text-3xl font-light text-neutral-800 leading-relaxed italic mb-5">
+                &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
+              </p>
+              <p className="text-lg md:text-xl text-neutral-600 font-light mb-8 leading-relaxed">
+                &ldquo;지구는 인류의 요람이다. 하지만 누구든 영원히 요람 속에 머물 수는 없는 법이다.&rdquo;
+              </p>
+              <div className="w-12 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-5" />
+              <footer className="text-base text-neutral-400 tracking-wide">
+                <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
+                <span className="mx-2 text-neutral-300">|</span>
+                <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
+                <span className="mx-2 text-neutral-300">|</span>
+                <span className="text-neutral-400 text-sm tracking-widest">1857 – 1935</span>
+              </footer>
+            </blockquote>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* Contests Preview */}
-      <section className="py-24 border-b border-neutral-100">
+      <section className="py-16 border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="flex items-center justify-between mb-12">
@@ -294,7 +294,7 @@ export default function HomeContent({
       </section>
 
       {/* Recent Problems */}
-      <section className="py-24">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="flex items-center justify-between mb-12">
@@ -320,13 +320,13 @@ export default function HomeContent({
       </section>
 
       {/* Features */}
-      <section className="py-24 bg-black text-white relative overflow-hidden">
+      <section className="py-16 bg-black text-white relative overflow-hidden">
         <div className="features-glow-1 absolute top-0 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl" />
         <div className="features-glow-2 absolute bottom-0 right-1/4 w-80 h-80 bg-purple-600/5 rounded-full blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
             <h2 className="text-3xl md:text-5xl font-light text-center mb-5">열린 과학 토론의 장</h2>
-            <p className="text-neutral-500 text-base md:text-lg text-center mb-16">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
+            <p className="text-neutral-500 text-base md:text-lg text-center mb-12">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -349,7 +349,7 @@ export default function HomeContent({
       </section>
 
       {/* Quick Links */}
-      <section className="py-24 bg-neutral-50 relative overflow-hidden">
+      <section className="py-16 bg-neutral-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.015]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
@@ -397,7 +397,7 @@ export default function HomeContent({
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-neutral-200 relative overflow-hidden">
+      <section className="py-16 border-t border-neutral-200 relative overflow-hidden">
         <div className="cta-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-100/20 via-purple-100/20 to-blue-100/20 rounded-full blur-3xl" />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <ScrollReveal>

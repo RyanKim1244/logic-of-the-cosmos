@@ -1,7 +1,30 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getDisplayText } from "@/lib/multilang";
 import ContestDetailContent from "@/components/ContestDetailContent";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("contests")
+    .select("name, short_name")
+    .eq("id", id)
+    .single();
+
+  if (!data) return { title: "대회를 찾을 수 없습니다" };
+
+  return {
+    title: `${data.name} (${data.short_name}) 기출문제`,
+    description: `${data.name} 기출문제 모음 — 연도별로 정리된 문제를 풀어보세요`,
+    openGraph: { title: `${data.short_name} 기출문제` },
+  };
+}
 
 export default async function ContestDetailPage({
   params,
