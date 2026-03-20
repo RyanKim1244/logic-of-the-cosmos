@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +40,7 @@ export default function HomeContent({
   initialProblemCounts,
 }: HomeContentProps) {
   const { user } = useAuth();
+  const t = useTranslations();
   const [recentProblems, setRecentProblems] = useState<Problem[]>(initialProblems);
   const [topContests, setTopContests] = useState<ContestPreview[]>(initialContests);
   const [stats, setStats] = useState<HomeStats>(initialStats);
@@ -194,14 +196,14 @@ export default function HomeContent({
           </h1>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent mx-auto mb-8 hero-line" />
           <p className="text-2xl md:text-3xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
-            과학의 모든 영역을 탐구하는 거대한 토론의 장
+            {t("home.heroSubtitle")}
           </p>
           <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-lg font-light hero-subtitle-delay">
-            올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
+            {t("home.heroSubDescription")}
           </p>
           <div className="flex items-center justify-center gap-4 hero-cta">
-            <Link href="/problems" className="hero-btn-primary inline-block px-10 py-3.5 bg-white text-black font-medium transition-all text-sm tracking-widest uppercase">문제 풀러 가기</Link>
-            <Link href="/contests" className="hero-btn-outline inline-block px-10 py-3.5 border border-neutral-500 text-neutral-300 font-medium transition-all text-sm tracking-widest uppercase">기출문제</Link>
+            <Link href="/problems" className="hero-btn-primary inline-block px-10 py-3.5 bg-white text-black font-medium transition-all text-sm tracking-widest uppercase">{t("home.ctaStart")}</Link>
+            <Link href="/contests" className="hero-btn-outline inline-block px-10 py-3.5 border border-neutral-500 text-neutral-300 font-medium transition-all text-sm tracking-widest uppercase">{t("nav.contests")}</Link>
           </div>
         </div>
       </section>
@@ -218,13 +220,13 @@ export default function HomeContent({
                 &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
               </p>
               <p className="text-lg md:text-xl text-neutral-600 font-light mb-8 leading-relaxed">
-                &ldquo;지구는 인류의 요람이다. 그러나 영원히 요람 속에 머물 수는 없다.&rdquo;
+                &ldquo;{t("home.quoteTranslation")}&rdquo;
               </p>
               <div className="w-12 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-5" />
               <footer className="text-base text-neutral-400 tracking-wide">
                 <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
                 <span className="mx-2 text-neutral-300">|</span>
-                <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
+                <span className="text-neutral-500">{t("home.quoteAuthorLocal")}</span>
                 <span className="mx-2 text-neutral-300">|</span>
                 <span className="text-neutral-400 text-sm tracking-widest">1857 – 1935</span>
               </footer>
@@ -242,10 +244,10 @@ export default function HomeContent({
           </ScrollReveal>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "총 문제 수", value: stats?.problems ?? 0, icon: "Q" },
-              { label: "등록 대회", value: stats?.contests ?? 0, icon: "#" },
-              { label: "토론 댓글 수", value: stats?.discussions ?? 0, icon: ">" },
-              { label: "참여자 수", value: stats?.authors ?? 0, icon: "@" },
+              { label: t("home.statsProblems"), value: stats?.problems ?? 0, icon: "Q" },
+              { label: t("home.statsContests"), value: stats?.contests ?? 0, icon: "#" },
+              { label: t("home.statsDiscussions"), value: stats?.discussions ?? 0, icon: ">" },
+              { label: t("home.statsAuthors"), value: stats?.authors ?? 0, icon: "@" },
             ].map((stat, i) => (
               <ScrollReveal key={stat.label} delay={i * 100}>
                 <div className="p-8 text-center border border-neutral-200 bg-white stat-card group">
@@ -266,11 +268,11 @@ export default function HomeContent({
           <ScrollReveal>
             <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-3xl md:text-4xl font-light text-black mb-2 section-heading">기출문제 아카이브</h2>
-                <p className="text-base text-neutral-400">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
+                <h2 className="text-3xl md:text-4xl font-light text-black mb-2 section-heading">{t("home.contestArchive")}</h2>
+                <p className="text-base text-neutral-400">{t("home.contestArchiveDesc")}</p>
               </div>
               <Link href="/contests" className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2 link-hover-arrow">
-                전체 보기 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span>
+                {t("home.sectionViewAll")} <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span>
               </Link>
             </div>
           </ScrollReveal>
@@ -283,7 +285,7 @@ export default function HomeContent({
                     <h3 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors mb-2 flex-1">{contest.name}</h3>
                     <div className="flex items-center justify-between text-xs text-neutral-400 pt-3 border-t border-neutral-100 group-hover:border-neutral-300 transition-colors">
                       <span>{contest.years.length > 0 ? `${contest.years[contest.years.length - 1]}–${contest.years[0]}` : ""}</span>
-                      <span className="font-medium text-neutral-500 group-hover:text-black transition-colors">{problemCounts[contest.id] || 0}문제</span>
+                      <span className="font-medium text-neutral-500 group-hover:text-black transition-colors">{t("home.problemsCountSuffix", { count: problemCounts[contest.id] || 0 })}</span>
                     </div>
                   </div>
                 </Link>
@@ -299,11 +301,11 @@ export default function HomeContent({
           <ScrollReveal>
             <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-3xl md:text-4xl font-light text-black mb-2">최근 문제</h2>
-                <p className="text-base text-neutral-400">새로 등록된 문제들을 확인하세요</p>
+                <h2 className="text-3xl md:text-4xl font-light text-black mb-2">{t("home.recentProblems")}</h2>
+                <p className="text-base text-neutral-400">{t("home.recentProblemsDesc")}</p>
               </div>
               <Link href="/problems" className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2">
-                전체 보기 <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+                {t("home.sectionViewAll")} <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
               </Link>
             </div>
           </ScrollReveal>
@@ -325,14 +327,14 @@ export default function HomeContent({
         <div className="features-glow-2 absolute bottom-0 right-1/4 w-80 h-80 bg-purple-600/5 rounded-full blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <h2 className="text-3xl md:text-5xl font-light text-center mb-5">열린 과학 토론의 장</h2>
-            <p className="text-neutral-500 text-base md:text-lg text-center mb-16">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
+            <h2 className="text-3xl md:text-5xl font-light text-center mb-5">{t("home.featuresTitle")}</h2>
+            <p className="text-neutral-500 text-base md:text-lg text-center mb-16">{t("home.featuresSubtitle")}</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: "\u221E", title: "경계 없는 탐구", desc: "중등 올림피아드부터 대학원 연구 문제까지, 물리·화학·생물·수학·지구과학 전 분야를 다룹니다." },
-              { icon: "\u21CC", title: "실시간 토론", desc: "각 문제마다 토론 스레드가 열립니다. 풀이를 공유하고, 다른 접근법을 제시하며 깊이 있는 대화를 나누세요." },
-              { icon: "\u03A3", title: "LaTeX 수식 지원", desc: "수학적 논증을 정확하게 표현할 수 있습니다. 토론과 풀이에서 자유롭게 LaTeX 수식을 사용하세요." },
+              { icon: "\u221E", title: t("home.featureBoundlessTitle"), desc: t("home.featureBoundlessDesc") },
+              { icon: "\u21CC", title: t("home.featureDiscussionTitle"), desc: t("home.featureDiscussionDesc") },
+              { icon: "\u03A3", title: t("home.featureLatexTitle"), desc: t("home.featureLatexDesc") },
             ].map((feature, i) => (
               <ScrollReveal key={feature.title} delay={i * 150}>
                 <div className="p-8 border border-neutral-800 feature-card group h-full flex flex-col">
@@ -353,7 +355,7 @@ export default function HomeContent({
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.015]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-14 section-heading">빠른 탐색</h2>
+            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-14 section-heading">{t("home.quickLinks")}</h2>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-6">
             <ScrollReveal delay={0}>
@@ -362,9 +364,9 @@ export default function HomeContent({
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-300">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-white transition-colors duration-300">?</span>
                   </div>
-                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.problems : "—"}개의 문제 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
+                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">{t("nav.problems")}</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">{t("home.quickLinksProblemsDesc")}</p>
+                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{t("home.problemsCountSuffix", { count: statsConfirmed ? stats.problems : "—" })} <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -374,9 +376,9 @@ export default function HomeContent({
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-300">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-white transition-colors duration-300">#</span>
                   </div>
-                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.contests : "—"}개의 대회 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
+                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">{t("nav.contests")}</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">{t("home.quickLinksContestsDesc")}</p>
+                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{t("home.contestsCountSuffix", { count: statsConfirmed ? stats.contests : "—" })} <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -386,9 +388,9 @@ export default function HomeContent({
                   <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-300">
                     <span className="text-lg font-light text-neutral-400 group-hover:text-white transition-colors duration-300">&gt;</span>
                   </div>
-                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">커뮤니티</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">자유 토론과 질문을 통해 다른 학습자들과 소통하세요.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">토론 참여하기 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
+                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">{t("nav.community")}</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">{t("home.quickLinksCommunityDesc")}</p>
+                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{t("home.joinDiscussion")} <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
                 </div>
               </Link>
             </ScrollReveal>
@@ -401,12 +403,12 @@ export default function HomeContent({
         <div className="cta-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-100/20 via-purple-100/20 to-blue-100/20 rounded-full blur-3xl" />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <ScrollReveal>
-            <h2 className="text-3xl md:text-5xl font-light text-black mb-5">과학의 경계를 넓혀보세요</h2>
-            <p className="text-neutral-400 text-base md:text-lg mb-10 max-w-lg mx-auto">문제를 풀고, 풀이를 공유하고, 함께 성장하세요.</p>
+            <h2 className="text-3xl md:text-5xl font-light text-black mb-5">{t("home.ctaTitle")}</h2>
+            <p className="text-neutral-400 text-base md:text-lg mb-10 max-w-lg mx-auto">{t("home.ctaSubtitle")}</p>
             <div className="flex items-center justify-center gap-4">
-              <Link href="/problems" className="cta-btn-primary px-10 py-3.5 bg-black text-white text-sm font-medium tracking-widest uppercase transition-all duration-300">문제 풀기</Link>
+              <Link href="/problems" className="cta-btn-primary px-10 py-3.5 bg-black text-white text-sm font-medium tracking-widest uppercase transition-all duration-300">{t("home.ctaStart")}</Link>
               {!user && (
-                <Link href="/login" className="cta-btn-outline px-10 py-3.5 border border-neutral-300 text-neutral-700 text-sm font-medium tracking-widest uppercase transition-all duration-300">계정 만들기</Link>
+                <Link href="/login" className="cta-btn-outline px-10 py-3.5 border border-neutral-300 text-neutral-700 text-sm font-medium tracking-widest uppercase transition-all duration-300">{t("home.ctaSignUp")}</Link>
               )}
             </div>
           </ScrollReveal>

@@ -1,10 +1,17 @@
+import { setRequestLocale } from "next-intl/server";
 import { createAuthServerSupabase } from "@/lib/supabase-server";
 import ProfilePageContent, { type ProfileData } from "@/components/ProfilePageContent";
 
 // Profile page must always render fresh (user-specific, cookie-based auth)
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const supabase = await createAuthServerSupabase();
   const { data: { user: authUser } } = await supabase.auth.getUser();
 

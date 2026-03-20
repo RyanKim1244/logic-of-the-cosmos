@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from 'next-intl';
 
 interface ContributionHeatmapProps {
   solvedDates: string[];
@@ -17,6 +18,8 @@ function getColor(count: number): string {
 const WEEKS = 26;
 
 export default function ContributionHeatmap({ solvedDates }: ContributionHeatmapProps) {
+  const t = useTranslations();
+
   const { grid, monthLabels, totalSolved, currentStreak, longestStreak } = useMemo(() => {
     const countMap: Record<string, number> = {};
     for (const d of solvedDates) {
@@ -48,7 +51,7 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
 
         if (d === 0 && date.getMonth() !== prevMonth) {
           prevMonth = date.getMonth();
-          months.push({ label: `${date.getMonth() + 1}월`, weekIndex: w });
+          months.push({ label: `${date.getMonth() + 1}`, weekIndex: w });
         }
       }
       weeks.push(week);
@@ -101,17 +104,17 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
   const svgHeight = TOP_PAD + 7 * COL;
 
   const dayLabels = [
-    { label: "월", row: 1 },
-    { label: "수", row: 3 },
-    { label: "금", row: 5 },
+    { label: "M", row: 1 },
+    { label: "W", row: 3 },
+    { label: "F", row: 5 },
   ];
 
   return (
     <div className="border border-neutral-200 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">풀이 활동</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{t("heatmap.title")}</h2>
         <span className="text-xs text-neutral-500">
-          최근 {WEEKS}주간 <span className="font-medium text-black">{totalSolved}</span>문제 풀이
+          {t("heatmap.recentWeeks", { weeks: WEEKS })} <span className="font-medium text-black">{t("heatmap.problemsSolved", { count: totalSolved })}</span>
         </span>
       </div>
 
@@ -157,7 +160,7 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
                   rx={2}
                   fill={getColor(day.count)}
                 >
-                  <title>{day.date}: {day.count}문제</title>
+                  <title>{day.date}: {day.count}{t("problemSets.problems")}</title>
                 </rect>
               );
             })
@@ -168,17 +171,17 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
       {/* Legend */}
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-4 text-xs text-neutral-400">
-          <span>연속 <span className="font-medium text-black">{currentStreak}</span>일</span>
-          <span>최장 <span className="font-medium text-black">{longestStreak}</span>일</span>
+          <span>{t("heatmap.streak", { count: currentStreak })}</span>
+          <span>{t("heatmap.longestStreak", { count: longestStreak })}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-neutral-400 mr-1">적음</span>
+          <span className="text-[10px] text-neutral-400 mr-1">{t("heatmap.less")}</span>
           {[0, 1, 2, 3, 5].map((count) => (
             <svg key={count} width={CELL} height={CELL}>
               <rect width={CELL} height={CELL} rx={2} fill={getColor(count)} />
             </svg>
           ))}
-          <span className="text-[10px] text-neutral-400 ml-1">많음</span>
+          <span className="text-[10px] text-neutral-400 ml-1">{t("heatmap.more")}</span>
         </div>
       </div>
     </div>

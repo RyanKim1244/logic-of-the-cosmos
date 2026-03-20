@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { Problem } from "@/types";
 
 export type SortOption = "number" | "latest" | "most_solved" | "most_discussed";
@@ -33,6 +34,7 @@ function Dropdown({
   onToggle: (item: string) => void;
   renderItem: (item: string) => React.ReactNode;
 }) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -55,7 +57,7 @@ function Dropdown({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={`${label} 필터 ${selected.length > 0 ? `(${selected.length}개 선택됨)` : ""}`}
+        aria-label={selected.length > 0 ? t("problems.filterSelected", { label, count: selected.length }) : t("problems.filterLabel", { label })}
         className="w-full flex items-center justify-between px-3 py-2.5 border border-neutral-200 text-sm hover:border-neutral-400 transition-colors bg-white"
       >
         <span className="text-neutral-500 text-xs uppercase tracking-wider">{label}</span>
@@ -72,12 +74,12 @@ function Dropdown({
       </button>
 
       {open && (
-        <div role="listbox" aria-label={`${label} 목록`} className="absolute z-20 top-full left-0 right-0 mt-1 border border-neutral-200 bg-white shadow-lg max-h-64 overflow-hidden flex flex-col">
+        <div role="listbox" aria-label={t("problems.listLabel", { label })} className="absolute z-20 top-full left-0 right-0 mt-1 border border-neutral-200 bg-white shadow-lg max-h-64 overflow-hidden flex flex-col">
           {items.length > 6 && (
             <div className="p-2 border-b border-neutral-100">
               <input
                 type="text"
-                placeholder="검색..."
+                placeholder={t("problems.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full px-2.5 py-1.5 text-xs border border-neutral-200 focus:border-black focus:outline-none"
@@ -110,7 +112,7 @@ function Dropdown({
               );
             })}
             {filtered.length === 0 && (
-              <p className="px-3 py-3 text-xs text-neutral-400 text-center">결과 없음</p>
+              <p className="px-3 py-3 text-xs text-neutral-400 text-center">{t("problems.noResults")}</p>
             )}
           </div>
         </div>
@@ -118,20 +120,6 @@ function Dropdown({
     </div>
   );
 }
-
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "number", label: "번호순" },
-  { value: "latest", label: "최신순" },
-  { value: "most_solved", label: "많이 푼 순" },
-  { value: "most_discussed", label: "토론 많은 순" },
-];
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "전체" },
-  { value: "unsolved", label: "미풀이" },
-  { value: "solved", label: "풀이 완료" },
-  { value: "bookmarked", label: "북마크" },
-];
 
 export default function FilterSidebar({
   selectedTags,
@@ -146,6 +134,22 @@ export default function FilterSidebar({
   statusFilter = "all",
   onStatusFilterChange,
 }: FilterSidebarProps) {
+  const t = useTranslations();
+
+  const sortOptions: { value: SortOption; label: string }[] = [
+    { value: "number", label: t("problems.sortNumber") },
+    { value: "latest", label: t("problems.sortLatest") },
+    { value: "most_solved", label: t("problems.sortMostSolved") },
+    { value: "most_discussed", label: t("problems.sortMostDiscussed") },
+  ];
+
+  const statusOptions: { value: StatusFilter; label: string }[] = [
+    { value: "all", label: t("problems.statusAll") },
+    { value: "unsolved", label: t("problems.statusUnsolved") },
+    { value: "solved", label: t("problems.statusSolved") },
+    { value: "bookmarked", label: t("problems.statusBookmarked") },
+  ];
+
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     problems.forEach((p) => p.tags.forEach((t) => tags.add(t)));
@@ -181,7 +185,7 @@ export default function FilterSidebar({
       <div className="border border-neutral-200 sticky top-20">
         {/* Header */}
         <div className="px-5 py-4 bg-black text-white flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-[0.2em]">필터</span>
+          <span className="text-xs font-medium uppercase tracking-[0.2em]">{t("problems.filterHeader")}</span>
           {activeCount > 0 && (
             <span className="w-5 h-5 bg-white text-black text-xs flex items-center justify-center font-medium">
               {activeCount}
@@ -197,8 +201,8 @@ export default function FilterSidebar({
             </svg>
             <input
               type="text"
-              placeholder="번호, 제목 검색..."
-              aria-label="문제 검색"
+              placeholder={t("problems.filterSearch")}
+              aria-label={t("problems.filterSearch")}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-10 pr-3 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors bg-neutral-50 focus:bg-white"
@@ -208,9 +212,9 @@ export default function FilterSidebar({
           {/* Sort */}
           {onSortChange && (
             <div>
-              <label className="block text-xs text-neutral-400 uppercase tracking-wider mb-1.5">정렬</label>
+              <label className="block text-xs text-neutral-400 uppercase tracking-wider mb-1.5">{t("problems.sort")}</label>
               <div className="grid grid-cols-2 gap-1">
-                {SORT_OPTIONS.map((opt) => (
+                {sortOptions.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => onSortChange(opt.value)}
@@ -230,9 +234,9 @@ export default function FilterSidebar({
           {/* Status Filter */}
           {onStatusFilterChange && (
             <div>
-              <label className="block text-xs text-neutral-400 uppercase tracking-wider mb-1.5">풀이 상태</label>
+              <label className="block text-xs text-neutral-400 uppercase tracking-wider mb-1.5">{t("problems.status")}</label>
               <div className="grid grid-cols-2 gap-1">
-                {STATUS_OPTIONS.map((opt) => (
+                {statusOptions.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => onStatusFilterChange(opt.value)}
@@ -251,7 +255,7 @@ export default function FilterSidebar({
 
           {/* Source Dropdown */}
           <Dropdown
-            label="출처"
+            label={t("problems.filterSources")}
             items={allSources}
             selected={selectedSources}
             onToggle={toggleSource}
@@ -267,7 +271,7 @@ export default function FilterSidebar({
 
           {/* Tag Dropdown */}
           <Dropdown
-            label="태그"
+            label={t("problems.filterTags")}
             items={allTags}
             selected={selectedTags}
             onToggle={toggleTag}
@@ -316,7 +320,7 @@ export default function FilterSidebar({
               }}
               className="w-full text-xs text-neutral-400 hover:text-black font-medium py-2.5 border border-neutral-200 hover:border-black transition-all uppercase tracking-widest"
             >
-              필터 초기화
+              {t("problems.filterClear")}
             </button>
           )}
         </div>

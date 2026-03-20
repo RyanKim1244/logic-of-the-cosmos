@@ -1,9 +1,22 @@
+import { setRequestLocale } from "next-intl/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import ContestsContent from "@/components/ContestsContent";
+import { routing } from "@/i18n/routing";
 
 export const revalidate = 60;
 
-export default async function ContestsPage() {
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function ContestsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   const [contestsRes, sourcesRes] = await Promise.allSettled([

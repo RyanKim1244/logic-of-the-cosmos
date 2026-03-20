@@ -5,8 +5,13 @@ export interface Problem {
   source: string;
   year: number;
   tags: string[];
-  content: string;
-  officialSolution: string;
+  content?: string;
+  officialSolution?: string;
+  externalUrl?: string;
+  difficulty?: number;
+  subject?: string;
+  concepts?: string[];
+  hints?: string[];
   createdAt: string;
   updatedAt: string;
 }

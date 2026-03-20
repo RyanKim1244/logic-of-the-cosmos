@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
@@ -21,6 +22,7 @@ interface DiscussionSectionProps {
 
 export default function DiscussionSection({ problemId }: DiscussionSectionProps) {
   const { user } = useAuth();
+  const t = useTranslations();
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
   };
 
   const handleDeleteComment = async (id: string) => {
-    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+    if (!confirm("Delete this comment?")) return;
     const { error } = await supabase.from("discussions").delete().eq("id", id);
     if (!error) {
       // Also remove replies to this comment
@@ -117,8 +119,8 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
   return (
     <div ref={sectionRef} className="mt-10">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-light text-black">토론</h2>
-        <span className="text-xs text-neutral-400">{discussions.length}개의 댓글</span>
+        <h2 className="text-lg font-light text-black">{t("discussions.title")}</h2>
+        <span className="text-xs text-neutral-400">{discussions.length} {t("community.comments")}</span>
       </div>
 
       {/* New comment form */}
@@ -129,14 +131,14 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
           </span>
           <span className="text-xs font-medium text-black">{authorName}</span>
           {!user && (
-            <span className="text-xs text-neutral-400">(로그인하면 이름으로 표시됩니다)</span>
+            <span className="text-xs text-neutral-400">({t("discussions.loginToComment")})</span>
           )}
         </div>
         <form onSubmit={handleSubmitComment}>
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="의견을 공유하세요... (LaTeX 수식 사용 가능: $...$ 또는 $$...$$)"
+            placeholder={t("discussions.writeComment")}
             className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none resize-none text-xs transition-colors bg-neutral-50 focus:bg-white"
             rows={4}
           />
@@ -146,7 +148,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
               disabled={!newComment.trim()}
               className="px-6 py-2 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              댓글 등록
+              {t("discussions.submit")}
             </button>
           </div>
         </form>
@@ -155,7 +157,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
       {/* Discussion list */}
       <div className="space-y-4">
         {topLevel.length === 0 && (
-          <p className="text-neutral-400 text-center py-8 text-xs">아직 토론이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
+          <p className="text-neutral-400 text-center py-8 text-xs">{t("discussions.noDiscussions")}</p>
         )}
         {topLevel.map((disc) => (
           <div key={disc.id} className="border border-neutral-200 p-5">
@@ -181,14 +183,14 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                 }}
                 className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors"
               >
-                {replyTo === disc.id ? "취소" : "답글"}
+                {replyTo === disc.id ? t("solutions.cancel") : t("discussions.reply")}
               </button>
               {(disc.author_id === user?.id || user?.is_admin) && (
                 <button
                   onClick={() => handleDeleteComment(disc.id)}
                   className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors"
                 >
-                  삭제{user?.is_admin && disc.author_id !== user?.id ? " (관리자)" : ""}
+                  Delete{user?.is_admin && disc.author_id !== user?.id ? " (Admin)" : ""}
                 </button>
               )}
             </div>
@@ -213,7 +215,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                     onClick={() => handleDeleteComment(reply.id)}
                     className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors mt-1 pl-8"
                   >
-                    삭제{user?.is_admin && reply.author_id !== user?.id ? " (관리자)" : ""}
+                    Delete{user?.is_admin && reply.author_id !== user?.id ? " (Admin)" : ""}
                   </button>
                 )}
               </div>
@@ -231,7 +233,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                 <textarea
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder="답글을 작성하세요... (LaTeX 수식 사용 가능: $...$)"
+                  placeholder={t("discussions.writeComment")}
                   className="w-full px-3 py-2 border border-neutral-200 text-xs focus:border-black focus:outline-none resize-none transition-colors bg-neutral-50 focus:bg-white"
                   rows={3}
                 />
@@ -241,7 +243,7 @@ export default function DiscussionSection({ problemId }: DiscussionSectionProps)
                     disabled={!replyContent.trim()}
                     className="px-4 py-1.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    답글 등록
+                    {t("discussions.reply")}
                   </button>
                 </div>
               </form>

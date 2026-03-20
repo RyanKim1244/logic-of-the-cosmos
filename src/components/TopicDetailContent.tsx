@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
@@ -38,6 +38,7 @@ export default function TopicDetailContent({
   initialComments,
 }: TopicDetailContentProps) {
   const { user } = useAuth();
+  const t = useTranslations();
   const [topic, setTopic] = useState<Topic>(initialTopic);
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [topicVoted, setTopicVoted] = useState(false);
@@ -187,14 +188,14 @@ export default function TopicDetailContent({
   };
 
   const handleDeleteTopic = async () => {
-    if (!confirm("토픽을 삭제하시겠습니까? 모든 댓글도 삭제됩니다.")) return;
+    if (!confirm(t("community.deleteTopicConfirm"))) return;
     await supabase.from("topic_comments").delete().eq("topic_id", topic.id);
     const { error } = await supabase.from("topics").delete().eq("id", topic.id);
     if (!error) router.push("/community");
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+    if (!confirm(t("community.deleteCommentConfirm"))) return;
     await supabase.from("topic_comments").delete().eq("parent_id", commentId);
     const { error } = await supabase.from("topic_comments").delete().eq("id", commentId);
     if (!error) {
@@ -209,7 +210,7 @@ export default function TopicDetailContent({
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12" ref={sectionRef}>
       <Link href="/community" className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-widest mb-8 inline-block">
-        &larr; 커뮤니티
+        &larr; {t("community.title")}
       </Link>
 
       {/* Topic */}
@@ -245,7 +246,7 @@ export default function TopicDetailContent({
                   onClick={handleDeleteTopic}
                   className="ml-auto text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors"
                 >
-                  삭제{user?.is_admin && topic.author_id !== user?.id ? " (관리자)" : ""}
+                  {t("common.delete")}{user?.is_admin && topic.author_id !== user?.id ? ` (${t("community.admin")})` : ""}
                 </button>
               )}
             </div>
@@ -258,24 +259,24 @@ export default function TopicDetailContent({
         <div className="flex items-center gap-3 mb-3">
           <span className="w-7 h-7 bg-black text-white flex items-center justify-center text-xs font-medium">{authorName.charAt(0).toUpperCase()}</span>
           <span className="text-sm font-medium">{authorName}</span>
-          {!user && <span className="text-xs text-neutral-400">(로그인하면 이름으로 표시됩니다)</span>}
+          {!user && <span className="text-xs text-neutral-400">({t("discussions.loginToComment")})</span>}
         </div>
         <form onSubmit={handleSubmitComment}>
-          <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="의견을 공유하세요..." rows={3} className="w-full px-4 py-3 border border-neutral-200 text-sm focus:border-black focus:outline-none resize-none transition-colors bg-neutral-50 focus:bg-white" />
+          <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder={t("discussions.writeComment")} rows={3} className="w-full px-4 py-3 border border-neutral-200 text-sm focus:border-black focus:outline-none resize-none transition-colors bg-neutral-50 focus:bg-white" />
           <div className="flex justify-end mt-2">
-            <button type="submit" disabled={!newComment.trim()} className="px-6 py-2 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">댓글 등록</button>
+            <button type="submit" disabled={!newComment.trim()} className="px-6 py-2 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">{t("discussions.submit")}</button>
           </div>
         </form>
       </div>
 
       <div className="mb-4">
-        <span className="text-xs text-neutral-400 uppercase tracking-wider">{comments.length}개의 댓글</span>
+        <span className="text-xs text-neutral-400 uppercase tracking-wider">{comments.length} {t("community.comments")}</span>
       </div>
 
       {/* Comments */}
       <div className="space-y-3">
         {topLevel.length === 0 && (
-          <p className="text-neutral-400 text-center py-8 text-sm border border-neutral-200">아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
+          <p className="text-neutral-400 text-center py-8 text-sm border border-neutral-200">{t("discussions.noDiscussions")}</p>
         )}
         {topLevel.map((comment) => (
           <div key={comment.id} className="border border-neutral-200 p-5">
@@ -301,14 +302,14 @@ export default function TopicDetailContent({
                 <p className="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed mb-2">{comment.content}</p>
                 <div className="flex items-center gap-3">
                   <button onClick={() => { setReplyTo(replyTo === comment.id ? null : comment.id); setReplyContent(""); }} className="text-xs text-neutral-400 hover:text-black font-medium uppercase tracking-wider transition-colors">
-                    {replyTo === comment.id ? "취소" : "답글"}
+                    {replyTo === comment.id ? t("solutions.cancel") : t("discussions.reply")}
                   </button>
                   {(comment.author_id === user?.id || user?.is_admin) && (
                     <button
                       onClick={() => handleDeleteComment(comment.id)}
                       className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors"
                     >
-                      삭제{user?.is_admin && comment.author_id !== user?.id ? " (관리자)" : ""}
+                      {t("common.delete")}{user?.is_admin && comment.author_id !== user?.id ? ` (${t("community.admin")})` : ""}
                     </button>
                   )}
                 </div>
@@ -340,7 +341,7 @@ export default function TopicDetailContent({
                             onClick={() => handleDeleteComment(reply.id)}
                             className="text-xs text-neutral-400 hover:text-red-500 font-medium uppercase tracking-wider transition-colors mt-1"
                           >
-                            삭제{user?.is_admin && reply.author_id !== user?.id ? " (관리자)" : ""}
+                            {t("common.delete")}{user?.is_admin && reply.author_id !== user?.id ? ` (${t("community.admin")})` : ""}
                           </button>
                         )}
                       </div>
@@ -354,9 +355,9 @@ export default function TopicDetailContent({
                       <span className="w-5 h-5 bg-black text-white flex items-center justify-center text-xs">{authorName.charAt(0).toUpperCase()}</span>
                       <span className="text-xs text-neutral-500">{authorName}</span>
                     </div>
-                    <textarea value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder="답글을 작성하세요..." rows={2} className="w-full px-3 py-2 border border-neutral-200 text-sm focus:border-black focus:outline-none resize-none transition-colors bg-neutral-50 focus:bg-white" />
+                    <textarea value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder={t("discussions.writeComment")} rows={2} className="w-full px-3 py-2 border border-neutral-200 text-sm focus:border-black focus:outline-none resize-none transition-colors bg-neutral-50 focus:bg-white" />
                     <div className="flex justify-end mt-2">
-                      <button type="submit" disabled={!replyContent.trim()} className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">답글 등록</button>
+                      <button type="submit" disabled={!replyContent.trim()} className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">{t("discussions.reply")}</button>
                     </div>
                   </form>
                 )}

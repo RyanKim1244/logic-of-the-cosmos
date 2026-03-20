@@ -1,9 +1,22 @@
+import { setRequestLocale } from "next-intl/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import CommunityContent from "@/components/CommunityContent";
+import { routing } from "@/i18n/routing";
 
 export const revalidate = 60;
 
-export default async function CommunityPage() {
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function CommunityPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   const { data: topics } = await supabase

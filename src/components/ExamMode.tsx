@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import type { Problem } from "@/types";
@@ -15,6 +16,7 @@ interface ExamModeProps {
 }
 
 export default function ExamMode({ problemSetId, problemSetTitle, problems, timeLimitMinutes }: ExamModeProps) {
+  const t = useTranslations();
   const { user } = useAuth();
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -111,25 +113,25 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
     return (
       <div className="max-w-2xl mx-auto text-center py-20">
         <div className="border border-neutral-200 p-12">
-          <h2 className="text-2xl font-light mb-4">모의시험 모드</h2>
+          <h2 className="text-2xl font-light mb-4">{t("exam.title")}</h2>
           <p className="text-lg font-light mb-2">{problemSetTitle}</p>
           <div className="flex items-center justify-center gap-6 text-sm text-neutral-500 mb-8">
-            <span>{problems.length}문제</span>
+            <span>{problems.length}{t("problemSets.problems")}</span>
             <span className="flex items-center gap-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {timeLimitMinutes}분
+              {timeLimitMinutes}{t("problemSets.minutes")}
             </span>
           </div>
 
           <div className="border border-neutral-200 p-6 mb-8 text-left">
-            <h4 className="text-xs text-neutral-400 uppercase tracking-widest mb-3">안내 사항</h4>
+            <h4 className="text-xs text-neutral-400 uppercase tracking-widest mb-3">{t("exam.instructions")}</h4>
             <ul className="text-sm text-neutral-500 space-y-2">
-              <li>- 시험이 시작되면 타이머가 작동합니다.</li>
-              <li>- 시간이 종료되면 자동으로 제출됩니다.</li>
-              <li>- 문제 간 자유롭게 이동할 수 있습니다.</li>
-              <li>- 중간에 &quot;시험 종료&quot; 버튼으로 제출할 수 있습니다.</li>
+              <li>- {t("exam.timerStart")}</li>
+              <li>- {t("exam.autoSubmit")}</li>
+              <li>- {t("exam.freeNav")}</li>
+              <li>- {t("exam.earlySubmit")}</li>
             </ul>
           </div>
 
@@ -137,7 +139,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
             onClick={handleStart}
             className="px-8 py-3 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors"
           >
-            시험 시작
+            {t("exam.start")}
           </button>
         </div>
       </div>
@@ -158,37 +160,37 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-light mb-2">시험 완료</h2>
+          <h2 className="text-2xl font-light mb-2">{t("exam.completed")}</h2>
           <p className="text-sm text-neutral-500 mb-6">{problemSetTitle}</p>
 
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="border border-neutral-200 p-4">
               <div className="text-2xl font-extralight">{answeredCount}</div>
-              <div className="text-xs text-neutral-400 mt-1">답안 작성</div>
+              <div className="text-xs text-neutral-400 mt-1">{t("exam.answered")}</div>
             </div>
             <div className="border border-neutral-200 p-4">
               <div className="text-2xl font-extralight">{problems.length}</div>
-              <div className="text-xs text-neutral-400 mt-1">전체 문제</div>
+              <div className="text-xs text-neutral-400 mt-1">{t("exam.totalProblems")}</div>
             </div>
             <div className="border border-neutral-200 p-4">
               <div className="text-2xl font-extralight">{formatTime(elapsed)}</div>
-              <div className="text-xs text-neutral-400 mt-1">소요 시간</div>
+              <div className="text-xs text-neutral-400 mt-1">{t("exam.elapsed")}</div>
             </div>
           </div>
         </div>
 
         {/* Review answers */}
         <div className="space-y-4">
-          <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">답안 확인</h3>
+          <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{t("exam.reviewAnswers")}</h3>
           {problems.map((p, i) => (
             <div key={p.id} className="border border-neutral-200 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs text-neutral-300 font-mono">Q{i + 1}</span>
                 <span className="text-sm font-medium">{p.title}</span>
                 {answers[p.id]?.trim() ? (
-                  <span className="ml-auto text-xs text-emerald-500">작성 완료</span>
+                  <span className="ml-auto text-xs text-emerald-500">{t("exam.written")}</span>
                 ) : (
-                  <span className="ml-auto text-xs text-neutral-300">미작성</span>
+                  <span className="ml-auto text-xs text-neutral-300">{t("exam.notWritten")}</span>
                 )}
               </div>
               {answers[p.id]?.trim() && (
@@ -200,7 +202,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
                 href={`/problems/${p.id}`}
                 className="text-xs text-black hover:underline mt-2 inline-block"
               >
-                풀이 보기 &rarr;
+                {t("exam.viewSolution")} &rarr;
               </Link>
             </div>
           ))}
@@ -211,7 +213,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
             href={`/problem-sets/${problemSetId}`}
             className="px-6 py-2.5 border border-neutral-200 text-sm tracking-widest uppercase hover:border-black transition-colors inline-block"
           >
-            문제 세트로 돌아가기
+            {t("exam.backToSet")}
           </Link>
         </div>
       </div>
@@ -239,7 +241,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
               onClick={() => finishExam(false)}
               className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
             >
-              시험 종료
+              {t("exam.finish")}
             </button>
           </div>
         </div>
@@ -257,7 +259,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
                     ? "bg-emerald-400"
                     : "bg-neutral-200"
               }`}
-              title={`문제 ${i + 1}`}
+              title={t("exam.problem", { num: i + 1 })}
             />
           ))}
         </div>
@@ -277,17 +279,17 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
 
           {/* Problem content */}
           <div className="border border-neutral-200 p-6 mb-6">
-            <LatexRenderer content={currentProblem.content} />
+            <LatexRenderer content={currentProblem.content || ""} />
           </div>
         </div>
 
         {/* Answer area */}
         <div className="mb-8">
-          <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">답안</label>
+          <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">{t("exam.answer")}</label>
           <textarea
             value={answers[currentProblem.id] || ""}
             onChange={(e) => handleAnswer(currentProblem.id, e.target.value)}
-            placeholder="답안을 입력하세요..."
+            placeholder={t("exam.answerPlaceholder")}
             rows={6}
             className="w-full border border-neutral-200 px-4 py-3 text-sm focus:border-black focus:outline-none resize-y"
           />
@@ -300,7 +302,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
             disabled={currentIndex === 0}
             className="px-5 py-2.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            이전
+            {t("exam.previous")}
           </button>
 
           <div className="flex gap-2">
@@ -335,7 +337,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
                 : "border border-neutral-200 hover:border-black"
             }`}
           >
-            {currentIndex === problems.length - 1 ? "제출" : "다음"}
+            {currentIndex === problems.length - 1 ? t("exam.submit") : t("exam.next")}
           </button>
         </div>
       </div>

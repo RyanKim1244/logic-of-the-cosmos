@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import type { StudyGroupMember, ProblemSet } from "@/types";
@@ -17,6 +17,7 @@ interface GroupDetail {
 }
 
 export default function StudyGroupDetailContent({ groupId }: { groupId: string }) {
+  const t = useTranslations();
   const { user } = useAuth();
   const router = useRouter();
   const [group, setGroup] = useState<GroupDetail | null>(null);
@@ -56,7 +57,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       name: g.name,
       description: g.description || "",
       ownerId: g.owner_id,
-      ownerName: ownerProfile?.name || "알 수 없음",
+      ownerName: ownerProfile?.name || t("common.unknown"),
       createdAt: g.created_at,
     });
 
@@ -72,7 +73,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       const mappedMembers: StudyGroupMember[] = memberData.map((m) => ({
         groupId: m.group_id,
         userId: m.user_id,
-        userName: nameMap.get(m.user_id) || "알 수 없음",
+        userName: nameMap.get(m.user_id) || t("common.unknown"),
         role: m.role as "owner" | "member",
         joinedAt: m.joined_at,
       }));
@@ -190,9 +191,9 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
   if (!group) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-neutral-400">스터디 그룹을 찾을 수 없습니다.</p>
+        <p className="text-neutral-400">{t("studyGroups.notFound")}</p>
         <Link href="/study-groups" className="text-sm text-black hover:underline mt-4 inline-block">
-          그룹 목록으로 &rarr;
+          {t("studyGroups.backToList")} &rarr;
         </Link>
       </div>
     );
@@ -209,9 +210,9 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
               <p className="text-sm text-neutral-500 mb-3">{group.description}</p>
             )}
             <div className="flex items-center gap-4 text-xs text-neutral-400">
-              <span>만든 사람: {group.ownerName}</span>
+              <span>{t("studyGroups.creator", { name: group.ownerName })}</span>
               <span>{new Date(group.createdAt).toLocaleDateString("ko-KR")}</span>
-              <span>{members.length}명</span>
+              <span>{t("studyGroups.memberCount", { count: members.length })}</span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -221,7 +222,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 disabled={joining}
                 className="px-5 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-40"
               >
-                {joining ? "참여 중..." : "참여하기"}
+                {joining ? t("studyGroups.joining") : t("studyGroups.join")}
               </button>
             )}
             {user && isMember && !isOwner && (
@@ -229,7 +230,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 onClick={handleLeave}
                 className="px-5 py-2.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
               >
-                탈퇴
+                {t("studyGroups.leave")}
               </button>
             )}
             {isOwner && (
@@ -237,7 +238,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 onClick={handleDelete}
                 className="px-5 py-2.5 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
               >
-                삭제
+                {t("common.delete")}
               </button>
             )}
           </div>
@@ -246,7 +247,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
 
       {/* Members */}
       <section className="mb-8">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">멤버</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">{t("studyGroups.members")}</h2>
         <div className="border border-neutral-200 divide-y divide-neutral-100">
           {members.map((m) => (
             <div key={m.userId} className="flex items-center justify-between px-6 py-3">
@@ -261,7 +262,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
               <div className="flex items-center gap-2">
                 {m.role === "owner" && (
                   <span className="text-[10px] px-2 py-0.5 bg-neutral-100 text-neutral-500 uppercase tracking-widest">
-                    Owner
+                    {t("studyGroups.owner")}
                   </span>
                 )}
                 <span className="text-xs text-neutral-300">
@@ -276,22 +277,22 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       {/* Linked Problem Sets */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">문제 세트</h2>
+          <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{t("problemSets.title")}</h2>
           {isOwner && (
             <button
               onClick={loadAvailableSets}
               className="text-xs text-black hover:underline"
             >
-              세트 추가 +
+              {t("studyGroups.addSet")}
             </button>
           )}
         </div>
 
         {showAddSet && (
           <div className="border border-neutral-200 p-4 mb-4 animate-fade-slide-up">
-            <h4 className="text-xs text-neutral-400 uppercase tracking-widest mb-3">공개 문제 세트 선택</h4>
+            <h4 className="text-xs text-neutral-400 uppercase tracking-widest mb-3">{t("studyGroups.selectPublicSet")}</h4>
             {availableSets.length === 0 ? (
-              <p className="text-sm text-neutral-400">추가할 수 있는 문제 세트가 없습니다.</p>
+              <p className="text-sm text-neutral-400">{t("studyGroups.noAvailableSets")}</p>
             ) : (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {availableSets.map((s) => (
@@ -302,7 +303,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                   >
                     <span className="text-sm font-medium">{s.title}</span>
                     {s.timeLimitMinutes && (
-                      <span className="text-xs text-neutral-400 ml-2">{s.timeLimitMinutes}분</span>
+                      <span className="text-xs text-neutral-400 ml-2">{s.timeLimitMinutes}{t("problemSets.minutes")}</span>
                     )}
                   </button>
                 ))}
@@ -312,17 +313,17 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
               onClick={() => setShowAddSet(false)}
               className="text-xs text-neutral-400 hover:text-black mt-3"
             >
-              닫기
+              {t("common.close")}
             </button>
           </div>
         )}
 
         {linkedSets.length === 0 ? (
           <div className="border border-neutral-200 p-8 text-center">
-            <p className="text-neutral-400 text-sm">연결된 문제 세트가 없습니다.</p>
+            <p className="text-neutral-400 text-sm">{t("studyGroups.noLinkedSets")}</p>
             {isOwner && (
               <button onClick={loadAvailableSets} className="text-sm text-black hover:underline mt-2 inline-block">
-                문제 세트 추가하기 &rarr;
+                {t("studyGroups.addProblemSet")} &rarr;
               </button>
             )}
           </div>
@@ -337,7 +338,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{s.title}</span>
                   <div className="flex items-center gap-3 text-xs text-neutral-400">
-                    {s.timeLimitMinutes && <span>{s.timeLimitMinutes}분</span>}
+                    {s.timeLimitMinutes && <span>{s.timeLimitMinutes}{t("problemSets.minutes")}</span>}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>

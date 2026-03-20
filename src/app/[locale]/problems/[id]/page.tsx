@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
 import ProblemDetailContent from "@/components/ProblemDetailContent";
@@ -5,9 +6,11 @@ import ProblemDetailContent from "@/components/ProblemDetailContent";
 export default async function ProblemDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { locale, id } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   const [problemRes, solvedCountRes] = await Promise.allSettled([

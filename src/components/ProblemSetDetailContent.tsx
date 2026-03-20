@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link, useRouter } from '@/i18n/navigation';
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getDisplayText } from "@/lib/multilang";
@@ -27,6 +27,7 @@ interface SetDetail {
 }
 
 export default function ProblemSetDetailContent({ setId }: { setId: string }) {
+  const t = useTranslations();
   const { user } = useAuth();
   const router = useRouter();
   const [setDetail, setSetDetail] = useState<SetDetail | null>(null);
@@ -63,7 +64,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
         title: setData.title,
         description: setData.description || "",
         ownerId: setData.owner_id,
-        ownerName: ownerProfile?.name || "알 수 없음",
+        ownerName: ownerProfile?.name || t("common.unknown"),
         isPublic: setData.is_public,
         timeLimitMinutes: setData.time_limit_minutes,
         createdAt: setData.created_at,
@@ -134,9 +135,9 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
   if (!setDetail) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-neutral-400">문제 세트를 찾을 수 없습니다.</p>
+        <p className="text-neutral-400">{t("problemSets.notFound")}</p>
         <Link href="/problem-sets" className="text-sm text-black hover:underline mt-4 inline-block">
-          세트 목록으로 &rarr;
+          {t("problemSets.backToList")} &rarr;
         </Link>
       </div>
     );
@@ -164,7 +165,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
               <h1 className="text-2xl font-light">{setDetail.title}</h1>
               {!setDetail.isPublic && (
                 <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 text-neutral-400 uppercase">
-                  비공개
+                  {t("problemSets.private")}
                 </span>
               )}
             </div>
@@ -173,13 +174,13 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
             )}
             <div className="flex items-center gap-4 text-xs text-neutral-400">
               <span>{setDetail.ownerName}</span>
-              <span>{problems.length}문제</span>
+              <span>{problems.length}{t("problemSets.problems")}</span>
               {setDetail.timeLimitMinutes && (
                 <span className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {setDetail.timeLimitMinutes}분
+                  {setDetail.timeLimitMinutes}{t("problemSets.minutes")}
                 </span>
               )}
               <span className="text-neutral-300">
@@ -194,7 +195,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
                 onClick={() => setExamMode(true)}
                 className="px-5 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
               >
-                모의시험 시작
+                {t("problemSets.startExam")}
               </button>
             )}
             {isOwner && (
@@ -202,7 +203,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
                 onClick={handleDelete}
                 className="px-5 py-2.5 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
               >
-                삭제
+                {t("common.delete")}
               </button>
             )}
           </div>
@@ -213,17 +214,17 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
       {!setDetail.timeLimitMinutes && problems.length > 0 && (
         <div className="border border-dashed border-neutral-300 p-6 mb-8 text-center">
           <p className="text-sm text-neutral-500 mb-3">
-            이 세트에는 시간 제한이 설정되어 있지 않습니다. 모의시험 모드를 사용하려면 시간 제한을 설정하세요.
+            {t("problemSets.noTimeLimit")}
           </p>
         </div>
       )}
 
       {/* Problem List */}
       <section>
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">문제 목록</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">{t("problems.title")}</h2>
         {problems.length === 0 ? (
           <div className="border border-neutral-200 p-8 text-center">
-            <p className="text-neutral-400 text-sm">이 세트에 문제가 없습니다.</p>
+            <p className="text-neutral-400 text-sm">{t("problemSets.emptySet")}</p>
           </div>
         ) : (
           <div className="space-y-2">

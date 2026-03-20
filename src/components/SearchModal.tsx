@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 
 interface SearchResult {
@@ -12,6 +13,7 @@ interface SearchResult {
 }
 
 export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const t = useTranslations();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -86,15 +88,15 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
         }
       }
       if (topicsRes.data) {
-        for (const t of topicsRes.data) {
-          items.push({ type: "topic", id: t.id, title: t.title, subtitle: `커뮤니티 · ${t.author_name}` });
+        for (const tp of topicsRes.data) {
+          items.push({ type: "topic", id: tp.id, title: tp.title, subtitle: `${t("nav.community")} · ${tp.author_name}` });
         }
       }
       setResults(items);
       setSelectedIndex(0);
     } catch { /* aborted or timeout */ }
     setSearching(false);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const timer = setTimeout(() => search(query), 200);
@@ -143,7 +145,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="번호, 제목, 출처, 토픽 검색..."
+            placeholder={t("search.placeholder")}
             className="flex-1 px-3 py-4 text-sm focus:outline-none"
           />
           <kbd className="text-[10px] text-neutral-400 border border-neutral-200 px-1.5 py-0.5 rounded">ESC</kbd>
@@ -152,9 +154,9 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
         {query.trim() && (
           <div className="max-h-80 overflow-y-auto">
             {searching ? (
-              <p className="text-sm text-neutral-400 text-center py-8">검색 중...</p>
+              <p className="text-sm text-neutral-400 text-center py-8">{t("search.searching")}</p>
             ) : results.length === 0 ? (
-              <p className="text-sm text-neutral-400 text-center py-8">검색 결과가 없습니다.</p>
+              <p className="text-sm text-neutral-400 text-center py-8">{t("search.noResults")}</p>
             ) : (
               <div className="py-2">
                 {results.map((result, i) => (
@@ -171,7 +173,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                         ? "text-blue-600 border-blue-200"
                         : "text-purple-600 border-purple-200"
                     }`}>
-                      {result.type === "problem" ? "문제" : "토픽"}
+                      {result.type === "problem" ? t("search.problem") : t("search.topic")}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{result.title}</p>
@@ -186,11 +188,11 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
         {!query.trim() && (
           <div className="py-8 text-center">
-            <p className="text-xs text-neutral-400">문제 번호, 제목, 출처, 토픽으로 검색하세요</p>
+            <p className="text-xs text-neutral-400">{t("search.hint")}</p>
             <p className="text-[10px] text-neutral-300 mt-2">
               <kbd className="border border-neutral-200 px-1 py-0.5 rounded">↑</kbd>{" "}
-              <kbd className="border border-neutral-200 px-1 py-0.5 rounded">↓</kbd> 이동{" "}
-              <kbd className="border border-neutral-200 px-1 py-0.5 rounded">Enter</kbd> 선택
+              <kbd className="border border-neutral-200 px-1 py-0.5 rounded">↓</kbd> {t("search.move")}{" "}
+              <kbd className="border border-neutral-200 px-1 py-0.5 rounded">Enter</kbd> {t("search.select")}
             </p>
           </div>
         )}

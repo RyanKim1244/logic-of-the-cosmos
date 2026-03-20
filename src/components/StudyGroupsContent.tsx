@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import type { StudyGroup } from "@/types";
 
 export default function StudyGroupsContent() {
+  const t = useTranslations();
   const { user } = useAuth();
   const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function StudyGroupsContent() {
         name: g.name,
         description: g.description || "",
         ownerId: g.owner_id,
-        ownerName: ownerMap.get(g.owner_id) || "알 수 없음",
+        ownerName: ownerMap.get(g.owner_id) || t("common.unknown"),
         memberCount: memberCounts[g.id] || 0,
         createdAt: g.created_at,
       }))
@@ -95,15 +97,15 @@ export default function StudyGroupsContent() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-2xl font-light tracking-tight">스터디 그룹</h1>
-          <p className="text-sm text-neutral-400 mt-1">함께 학습하고 문제를 풀어보세요</p>
+          <h1 className="text-2xl font-light tracking-tight">{t("studyGroups.title")}</h1>
+          <p className="text-sm text-neutral-400 mt-1">{t("studyGroups.subtitle")}</p>
         </div>
         {user && (
           <button
             onClick={() => setShowCreate(!showCreate)}
             className="px-5 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
           >
-            {showCreate ? "취소" : "그룹 만들기"}
+            {showCreate ? t("common.cancel") : t("studyGroups.create")}
           </button>
         )}
       </div>
@@ -111,19 +113,19 @@ export default function StudyGroupsContent() {
       {/* Create Form */}
       {showCreate && (
         <div className="border border-neutral-200 p-6 mb-8 animate-fade-slide-up">
-          <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">새 스터디 그룹</h3>
+          <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">{t("studyGroups.newGroup")}</h3>
           <div className="space-y-4">
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="그룹 이름"
+              placeholder={t("studyGroups.groupName")}
               className="w-full border border-neutral-200 px-4 py-3 text-sm focus:border-black focus:outline-none"
             />
             <textarea
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="그룹 설명 (선택)"
+              placeholder={t("studyGroups.groupDescription")}
               rows={3}
               className="w-full border border-neutral-200 px-4 py-3 text-sm focus:border-black focus:outline-none resize-none"
             />
@@ -132,7 +134,7 @@ export default function StudyGroupsContent() {
               disabled={creating || !newName.trim()}
               className="px-6 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-40"
             >
-              {creating ? "생성 중..." : "생성"}
+              {creating ? t("studyGroups.creating") : t("studyGroups.createAction")}
             </button>
           </div>
         </div>
@@ -150,13 +152,13 @@ export default function StudyGroupsContent() {
         </div>
       ) : groups.length === 0 ? (
         <div className="border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">아직 스터디 그룹이 없습니다.</p>
+          <p className="text-neutral-400 text-sm">{t("studyGroups.empty")}</p>
           {user && (
             <button
               onClick={() => setShowCreate(true)}
               className="text-sm text-black hover:underline mt-3 inline-block"
             >
-              첫 그룹을 만들어보세요 &rarr;
+              {t("studyGroups.createFirst")} &rarr;
             </button>
           )}
         </div>

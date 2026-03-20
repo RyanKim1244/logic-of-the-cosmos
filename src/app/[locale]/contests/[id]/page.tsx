@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getDisplayText } from "@/lib/multilang";
@@ -6,9 +7,11 @@ import ContestDetailContent from "@/components/ContestDetailContent";
 export default async function ContestDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { locale, id } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   const { data: contest } = await supabase

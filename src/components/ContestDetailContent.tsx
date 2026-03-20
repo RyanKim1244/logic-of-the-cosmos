@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Contest {
   id: string;
@@ -21,6 +22,7 @@ interface Problem {
 }
 
 function YearAccordion({ problemsByYear }: { problemsByYear: { year: number; problems: Problem[] }[] }) {
+  const t = useTranslations();
   const [openYears, setOpenYears] = useState<Set<number>>(new Set());
 
   const toggle = useCallback((year: number) => {
@@ -44,7 +46,7 @@ function YearAccordion({ problemsByYear }: { problemsByYear: { year: number; pro
             >
               <div className="flex items-center gap-4">
                 <h2 className="text-lg font-light text-black">{year}</h2>
-                <span className="text-xs text-neutral-400">{yearProblems.length}문제</span>
+                <span className="text-xs text-neutral-400">{yearProblems.length}{t("contests.problems")}</span>
               </div>
               <svg
                 className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -85,6 +87,7 @@ interface ContestDetailContentProps {
 }
 
 export default function ContestDetailContent({ contest, contestProblems }: ContestDetailContentProps) {
+  const t = useTranslations();
   const problemsByYear = contest.years
     .map((year) => ({
       year,
@@ -96,7 +99,7 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <nav className="mb-8">
         <Link href="/contests" className="text-neutral-400 hover:text-black text-xs uppercase tracking-wider transition-colors">
-          &larr; 기출문제
+          &larr; {t("contests.title")}
         </Link>
       </nav>
 
@@ -105,11 +108,11 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
         <h1 className="text-2xl font-light text-black mt-2 mb-3">{contest.name}</h1>
         <p className="text-sm text-neutral-500 mb-4">{contest.description}</p>
         <div className="flex items-center gap-6 text-xs text-neutral-400">
-          <span>{contestProblems.length}개의 문제</span>
-          <span>{contest.years.length}개 연도</span>
+          <span>{t("contests.problemCount", { count: contestProblems.length })}</span>
+          <span>{t("contests.yearCount", { count: contest.years.length })}</span>
           {contest.website && (
             <a href={contest.website} target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">
-              공식 사이트 &#x2197;
+              {t("contests.website")} &#x2197;
             </a>
           )}
         </div>
@@ -117,8 +120,8 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
 
       {problemsByYear.length === 0 ? (
         <div className="text-center py-20 text-neutral-400">
-          <p className="text-base">등록된 문제가 없습니다.</p>
-          <p className="text-sm mt-2">관리자 페이지에서 문제를 추가해 보세요.</p>
+          <p className="text-base">{t("contests.emptyProblems")}</p>
+          <p className="text-sm mt-2">{t("contests.adminHint")}</p>
         </div>
       ) : (
         <YearAccordion problemsByYear={problemsByYear} />
@@ -126,7 +129,7 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
 
       {contest.years.filter((y) => !problemsByYear.some((g) => g.year === y)).length > 0 && (
         <div className="mt-8 border-t border-neutral-100 pt-6">
-          <p className="text-xs text-neutral-400 mb-3">아직 문제가 등록되지 않은 연도:</p>
+          <p className="text-xs text-neutral-400 mb-3">{t("contests.missingYears")}</p>
           <div className="flex flex-wrap gap-2">
             {contest.years
               .filter((y) => !problemsByYear.some((g) => g.year === y))

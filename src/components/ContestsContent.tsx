@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, isCacheStale } from "@/lib/cache";
 
@@ -23,6 +24,7 @@ export default function ContestsContent({
   initialContests,
   initialProblemCounts,
 }: ContestsContentProps) {
+  const t = useTranslations();
   const [contests, setContests] = useState<Contest[]>(initialContests);
   const [problemCounts, setProblemCounts] = useState<Record<string, number>>(initialProblemCounts);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function ContestsContent({
         );
         if (signal.aborted) return;
         if (fetchError) {
-          if (contests.length === 0) setError(`기출문제를 불러오는 데 실패했습니다. (${fetchError.message})`);
+          if (contests.length === 0) setError(`${t("problems.errorLoading")} (${fetchError.message})`);
           return;
         }
         if (contestsData && contestsData.length > 0) {
@@ -77,7 +79,7 @@ export default function ContestsContent({
         }
       } catch (e) {
         if (signal.aborted) return;
-        if (contests.length === 0) setError(`기출문제를 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        if (contests.length === 0) setError(`${t("problems.errorLoading")} (${e instanceof Error ? e.message : t("common.unknown")})`);
       }
     };
 
@@ -103,7 +105,7 @@ export default function ContestsContent({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center py-20">
           <p className="text-red-500 text-sm mb-4">{error}</p>
-          <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+          <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">{t("common.retry")}</button>
         </div>
       </div>
     );
@@ -111,9 +113,9 @@ export default function ContestsContent({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-light text-black mb-3">기출문제</h1>
+      <h1 className="text-3xl font-light text-black mb-3">{t("contests.title")}</h1>
       <p className="text-sm text-neutral-400 mb-10">
-        대회 및 기관별 기출문제를 연도별로 정리했습니다.
+        {t("contests.subtitle")}
       </p>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -142,7 +144,7 @@ export default function ContestsContent({
                 </p>
                 <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
                   <span className="text-xs text-neutral-400">{yearRange}</span>
-                  <span className="text-xs text-neutral-500 font-medium">{problemCounts[contest.id] || 0}문제</span>
+                  <span className="text-xs text-neutral-500 font-medium">{problemCounts[contest.id] || 0}{t("contests.problems")}</span>
                 </div>
               </div>
             </Link>

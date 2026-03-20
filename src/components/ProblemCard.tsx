@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { Problem } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { getDisplayText } from "@/lib/multilang";
 
 export default function ProblemCard({ problem, solvedCount = 0 }: { problem: Problem; solvedCount?: number }) {
   const { user } = useAuth();
+  const t = useTranslations();
   const isSolved = user?.solvedProblems.includes(problem.id) ?? false;
   const isBookmarked = user?.bookmarkedProblems.includes(problem.id) ?? false;
 
@@ -19,14 +21,14 @@ export default function ProblemCard({ problem, solvedCount = 0 }: { problem: Pro
         {(isSolved || isBookmarked) && (
           <div className="flex items-center gap-1 shrink-0">
             {isSolved && (
-              <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title="풀이 완료">
+              <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title={t("problems.solved")}>
                 <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               </span>
             )}
             {isBookmarked && (
-              <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title="북마크">
+              <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title={t("problems.bookmark")}>
                 <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>

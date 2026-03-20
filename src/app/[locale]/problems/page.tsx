@@ -1,10 +1,23 @@
+import { setRequestLocale } from "next-intl/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import ProblemsContent from "@/components/ProblemsContent";
 import { Problem } from "@/types";
+import { routing } from "@/i18n/routing";
 
 export const revalidate = 60;
 
-export default async function ProblemsPage() {
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function ProblemsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   const [problemsRes, solvedRes, discussionRes] = await Promise.allSettled([

@@ -1,9 +1,15 @@
+import { setRequestLocale } from "next-intl/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import HomeContent from "@/components/HomeContent";
 import { Problem } from "@/types";
+import { routing } from "@/i18n/routing";
 
 // ISR: regenerate this page in the background every 60 seconds
 export const revalidate = 60;
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 interface ContestPreview {
   id: string;
@@ -12,7 +18,14 @@ interface ContestPreview {
   years: number[];
 }
 
-export default async function Home() {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   // All queries run in parallel on the server — no client-side waterfall

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getDisplayText } from "@/lib/multilang";
@@ -59,6 +59,7 @@ function CollapsibleSection({
   solvedIds?: Set<string>;
   bookmarkedIds?: Set<string>;
 }) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -79,7 +80,7 @@ function CollapsibleSection({
           >
             <div className="flex items-center gap-3">
               <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{title}</h2>
-              <span className="text-xs text-neutral-400">{count}개</span>
+              <span className="text-xs text-neutral-400">{count}</span>
             </div>
             <svg
               className={`w-4 h-4 text-neutral-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
@@ -99,14 +100,14 @@ function CollapsibleSection({
                       {(isSolved || isBookmarked) && (
                         <div className="flex items-center gap-1 shrink-0">
                           {isSolved && (
-                            <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title="풀이 완료">
+                            <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title={t("problems.solved")}>
                               <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </span>
                           )}
                           {isBookmarked && (
-                            <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title="북마크">
+                            <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title={t("problems.bookmark")}>
                               <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                               </svg>
@@ -134,6 +135,7 @@ function CollapsibleSection({
 }
 
 export default function ProfilePageContent({ initialData }: { initialData: ProfileData | null }) {
+  const t = useTranslations();
   const { user, loading: authLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -227,7 +229,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         return {
           problem_id: s.problem_id,
           created_at: s.created_at,
-          title: detail?.title ?? "(삭제된 문제)",
+          title: detail?.title ?? t("profile.deletedProblem"),
           source: detail?.source ?? "",
           problem_number: detail?.problem_number ?? 0,
         };
@@ -248,7 +250,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
         bookmarkedProblems: bookmarkedIds.map((id: string) => detailMap.get(id)).filter((p): p is ProblemSummary => !!p),
         solvedProblems: solvedIds.map((id: string) => {
           const detail = detailMap.get(id);
-          return detail ?? { id, problem_number: 0, title: "(삭제된 문제)", source: "" };
+          return detail ?? { id, problem_number: 0, title: t("profile.deletedProblem"), source: "" };
         }),
       });
     })();
@@ -275,7 +277,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
     if (authLoading) {
       return (
         <div className="min-h-[60vh] flex items-center justify-center">
-          <p className="text-neutral-400 text-sm">로딩 중...</p>
+          <p className="text-neutral-400 text-sm">{t("common.loading")}</p>
         </div>
       );
     }
@@ -283,9 +285,9 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
     if (!user) {
       return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
-          <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
+          <p className="text-neutral-500 mb-4">{t("profile.loginRequired")}</p>
           <Link href="/login" className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors">
-            로그인
+            {t("auth.signIn")}
           </Link>
         </div>
       );
@@ -308,9 +310,9 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   if (!profile) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
-        <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
+        <p className="text-neutral-500 mb-4">{t("profile.loginRequired")}</p>
         <Link href="/login" className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors">
-          로그인
+          {t("auth.signIn")}
         </Link>
       </div>
     );
@@ -358,10 +360,10 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
               {isEditing && user ? (
                 <div className="space-y-3">
                   <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="block text-xl font-light border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none" />
-                  <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="자기소개를 입력하세요" rows={2} className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none" />
+                  <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder={t("profile.bioPlaceholder")} rows={2} className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none" />
                   <div className="flex gap-2">
-                    <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors">저장</button>
-                    <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">취소</button>
+                    <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors">{t("profile.save")}</button>
+                    <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">{t("profile.cancel")}</button>
                   </div>
                 </div>
               ) : (
@@ -369,7 +371,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                   <h1 className="text-2xl font-light mb-1">{profile.name}</h1>
                   {profile.bio && <p className="text-sm text-neutral-500 mb-2">{profile.bio}</p>}
                   <p className="text-xs text-neutral-400">{profile.email}</p>
-                  <p className="text-xs text-neutral-400 mt-1">가입일: {joinDate}</p>
+                  <p className="text-xs text-neutral-400 mt-1">{t("profile.joinDate", { date: joinDate })}</p>
                 </>
               )}
             </div>
@@ -377,8 +379,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
           {!isEditing && user && (
             <div className="flex gap-2">
-              <button onClick={startEdit} className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">편집</button>
-              <button onClick={async () => { await logout(); router.push("/"); }} className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors">로그아웃</button>
+              <button onClick={startEdit} className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">{t("profile.editProfile")}</button>
+              <button onClick={async () => { await logout(); router.push("/"); }} className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors">{t("profile.signOut")}</button>
             </div>
           )}
         </div>
@@ -388,15 +390,15 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{solvedCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{t("profile.solved")}</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{solutionCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">작성한 풀이</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{t("profile.solutions")}</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{discussionCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">토론 참여</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{t("profile.discussions")}</div>
         </div>
       </div>
 
@@ -410,11 +412,11 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Solve History */}
       <section className="mb-8">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">풀이 기록</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">{t("profile.heatmap")}</h2>
         {solveHistory.length === 0 ? (
           <div className="border border-neutral-200 p-8 text-center">
-            <p className="text-neutral-400 text-sm">아직 풀이 기록이 없습니다.</p>
-            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 풀러 가기 &rarr;</Link>
+            <p className="text-neutral-400 text-sm">{t("profile.emptyHistory")}</p>
+            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">{t("profile.goToProblems")} &rarr;</Link>
           </div>
         ) : (
           <div className="space-y-6">
@@ -423,7 +425,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
                   <h3 className="text-sm font-medium text-neutral-600">{date}</h3>
-                  <span className="text-xs text-neutral-400">{records.length}문제</span>
+                  <span className="text-xs text-neutral-400">{records.length}{t("contests.problems")}</span>
                 </div>
                 <div className="space-y-1.5 ml-5 border-l border-neutral-200 pl-4">
                   {records.map((record, i) => {
@@ -436,13 +438,13 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1 shrink-0">
-                            <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title="풀이 완료">
+                            <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center" title={t("problems.solved")}>
                               <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </span>
                             {isBookmarked && (
-                              <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title="북마크">
+                              <span className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center" title={t("problems.bookmark")}>
                                 <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                                 </svg>
@@ -474,11 +476,11 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Bookmarked Problems */}
       <CollapsibleSection
-        title="북마크한 문제"
+        title={t("profile.bookmarks")}
         count={bookmarkedProblems.length}
-        emptyText="아직 북마크한 문제가 없습니다."
+        emptyText={t("profile.emptyBookmarks")}
         emptyLink="/problems"
-        emptyLinkText="문제 목록 보기"
+        emptyLinkText={t("profile.viewProblems")}
         items={bookmarkedProblems}
         solvedIds={solvedIdSet}
         bookmarkedIds={bookmarkedIdSet}
@@ -486,11 +488,11 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Solved Problems */}
       <CollapsibleSection
-        title="풀이 완료"
+        title={t("problems.solved")}
         count={solvedProblems.length}
-        emptyText="아직 풀이를 완료한 문제가 없습니다."
+        emptyText={t("profile.emptySolved")}
         emptyLink="/problems"
-        emptyLinkText="문제 풀러 가기"
+        emptyLinkText={t("profile.goToProblems")}
         items={solvedProblems}
         solvedIds={solvedIdSet}
         bookmarkedIds={bookmarkedIdSet}

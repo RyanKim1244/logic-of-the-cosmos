@@ -1,139 +1,18 @@
-"use client";
+import { setRequestLocale } from "next-intl/server";
+import { routing } from "@/i18n/routing";
+import LoginForm from "@/components/LoginForm";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
-import Logo from "@/components/Logo";
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
-export default function LoginPage() {
-  const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const { login, register } = useAuth();
-  const router = useRouter();
+export default async function LoginPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
-
-    try {
-      if (isRegister) {
-        if (!name.trim()) {
-          setError("이름을 입력해주세요.");
-          setSubmitting(false);
-          return;
-        }
-        const result = await register(email, password, name);
-        if (result.success) {
-          router.push("/profile");
-        } else {
-          setError(result.error || "회원가입에 실패했습니다.");
-        }
-      } else {
-        const result = await login(email, password);
-        if (result.success) {
-          router.push("/");
-        } else {
-          setError(result.error || "로그인에 실패했습니다.");
-        }
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex flex-col items-center gap-2">
-            <Logo size={48} className="text-black" />
-            <span className="text-2xl font-light tracking-[0.2em] text-black">LoT<span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 bg-clip-text text-transparent">C</span></span>
-          </Link>
-          <p className="text-neutral-400 text-sm mt-2">Logic of The Cosmos</p>
-        </div>
-
-        <div className="border border-neutral-200 p-8">
-          <h1 className="text-xl font-light mb-8 text-center tracking-wide">
-            {isRegister ? "회원가입" : "로그인"}
-          </h1>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {isRegister && (
-              <div>
-                <label className="block text-xs text-neutral-500 uppercase tracking-widest mb-2">
-                  이름
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none transition-colors text-sm"
-                  placeholder="이름을 입력하세요"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs text-neutral-500 uppercase tracking-widest mb-2">
-                이메일
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none transition-colors text-sm"
-                placeholder="email@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-neutral-500 uppercase tracking-widest mb-2">
-                비밀번호
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-3 border border-neutral-200 focus:border-black focus:outline-none transition-colors text-sm"
-                placeholder="6자 이상 입력하세요"
-              />
-            </div>
-
-            {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3 bg-black text-white text-sm font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-50"
-            >
-              {submitting ? "처리 중..." : isRegister ? "가입하기" : "로그인"}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setError("");
-              }}
-              className="text-sm text-neutral-400 hover:text-black transition-colors"
-            >
-              {isRegister ? "이미 계정이 있으신가요? 로그인" : "계정이 없으신가요? 회원가입"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <LoginForm />;
 }

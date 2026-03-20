@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
 import PublicProfileContent from "@/components/PublicProfileContent";
@@ -5,9 +6,11 @@ import PublicProfileContent from "@/components/PublicProfileContent";
 export default async function PublicProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { locale, id } = await params;
+  setRequestLocale(locale);
+
   const supabase = createServerSupabase();
 
   // Phase 1: All independent queries in parallel

@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from "@/context/AuthContext";
 import { getDisplayText } from "@/lib/multilang";
 
@@ -44,6 +44,7 @@ export default function PublicProfileContent({
   solvedDates,
   solveHistory,
 }: PublicProfileContentProps) {
+  const t = useTranslations();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -82,7 +83,7 @@ export default function PublicProfileContent({
           <div>
             <h1 className="text-2xl font-light mb-1">{profile.name}</h1>
             {profile.bio && <p className="text-sm text-neutral-500 mb-2">{profile.bio}</p>}
-            <p className="text-xs text-neutral-400">가입일: {joinDate}</p>
+            <p className="text-xs text-neutral-400">{t("profile.joinDate", { date: joinDate })}</p>
           </div>
         </div>
       </div>
@@ -91,15 +92,15 @@ export default function PublicProfileContent({
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{solvedCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{t("profile.solved")}</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{solutionCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">작성한 풀이</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{t("profile.solutions")}</div>
         </div>
         <div className="border border-neutral-200 p-6 text-center">
           <div className="text-3xl font-extralight">{discussionCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">토론 참여</div>
+          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{t("profile.discussions")}</div>
         </div>
       </div>
 
@@ -110,10 +111,10 @@ export default function PublicProfileContent({
 
       {/* Solve History */}
       <section className="mb-8">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">풀이 기록</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">{t("profile.heatmap")}</h2>
         {solveHistory.length === 0 ? (
           <div className="border border-neutral-200 p-8 text-center">
-            <p className="text-neutral-400 text-sm">아직 풀이 기록이 없습니다.</p>
+            <p className="text-neutral-400 text-sm">{t("profile.emptyHistory")}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -122,7 +123,7 @@ export default function PublicProfileContent({
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
                   <h3 className="text-sm font-medium text-neutral-600">{date}</h3>
-                  <span className="text-xs text-neutral-400">{records.length}문제</span>
+                  <span className="text-xs text-neutral-400">{records.length}{t("contests.problems")}</span>
                 </div>
                 <div className="space-y-1.5 ml-5 border-l border-neutral-200 pl-4">
                   {records.map((record, i) => (
@@ -132,7 +133,7 @@ export default function PublicProfileContent({
                       className="block border border-emerald-300 p-3 hover:border-black transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0" title="풀이 완료">
+                        <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0" title={t("problems.solved")}>
                           <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>

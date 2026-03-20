@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +9,8 @@ import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 import FilterSidebar from "@/components/FilterSidebar";
 import type { SortOption, StatusFilter } from "@/components/FilterSidebar";
+import SubjectFilter from "@/components/SubjectFilter";
+import type { Subject } from "@/components/SubjectFilter";
 
 interface ProblemsContentProps {
   initialProblems: Problem[];
@@ -21,6 +24,7 @@ export default function ProblemsContent({
   initialDiscussionCounts,
 }: ProblemsContentProps) {
   const { user } = useAuth();
+  const t = useTranslations();
   const [problems, setProblems] = useState<Problem[]>(initialProblems);
   const [loading, setLoading] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -28,6 +32,7 @@ export default function ProblemsContent({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("number");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [selectedSubject, setSelectedSubject] = useState<Subject>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>(initialSolvedCounts);
@@ -41,8 +46,13 @@ export default function ProblemsContent({
     source: p.source as string,
     year: p.year as number,
     tags: p.tags as string[],
-    content: (p.content as string) || "",
-    officialSolution: (p.official_solution as string) || "",
+    content: (p.content as string) || undefined,
+    officialSolution: (p.official_solution as string) || undefined,
+    externalUrl: (p.external_url as string) || undefined,
+    difficulty: (p.difficulty as number) || undefined,
+    subject: (p.subject as string) || undefined,
+    concepts: (p.concepts as string[]) || undefined,
+    hints: [p.hint_1, p.hint_2, p.hint_3].filter(Boolean) as string[],
     createdAt: p.created_at as string,
     updatedAt: p.updated_at as string,
   });
@@ -74,13 +84,13 @@ export default function ProblemsContent({
     try {
       const { data, error: fetchError } = await withRetry(
         () => withTimeout(
-          supabase.from("problems").select("id, problem_number, title, source, year, tags, created_at, updated_at").order("problem_number", { ascending: true }),
+          supabase.from("problems").select("id, problem_number, title, source, year, tags, subject, difficulty, external_url, concepts, hint_1, hint_2, hint_3, created_at, updated_at").order("problem_number", { ascending: true }),
           8000, signal
         ), 1, 1000, signal
       );
       if (fetchError) {
         if (problems.length === 0) {
-          setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
+          setError(`${t("problems.errorLoading")} (${fetchError.message})`);
         }
       } else if (data && data.length > 0) {
         const mapped = data.map(mapProblem);
@@ -90,7 +100,7 @@ export default function ProblemsContent({
     } catch (e) {
       if (signal?.aborted) return;
       if (problems.length === 0) {
-        setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        setError(`${t("problems.errorLoading")} (${e instanceof Error ? e.message : t("common.error")})`);
       }
     }
     setLoading(false);
@@ -166,6 +176,16 @@ export default function ProblemsContent({
     };
   }, []);
 
+  const subjectCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of problems) {
+      if (p.subject) {
+        counts[p.subject] = (counts[p.subject] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [problems]);
+
   const filteredProblems = useMemo(() => {
     const filtered = problems.filter((problem) => {
       const matchesTags =
@@ -180,6 +200,9 @@ export default function ProblemsContent({
         problem.tags.some((tag) => tag.toLowerCase().includes(query)) ||
         String(problem.problemNumber).includes(searchQuery);
 
+      const matchesSubject =
+        selectedSubject === "all" || problem.subject === selectedSubject;
+
       let matchesStatus = true;
       if (statusFilter === "solved") {
         matchesStatus = user?.solvedProblems.includes(problem.id) ?? false;
@@ -189,7 +212,7 @@ export default function ProblemsContent({
         matchesStatus = user?.bookmarkedProblems.includes(problem.id) ?? false;
       }
 
-      return matchesTags && matchesSource && matchesSearch && matchesStatus;
+      return matchesTags && matchesSource && matchesSearch && matchesStatus && matchesSubject;
     });
 
     return filtered.sort((a, b) => {
@@ -204,11 +227,11 @@ export default function ProblemsContent({
           return a.problemNumber - b.problemNumber;
       }
     });
-  }, [problems, selectedTags, selectedSources, searchQuery, sortBy, statusFilter, user, solvedCounts, discussionCounts]);
+  }, [problems, selectedTags, selectedSources, searchQuery, sortBy, statusFilter, selectedSubject, user, solvedCounts, discussionCounts]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedTags, selectedSources, searchQuery, sortBy, statusFilter]);
+  }, [selectedTags, selectedSources, searchQuery, sortBy, statusFilter, selectedSubject]);
 
   const totalPages = Math.ceil(filteredProblems.length / PER_PAGE);
   const paginatedProblems = filteredProblems.slice(
@@ -219,7 +242,7 @@ export default function ProblemsContent({
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-neutral-400 text-center py-20 text-sm">로딩 중...</p>
+        <p className="text-neutral-400 text-center py-20 text-sm">{t("common.loading")}</p>
       </div>
     );
   }
@@ -229,7 +252,7 @@ export default function ProblemsContent({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center py-20">
           <p className="text-red-500 text-sm mb-4">{error}</p>
-          <button onClick={() => fetchProblems()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+          <button onClick={() => fetchProblems()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">{t("common.retry")}</button>
         </div>
       </div>
     );
@@ -237,9 +260,15 @@ export default function ProblemsContent({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-light text-black mb-10">문제 목록</h1>
+      <h1 className="text-3xl font-light text-black mb-10">{t("problems.title")}</h1>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <SubjectFilter
+        selected={selectedSubject}
+        onChange={setSelectedSubject}
+        counts={subjectCounts}
+      />
+
+      <div className="flex flex-col lg:flex-row gap-8 mt-6">
         <FilterSidebar
           selectedTags={selectedTags}
           selectedSources={selectedSources}
@@ -257,15 +286,15 @@ export default function ProblemsContent({
         <div className="flex-1">
           {filteredProblems.length === 0 ? (
             <div className="text-center py-20 text-neutral-400">
-              <p className="text-base">검색 결과가 없습니다.</p>
-              <p className="text-sm mt-2">필터를 조정해 보세요.</p>
+              <p className="text-base">{t("problems.empty")}</p>
+              <p className="text-sm mt-2">{t("problems.emptyHint")}</p>
             </div>
           ) : (
             <>
               <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">
-                {filteredProblems.length}개의 문제
+                {t("problems.problemCount", { count: filteredProblems.length })}
                 {totalPages > 1 && (
-                  <span className="ml-2">· 페이지 {currentPage}/{totalPages}</span>
+                  <span className="ml-2">· {t("problems.pageOf", { current: currentPage, total: totalPages })}</span>
                 )}
               </p>
               <div className="space-y-2">

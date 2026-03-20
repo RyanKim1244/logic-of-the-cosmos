@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -18,6 +19,7 @@ interface Solution {
 
 export default function SolutionSection({ problemId }: { problemId: string }) {
   const { user } = useAuth();
+  const t = useTranslations();
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [newSolution, setNewSolution] = useState("");
   const [isWriting, setIsWriting] = useState(false);
@@ -194,7 +196,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("풀이를 삭제하시겠습니까?")) return;
+    if (!confirm("Delete this solution?")) return;
 
     const { error } = await supabase
       .from("discussions")
@@ -221,15 +223,15 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
     <div ref={sectionRef}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-light text-black">풀이 공유</h2>
-          <span className="text-xs text-neutral-400">{solutions.length}개의 풀이</span>
+          <h2 className="text-lg font-light text-black">{t("solutions.title")}</h2>
+          <span className="text-xs text-neutral-400">{solutions.length} {t("solutions.title").toLowerCase()}</span>
         </div>
         {user && !mySolution && !isWriting && (
           <button
             onClick={() => setIsWriting(true)}
             className="px-5 py-2 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors"
           >
-            내 풀이 작성
+            {t("solutions.writeSolution")}
           </button>
         )}
       </div>
@@ -247,7 +249,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
             ref={newSolutionRef}
             value={newSolution}
             onChange={(e) => setNewSolution(e.target.value)}
-            placeholder={"나만의 풀이를 작성하세요. LaTeX 수식을 사용할 수 있습니다.\n인라인: $E = mc^2$\n블록: $$\\int_0^\\infty e^{-x} dx = 1$$"}
+            placeholder={t("discussions.writeComment")}
             className="w-full px-4 py-3 border border-neutral-200 border-b-0 focus:border-black focus:outline-none resize-none text-xs transition-colors bg-neutral-50 focus:bg-white font-mono"
             rows={8}
           />
@@ -260,14 +262,14 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
               onClick={() => { setIsWriting(false); setNewSolution(""); }}
               className="px-5 py-2 border border-neutral-300 text-neutral-500 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
             >
-              취소
+              {t("solutions.cancel")}
             </button>
             <button
               type="submit"
               disabled={!newSolution.trim()}
               className="px-5 py-2 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              풀이 등록
+              {t("solutions.submitSolution")}
             </button>
           </div>
         </form>
@@ -276,7 +278,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
       {/* Solutions list */}
       {sortedSolutions.length === 0 && !isWriting ? (
         <p className="text-neutral-400 text-center py-8 text-xs">
-          아직 공유된 풀이가 없습니다. {user ? "첫 번째 풀이를 작성해보세요!" : "로그인 후 풀이를 작성할 수 있습니다."}
+          {user ? t("solutions.noSolutions") : t("solutions.loginToWrite")}
         </p>
       ) : (
         <div className="space-y-4">
@@ -292,7 +294,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                       onClick={(e) => { e.stopPropagation(); handleUpvote(solution.id); }}
                       disabled={!user}
                       className={`p-1 transition-colors ${votedSolutions.has(solution.id) ? "text-black" : "text-neutral-300 hover:text-neutral-500"} disabled:cursor-not-allowed`}
-                      title={user ? (votedSolutions.has(solution.id) ? "추천 취소" : "추천") : "로그인 후 추천할 수 있습니다"}
+                      title={user ? t("solutions.upvote") : t("solutions.loginToWrite")}
                     >
                       <svg className="w-4 h-4" fill={votedSolutions.has(solution.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -318,7 +320,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                           <span className="font-medium text-black text-xs">{solution.author_name}</span>
                         )}
                         {solution.author_id === user?.id && (
-                          <span className="ml-2 text-[10px] text-blue-500 font-medium uppercase tracking-wider">내 풀이</span>
+                          <span className="ml-2 text-[10px] text-blue-500 font-medium uppercase tracking-wider">My Solution</span>
                         )}
                         <span className="text-xs text-neutral-400 ml-2">{formatDate(solution.created_at)}</span>
                       </div>
@@ -340,14 +342,14 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                                 onClick={() => { setEditingId(solution.id); setEditContent(solution.content); }}
                                 className="text-xs text-neutral-400 hover:text-black transition-colors uppercase tracking-wider"
                               >
-                                수정
+                                Edit
                               </button>
                             )}
                             <button
                               onClick={() => handleDelete(solution.id)}
                               className="text-xs text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-wider"
                             >
-                              삭제{user?.is_admin && solution.author_id !== user?.id ? " (관리자)" : ""}
+                              Delete{user?.is_admin && solution.author_id !== user?.id ? " (Admin)" : ""}
                             </button>
                           </div>
                         )}
@@ -370,14 +372,14 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                                 onClick={() => { setEditingId(null); setEditContent(""); }}
                                 className="px-4 py-1.5 border border-neutral-300 text-neutral-500 text-xs font-medium tracking-widest uppercase hover:border-black hover:text-black transition-colors"
                               >
-                                취소
+                                {t("solutions.cancel")}
                               </button>
                               <button
                                 type="submit"
                                 disabled={!editContent.trim()}
                                 className="px-4 py-1.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30"
                               >
-                                수정 완료
+                                Save
                               </button>
                             </div>
                           </form>

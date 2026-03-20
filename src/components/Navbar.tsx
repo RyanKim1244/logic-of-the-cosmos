@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import Logo from "@/components/Logo";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 const SearchModal = dynamic(() => import("@/components/SearchModal"), {
   ssr: false,
@@ -12,6 +14,7 @@ const SearchModal = dynamic(() => import("@/components/SearchModal"), {
 
 export default function Navbar() {
   const { user, loading } = useAuth();
+  const t = useTranslations();
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -32,23 +35,23 @@ export default function Navbar() {
   const navLinks = (
     <>
       <Link href="/problems" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
-        문제 목록
+        {t("nav.problems")}
       </Link>
       <Link href="/contests" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
-        기출문제
+        {t("nav.contests")}
       </Link>
       <Link href="/community" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
-        커뮤니티
+        {t("nav.community")}
       </Link>
       <Link href="/problem-sets" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
-        문제 세트
+        {t("nav.problemSets")}
       </Link>
       <Link href="/study-groups" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
-        스터디
+        {t("nav.studyGroups")}
       </Link>
       {user?.is_admin && (
         <Link href="/admin" onClick={closeMenu} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium tracking-wide">
-          관리자
+          {t("nav.admin")}
         </Link>
       )}
     </>
@@ -56,7 +59,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav aria-label="메인 내비게이션" className="bg-black text-white sticky top-0 z-50 border-b border-neutral-800">
+      <nav aria-label={t("nav.mainNav")} className="bg-black text-white sticky top-0 z-50 border-b border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <Link href="/" className="flex items-center space-x-2.5 hover:opacity-80 transition-opacity">
@@ -77,6 +80,7 @@ export default function Navbar() {
                 <span className="text-xs border border-neutral-700 px-1.5 py-0.5 rounded text-neutral-500">⌘K</span>
               </button>
               {navLinks}
+              <LocaleSwitcher />
               {loading ? (
                 <span className="w-7 h-7 bg-neutral-800 animate-pulse rounded" />
               ) : user ? (
@@ -88,13 +92,14 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <Link href="/login" className="px-4 py-1.5 border border-neutral-700 text-neutral-300 hover:border-white hover:text-white transition-colors text-sm tracking-wide">
-                  로그인
+                  {t("nav.signIn")}
                 </Link>
               )}
             </div>
 
             {/* Mobile buttons */}
             <div className="flex items-center gap-3 md:hidden">
+              <LocaleSwitcher />
               <button
                 onClick={() => setSearchOpen(true)}
                 className="text-neutral-400 hover:text-white transition-colors"
@@ -106,7 +111,7 @@ export default function Navbar() {
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="text-neutral-400 hover:text-white transition-colors"
-                aria-label="메뉴 열기"
+                aria-label={t("nav.openMenu")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
@@ -136,7 +141,7 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <Link href="/login" onClick={closeMenu} className="block px-4 py-1.5 border border-neutral-700 text-neutral-300 hover:border-white hover:text-white transition-colors text-sm tracking-wide text-center">
-                  로그인
+                  {t("nav.signIn")}
                 </Link>
               )}
             </div>
