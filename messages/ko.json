@@ -1,5 +1,172 @@
 {
+  "meta": {
+    "title": "Logic of The Cosmos — 과학 올림피아드 문제 플랫폼",
+    "description": "IPhO, IChO, IBO, IESO 기출문제와 AI 풀이 분석을 제공하는 과학 학습 플랫폼.",
+    "footer": "© 2026 Logic of The Cosmos",
+    "footerSub": "경계 없는 과학 탐구의 장"
+  },
+  "nav": {
+    "problems": "문제 목록",
+    "contests": "기출문제",
+    "community": "커뮤니티",
+    "problemSets": "문제 세트",
+    "studyGroups": "스터디",
+    "admin": "관리자",
+    "signIn": "로그인",
+    "search": "검색",
+    "mainNav": "메인 내비게이션",
+    "openMenu": "메뉴 열기"
+  },
+  "home": {
+    "heroTitle": "과학 올림피아드를 마스터하세요",
+    "heroHighlight": "AI와 함께",
+    "heroDescription": "IPhO, IChO, IBO, IESO 대비를 위한 적응형 학습 플랫폼. 기출문제를 풀고, AI 피드백을 받고, 진도를 추적하세요.",
+    "ctaStart": "무료로 시작하기",
+    "ctaSignUp": "무료 가입",
+    "statsProblems": "문제",
+    "statsContests": "대회",
+    "statsDiscussions": "토론",
+    "statsAuthors": "기여자",
+    "sectionRecent": "최근 추가된 문제",
+    "sectionContests": "대회별 둘러보기",
+    "sectionViewAll": "전체 보기",
+    "joinCta": "전 세계 학생들과 함께 과학 올림피아드를 준비하세요"
+  },
+  "subjects": {
+    "all": "전체",
+    "physics": "물리",
+    "chemistry": "화학",
+    "biology": "생물",
+    "earth": "지구과학",
+    "math": "수학"
+  },
+  "problems": {
+    "title": "문제 목록",
+    "empty": "문제가 없습니다",
+    "errorLoading": "문제를 불러오지 못했습니다",
+    "sortNumber": "번호순",
+    "sortLatest": "최신순",
+    "sortMostSolved": "풀이 많은 순",
+    "sortMostDiscussed": "토론 많은 순",
+    "statusAll": "전체",
+    "statusSolved": "풀이 완료",
+    "statusUnsolved": "미풀이",
+    "statusBookmarked": "북마크",
+    "filterTags": "태그",
+    "filterSources": "출처",
+    "filterSearch": "문제 검색...",
+    "filterClear": "필터 초기화",
+    "difficulty": "난이도",
+    "viewOriginal": "원문 보기",
+    "hint": "힌트",
+    "showHint": "힌트 보기",
+    "solved": "풀이 완료",
+    "bookmark": "북마크",
+    "unbookmark": "북마크 해제"
+  },
+  "solutions": {
+    "title": "풀이",
+    "writeSolution": "풀이 작성",
+    "officialSolution": "공식 풀이",
+    "communitySolutions": "커뮤니티 풀이",
+    "submitSolution": "제출",
+    "cancel": "취소",
+    "upvote": "추천",
+    "noSolutions": "아직 풀이가 없습니다. 첫 번째 풀이를 작성해보세요!",
+    "loginToWrite": "풀이를 작성하려면 로그인하세요"
+  },
+  "discussions": {
+    "title": "토론",
+    "writeComment": "댓글을 작성하세요...",
+    "submit": "작성",
+    "reply": "답글",
+    "noDiscussions": "아직 토론이 없습니다. 대화를 시작하세요!",
+    "loginToComment": "토론에 참여하려면 로그인하세요"
+  },
+  "aiCoach": {
+    "title": "AI 코치",
+    "inputPlaceholder": "풀이를 여기에 붙여넣으세요 (LaTeX 지원)...",
+    "analyze": "풀이 분석하기",
+    "analyzing": "AI가 풀이를 분석 중입니다...",
+    "score": "점수",
+    "feedback": "피드백",
+    "strengths": "잘한 점",
+    "weakPoints": "개선할 점",
+    "conceptsToReview": "복습할 개념",
+    "nextSteps": "다음 단계",
+    "remaining": "오늘 {count}회 분석 가능",
+    "limitReached": "일일 한도에 도달했습니다. Pro로 업그레이드하면 무제한으로 분석할 수 있습니다.",
+    "loginRequired": "AI 코치를 사용하려면 로그인하세요",
+    "history": "이전 분석 기록",
+    "upgrade": "Pro 업그레이드"
+  },
+  "community": {
+    "title": "커뮤니티",
+    "newTopic": "새 글 작성",
+    "topicTitle": "제목",
+    "topicContent": "내용",
+    "topicTags": "태그 (쉼표로 구분)",
+    "submit": "게시",
+    "cancel": "취소",
+    "comments": "댓글",
+    "noTopics": "아직 게시글이 없습니다. 토론을 시작하세요!",
+    "loginToPost": "글을 작성하려면 로그인하세요"
+  },
+  "contests": {
+    "title": "기출문제",
+    "problems": "문제",
+    "viewProblems": "문제 보기",
+    "website": "공식 웹사이트"
+  },
+  "profile": {
+    "title": "프로필",
+    "editProfile": "프로필 수정",
+    "bio": "소개",
+    "solved": "풀이 완료",
+    "solutions": "풀이",
+    "discussions": "토론",
+    "heatmap": "활동",
+    "bookmarks": "북마크",
+    "settings": "설정",
+    "signOut": "로그아웃",
+    "save": "저장",
+    "cancel": "취소"
+  },
+  "auth": {
+    "signIn": "로그인",
+    "signUp": "회원가입",
+    "email": "이메일",
+    "password": "비밀번호",
+    "name": "이름",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "noAccount": "계정이 없으신가요?",
+    "hasAccount": "이미 계정이 있으신가요?",
+    "orContinueWith": "또는 다음으로 계속",
+    "google": "Google",
+    "github": "GitHub"
+  },
   "common": {
-    "title": "Logic of The Cosmos"
+    "loading": "로딩 중...",
+    "error": "문제가 발생했습니다",
+    "retry": "다시 시도",
+    "back": "뒤로",
+    "notFound": "페이지를 찾을 수 없습니다",
+    "notFoundDescription": "요청하신 페이지가 존재하지 않습니다.",
+    "goHome": "홈으로"
+  },
+  "problemSets": {
+    "title": "문제 세트",
+    "create": "세트 만들기",
+    "startExam": "시험 시작",
+    "timeLimit": "제한 시간",
+    "minutes": "분",
+    "problems": "문제"
+  },
+  "studyGroups": {
+    "title": "스터디",
+    "create": "스터디 만들기",
+    "join": "참여",
+    "leave": "탈퇴",
+    "members": "명"
   }
 }

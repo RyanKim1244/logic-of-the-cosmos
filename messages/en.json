@@ -1,5 +1,172 @@
 {
+  "meta": {
+    "title": "Logic of The Cosmos — Science Olympiad Platform",
+    "description": "Adaptive learning platform for IPhO, IChO, IBO, IESO preparation with AI-powered solution analysis.",
+    "footer": "© 2026 Logic of The Cosmos",
+    "footerSub": "Boundless scientific exploration"
+  },
+  "nav": {
+    "problems": "Problems",
+    "contests": "Contests",
+    "community": "Community",
+    "problemSets": "Problem Sets",
+    "studyGroups": "Study Groups",
+    "admin": "Admin",
+    "signIn": "Sign In",
+    "search": "Search",
+    "mainNav": "Main navigation",
+    "openMenu": "Open menu"
+  },
+  "home": {
+    "heroTitle": "Master Science Olympiads",
+    "heroHighlight": "with AI",
+    "heroDescription": "The adaptive learning platform for IPhO, IChO, IBO & IESO preparation. Practice past problems, get AI-powered feedback, and track your progress.",
+    "ctaStart": "Start Practicing — Free",
+    "ctaSignUp": "Sign Up Free",
+    "statsProblems": "Problems",
+    "statsContests": "Contests",
+    "statsDiscussions": "Discussions",
+    "statsAuthors": "Contributors",
+    "sectionRecent": "Recently Added",
+    "sectionContests": "Browse by Contest",
+    "sectionViewAll": "View All",
+    "joinCta": "Join students worldwide preparing for Science Olympiads"
+  },
+  "subjects": {
+    "all": "All Subjects",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "biology": "Biology",
+    "earth": "Earth Science",
+    "math": "Mathematics"
+  },
+  "problems": {
+    "title": "Problems",
+    "empty": "No problems found",
+    "errorLoading": "Failed to load problems",
+    "sortNumber": "By Number",
+    "sortLatest": "Latest",
+    "sortMostSolved": "Most Solved",
+    "sortMostDiscussed": "Most Discussed",
+    "statusAll": "All",
+    "statusSolved": "Solved",
+    "statusUnsolved": "Unsolved",
+    "statusBookmarked": "Bookmarked",
+    "filterTags": "Tags",
+    "filterSources": "Sources",
+    "filterSearch": "Search problems...",
+    "filterClear": "Clear filters",
+    "difficulty": "Difficulty",
+    "viewOriginal": "View Original Problem",
+    "hint": "Hint",
+    "showHint": "Show Hint",
+    "solved": "Solved",
+    "bookmark": "Bookmark",
+    "unbookmark": "Remove Bookmark"
+  },
+  "solutions": {
+    "title": "Solutions",
+    "writeSolution": "Write a Solution",
+    "officialSolution": "Official Solution",
+    "communitySolutions": "Community Solutions",
+    "submitSolution": "Submit",
+    "cancel": "Cancel",
+    "upvote": "Upvote",
+    "noSolutions": "No solutions yet. Be the first to contribute!",
+    "loginToWrite": "Sign in to write a solution"
+  },
+  "discussions": {
+    "title": "Discussion",
+    "writeComment": "Write a comment...",
+    "submit": "Submit",
+    "reply": "Reply",
+    "noDiscussions": "No discussions yet. Start the conversation!",
+    "loginToComment": "Sign in to join the discussion"
+  },
+  "aiCoach": {
+    "title": "AI Coach",
+    "inputPlaceholder": "Paste your solution here (LaTeX supported)...",
+    "analyze": "Analyze My Solution",
+    "analyzing": "AI is reviewing your solution...",
+    "score": "Score",
+    "feedback": "Feedback",
+    "strengths": "Strengths",
+    "weakPoints": "Areas to Improve",
+    "conceptsToReview": "Concepts to Review",
+    "nextSteps": "Next Steps",
+    "remaining": "{count} analyses remaining today",
+    "limitReached": "Daily limit reached. Upgrade to Pro for unlimited analyses.",
+    "loginRequired": "Sign in to use AI Coach",
+    "history": "Previous Analyses",
+    "upgrade": "Upgrade to Pro"
+  },
+  "community": {
+    "title": "Community",
+    "newTopic": "New Topic",
+    "topicTitle": "Title",
+    "topicContent": "Content",
+    "topicTags": "Tags (comma separated)",
+    "submit": "Post",
+    "cancel": "Cancel",
+    "comments": "comments",
+    "noTopics": "No topics yet. Start a discussion!",
+    "loginToPost": "Sign in to create a topic"
+  },
+  "contests": {
+    "title": "Contests",
+    "problems": "problems",
+    "viewProblems": "View Problems",
+    "website": "Official Website"
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "bio": "Bio",
+    "solved": "Solved",
+    "solutions": "Solutions",
+    "discussions": "Discussions",
+    "heatmap": "Activity",
+    "bookmarks": "Bookmarks",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "github": "GitHub"
+  },
   "common": {
-    "title": "Logic of The Cosmos"
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "back": "Back",
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist.",
+    "goHome": "Go Home"
+  },
+  "problemSets": {
+    "title": "Problem Sets",
+    "create": "Create Set",
+    "startExam": "Start Exam",
+    "timeLimit": "Time Limit",
+    "minutes": "minutes",
+    "problems": "problems"
+  },
+  "studyGroups": {
+    "title": "Study Groups",
+    "create": "Create Group",
+    "join": "Join",
+    "leave": "Leave",
+    "members": "members"
   }
 }
