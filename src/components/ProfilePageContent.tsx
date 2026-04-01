@@ -10,12 +10,12 @@ import { getDisplayText } from "@/lib/multilang";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
   ssr: false,
-  loading: () => <div className="border border-neutral-200 p-6 h-48 animate-pulse bg-neutral-50" />,
+  loading: () => <div className="border border-neutral-200 rounded-xl p-6 h-48 animate-pulse bg-neutral-50" />,
 });
 
 const ContestProgressBars = dynamic(() => import("@/components/ContestProgressBars"), {
   ssr: false,
-  loading: () => <div className="border border-neutral-200 p-6 h-40 animate-pulse bg-neutral-50" />,
+  loading: () => <div className="border border-neutral-200 rounded-xl p-6 h-40 animate-pulse bg-neutral-50" />,
 });
 
 interface ProblemSummary {
@@ -66,13 +66,13 @@ function CollapsibleSection({
       {items.length === 0 ? (
         <>
           <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">{title}</h2>
-          <div className="border border-neutral-200 p-8 text-center">
+          <div className="border border-neutral-200 rounded-xl p-8 text-center">
             <p className="text-neutral-400 text-sm">{emptyText}</p>
             <Link href={emptyLink} className="text-sm text-black hover:underline mt-2 inline-block">{emptyLinkText} &rarr;</Link>
           </div>
         </>
       ) : (
-        <div className="border border-neutral-200">
+        <div className="border border-neutral-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="w-full flex items-center justify-between px-6 py-4 hover:bg-neutral-50 transition-colors"
@@ -94,7 +94,7 @@ function CollapsibleSection({
                 const isSolved = solvedIds?.has(p.id) ?? false;
                 const isBookmarked = bookmarkedIds?.has(p.id) ?? false;
                 return (
-                  <Link key={p.id} href={`/problems/${p.id}`} className={`block border p-4 hover:border-black transition-colors ${isSolved ? "border-emerald-300" : "border-neutral-200"}`}>
+                  <Link key={p.id} href={`/problems/${p.id}`} className={`block border rounded-lg p-4 hover:border-black transition-colors ${isSolved ? "border-emerald-300" : "border-neutral-200"}`}>
                     <div className="flex items-center gap-3">
                       {(isSolved || isBookmarked) && (
                         <div className="flex items-center gap-1 shrink-0">
@@ -348,10 +348,10 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       {/* Profile Header */}
-      <div className="border border-neutral-200 p-8 mb-8">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-black text-white flex items-center justify-center text-2xl font-light">
+      <div className="border border-neutral-200 rounded-xl p-6 sm:p-8 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-xl text-white flex items-center justify-center text-xl sm:text-2xl font-light shrink-0">
               {profile.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -385,16 +385,16 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="border border-neutral-200 p-6 text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="border border-neutral-200 rounded-xl p-6 text-center">
           <div className="text-3xl font-extralight">{solvedCount}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
         </div>
-        <div className="border border-neutral-200 p-6 text-center">
+        <div className="border border-neutral-200 rounded-xl p-6 text-center">
           <div className="text-3xl font-extralight">{solutionCount}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">작성한 풀이</div>
         </div>
-        <div className="border border-neutral-200 p-6 text-center">
+        <div className="border border-neutral-200 rounded-xl p-6 text-center">
           <div className="text-3xl font-extralight">{discussionCount}</div>
           <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">토론 참여</div>
         </div>
@@ -412,7 +412,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
       <section className="mb-8">
         <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">풀이 기록</h2>
         {solveHistory.length === 0 ? (
-          <div className="border border-neutral-200 p-8 text-center">
+          <div className="border border-neutral-200 rounded-xl p-8 text-center">
             <p className="text-neutral-400 text-sm">아직 풀이 기록이 없습니다.</p>
             <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 풀러 가기 &rarr;</Link>
           </div>
@@ -432,7 +432,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                       <Link
                         key={`${record.problem_id}-${i}`}
                         href={`/problems/${record.problem_id}`}
-                        className="block border border-emerald-300 p-3 hover:border-black transition-colors"
+                        className="block border border-emerald-300 rounded-lg p-3 hover:border-black transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1 shrink-0">

@@ -31,10 +31,12 @@ type ContestRow = {
 };
 
 type ProblemFormData = {
+  problemType: "lotc" | "external";
   title: MultiLangContent;
   source: string;
   year: number;
   tags: string;
+  problemUrl: string;
   content: MultiLangContent;
   officialSolution: MultiLangContent;
 };
@@ -48,10 +50,12 @@ type ContestFormData = {
 };
 
 const emptyProblemForm: ProblemFormData = {
+  problemType: "external",
   title: { ko: "" },
   source: "",
   year: new Date().getFullYear(),
   tags: "",
+  problemUrl: "",
   content: { ko: "" },
   officialSolution: { ko: "" },
 };
@@ -149,9 +153,12 @@ export default function AdminPage() {
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
   const openEditProblem = async (p: ProblemRow) => {
     // Fetch content & official_solution on demand (not loaded in list query)
-    const { data } = await supabase.from("problems").select("title, content, official_solution").eq("id", p.id).single();
+    const { data } = await supabase.from("problems").select("title, content, official_solution, problem_url").eq("id", p.id).single();
+    const isLoTC = p.source.trim().toLowerCase() === "lotc";
     setProblemForm({
+      problemType: isLoTC ? "lotc" : "external",
       title: parseMultiLang(data?.title ?? p.title), source: p.source, year: p.year, tags: p.tags.join(", "),
+      problemUrl: data?.problem_url ?? "",
       content: parseMultiLang(data?.content ?? ""),
       officialSolution: parseMultiLang(data?.official_solution ?? ""),
     });
@@ -169,10 +176,17 @@ export default function AdminPage() {
     const contentStr = serializeMultiLang(problemForm.content);
     const solutionStr = serializeMultiLang(problemForm.officialSolution);
 
+    const finalSource = problemForm.problemType === "lotc" ? "LoTC" : problemForm.source;
+    const finalYear = problemForm.problemType === "lotc"
+      ? problemForm.year
+      : (parseInt(problemForm.source.match(/\d{4}/)?.[0] ?? "") || new Date().getFullYear());
+
     if (problemMode === "edit" && editingProblemId) {
       const { error } = await supabase.from("problems").update({
-        title: titleStr, source: problemForm.source, year: problemForm.year,
-        tags, content: contentStr, official_solution: solutionStr, updated_at: now,
+        title: titleStr, source: finalSource, year: finalYear,
+        tags, content: contentStr, official_solution: solutionStr,
+        problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
+        updated_at: now,
       }).eq("id", editingProblemId);
 
       if (error) {
@@ -180,7 +194,7 @@ export default function AdminPage() {
         return;
       }
       setAllProblems(allProblems.map((p) =>
-        p.id === editingProblemId ? { ...p, title: titleStr, source: problemForm.source, year: problemForm.year, tags, updated_at: now } : p
+        p.id === editingProblemId ? { ...p, title: titleStr, source: finalSource, year: finalYear, tags, updated_at: now } : p
       ));
     } else {
       const id = `custom-${Date.now()}`;
@@ -189,8 +203,9 @@ export default function AdminPage() {
         : 999;
       const nextNumber = Math.max(maxNum + 1, 1000);
       const { data, error } = await supabase.from("problems").insert({
-        id, problem_number: nextNumber, title: titleStr, source: problemForm.source, year: problemForm.year,
+        id, problem_number: nextNumber, title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
+        problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
       }).select("id, problem_number, title, source, year, tags, created_at, updated_at").single();
 
       if (error) {
@@ -325,16 +340,57 @@ export default function AdminPage() {
             <div className="border border-neutral-200 p-8 mb-8">
               <h2 className="text-lg font-light text-black mb-6">{problemMode === "edit" ? "문제 수정" : "새 문제 추가"}</h2>
               <form onSubmit={handleProblemSubmit} className="space-y-5">
-                <MultiLangEditor label="제목" value={problemForm.title} onChange={(title) => setProblemForm({ ...problemForm, title })} rows={1} placeholder="문제 제목" required />
-                <div className="grid md:grid-cols-2 gap-5">
-                  <div><label className={labelClass}>출처</label><input type="text" required maxLength={100} value={problemForm.source} onChange={(e) => setProblemForm({ ...problemForm, source: e.target.value })} className={inputClass} placeholder="예: IPhO 2023, KPhO 2022" /></div>
+
+                {/* Problem type selector */}
+                <div>
+                  <label className={labelClass}>문제 유형</label>
+                  <div className="flex gap-0">
+                    {(["lotc", "external"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setProblemForm({ ...problemForm, problemType: t, source: t === "lotc" ? "LoTC" : "" })}
+                        className={`px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-colors border ${
+                          problemForm.problemType === t
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-neutral-500 border-neutral-300 hover:border-neutral-500 hover:text-black"
+                        }`}
+                      >
+                        {t === "lotc" ? "LoTC 고유 문제" : "외부 문제"}
+                      </button>
+                    ))}
+                  </div>
+                  {problemForm.problemType === "lotc" && (
+                    <p className="text-[11px] text-neutral-400 mt-1.5">문제 지문과 공식 풀이를 직접 입력합니다. 출처는 자동으로 &quot;LoTC&quot;로 설정됩니다.</p>
+                  )}
+                  {problemForm.problemType === "external" && (
+                    <p className="text-[11px] text-neutral-400 mt-1.5">출처 기관의 공식 링크를 연결합니다.</p>
+                  )}
                 </div>
+
+                <MultiLangEditor label="제목" value={problemForm.title} onChange={(title) => setProblemForm({ ...problemForm, title })} rows={1} placeholder="문제 제목" required />
+
                 <div className="grid md:grid-cols-2 gap-5">
-                  <div><label className={labelClass}>연도</label><input type="number" required min={1900} max={2100} value={problemForm.year} onChange={(e) => { const v = e.target.valueAsNumber; if (!isNaN(v)) setProblemForm({ ...problemForm, year: v }); }} onWheel={(e) => e.currentTarget.blur()} className={inputClass} /></div>
+                  {problemForm.problemType === "external" && (
+                    <div><label className={labelClass}>출처 (연도 포함)</label><input type="text" required maxLength={100} value={problemForm.source} onChange={(e) => setProblemForm({ ...problemForm, source: e.target.value })} className={inputClass} placeholder="예: IPhO 2025, KPhO 2024" /></div>
+                  )}
+                  {problemForm.problemType === "lotc" && (
+                    <div><label className={labelClass}>연도</label><input type="number" required min={1900} max={2100} value={problemForm.year} onChange={(e) => { const v = e.target.valueAsNumber; if (!isNaN(v)) setProblemForm({ ...problemForm, year: v }); }} onWheel={(e) => e.currentTarget.blur()} className={inputClass} /></div>
+                  )}
                   <div><label className={labelClass}>태그 (쉼표로 구분)</label><input type="text" value={problemForm.tags} onChange={(e) => setProblemForm({ ...problemForm, tags: e.target.value })} className={inputClass} placeholder="예: electromagnetism, special-relativity" /></div>
                 </div>
-                <MultiLangEditor label="문제 내용 (LaTeX 지원)" value={problemForm.content} onChange={(content) => setProblemForm({ ...problemForm, content })} rows={10} placeholder="LaTeX 수식을 포함한 문제 내용을 입력하세요." required />
-                <MultiLangEditor label="공식 풀이 (LaTeX 지원)" value={problemForm.officialSolution} onChange={(officialSolution) => setProblemForm({ ...problemForm, officialSolution })} rows={10} placeholder="공식 풀이를 입력하세요..." required />
+
+                {problemForm.problemType === "external" && (
+                  <div><label className={labelClass}>공식 문제 링크 (선택)</label><input type="url" value={problemForm.problemUrl} onChange={(e) => setProblemForm({ ...problemForm, problemUrl: e.target.value })} className={inputClass} placeholder="https://..." /></div>
+                )}
+
+                {problemForm.problemType === "lotc" && (
+                  <>
+                    <MultiLangEditor label="문제 내용 (LaTeX 지원)" value={problemForm.content} onChange={(content) => setProblemForm({ ...problemForm, content })} rows={10} placeholder="LaTeX 수식을 포함한 문제 내용을 입력하세요." required />
+                    <MultiLangEditor label="공식 풀이 (LaTeX 지원)" value={problemForm.officialSolution} onChange={(officialSolution) => setProblemForm({ ...problemForm, officialSolution })} rows={10} placeholder="공식 풀이를 입력하세요..." required />
+                  </>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <button type="submit" className="px-6 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider">{problemMode === "edit" ? "수정 완료" : "문제 등록"}</button>
                   <button type="button" onClick={closeProblemForm} className="px-6 py-2.5 border border-neutral-300 text-neutral-700 text-xs font-medium hover:border-black hover:text-black transition-colors uppercase tracking-wider">취소</button>
@@ -352,7 +408,7 @@ export default function AdminPage() {
                 <div key={problem.id} className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-black text-sm truncate">{getDisplayText(problem.title)}</h3>
-                    <p className="text-xs text-neutral-400 mt-1">{problem.source} ({problem.year})</p>
+                    <p className="text-xs text-neutral-400 mt-1">{problem.source.toLowerCase() === "lotc" ? "LoTC" : problem.source}</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {problem.tags.slice(0, 4).map((tag) => (<span key={tag} className="text-xs text-neutral-400">#{tag}</span>))}
                     </div>

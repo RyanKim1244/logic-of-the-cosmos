@@ -110,7 +110,7 @@ export default function StudyGroupsContent() {
 
       {/* Create Form */}
       {showCreate && (
-        <div className="border border-neutral-200 p-6 mb-8 animate-fade-slide-up">
+        <div className="border border-neutral-200 rounded-xl p-6 mb-8 animate-fade-slide-up">
           <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">새 스터디 그룹</h3>
           <div className="space-y-4">
             <input
@@ -142,14 +142,14 @@ export default function StudyGroupsContent() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="border border-neutral-200 p-6 animate-pulse">
+            <div key={i} className="border border-neutral-200 rounded-xl p-6 animate-pulse">
               <div className="h-5 bg-neutral-100 rounded w-48 mb-3" />
               <div className="h-4 bg-neutral-50 rounded w-72" />
             </div>
           ))}
         </div>
       ) : groups.length === 0 ? (
-        <div className="border border-neutral-200 p-12 text-center">
+        <div className="border border-neutral-200 rounded-xl p-12 text-center">
           <p className="text-neutral-400 text-sm">아직 스터디 그룹이 없습니다.</p>
           {user && (
             <button
@@ -166,7 +166,7 @@ export default function StudyGroupsContent() {
             <Link
               key={group.id}
               href={`/study-groups/${group.id}`}
-              className="block border border-neutral-200 p-6 hover:border-black transition-colors group"
+              className="block border border-neutral-200 rounded-xl p-6 hover:border-black transition-colors group"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">

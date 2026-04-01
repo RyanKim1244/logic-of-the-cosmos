@@ -5,18 +5,12 @@ import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
-import { Problem } from "@/types";
+import { Problem, ContestPreview } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 import HeroBackground from "@/components/HeroBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 import CountUp from "@/components/CountUp";
 
-interface ContestPreview {
-  id: string;
-  name: string;
-  short_name: string;
-  years: number[];
-}
 
 interface HomeStats {
   problems: number;
@@ -185,74 +179,82 @@ export default function HomeContent({
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="hero-gradient text-white py-36 md:py-52 relative overflow-hidden">
+      {/* ── Hero ── */}
+      <section className="hero-gradient text-white py-40 md:py-56 relative overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extralight mb-8 tracking-tight hero-title">
+          <ScrollReveal>
+            <span className="section-label text-neutral-500 mb-6 inline-block">Beautiful Science</span>
+          </ScrollReveal>
+          <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-extralight mb-6 tracking-tight hero-title leading-none">
             Logic of The <span className="hero-gradient-text">Cosmos</span>
           </h1>
-          <div className="w-24 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent mx-auto mb-8 hero-line" />
-          <p className="text-2xl md:text-3xl text-neutral-300 mb-4 max-w-2xl mx-auto font-light hero-subtitle">
+          <div className="w-20 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent mx-auto mb-8 hero-line" />
+          <p className="text-xl md:text-2xl text-neutral-400 mb-14 max-w-2xl mx-auto font-light hero-subtitle tracking-wide">
             과학의 모든 영역을 탐구하는 거대한 토론의 장
           </p>
-          <p className="text-neutral-500 mb-14 max-w-xl mx-auto text-lg font-light hero-subtitle-delay">
-            올림피아드 · 대학 기출 · 대학원 수준 · 연구 문제까지 — 경계 없는 과학 탐구
-          </p>
-          <div className="flex items-center justify-center gap-4 hero-cta">
-            <Link href="/problems" className="hero-btn-primary inline-block px-10 py-3.5 bg-white text-black font-medium transition-all text-sm tracking-widest uppercase">문제 풀러 가기</Link>
-            <Link href="/contests" className="hero-btn-outline inline-block px-10 py-3.5 border border-neutral-500 text-neutral-300 font-medium transition-all text-sm tracking-widest uppercase">기출문제</Link>
+          <div className="flex items-center justify-center gap-3 hero-cta flex-wrap">
+            <Link href="/problems" className="hero-btn-v2-primary">
+              문제 풀러 가기
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <Link href="/contests" className="hero-btn-v2-outline">기출문제</Link>
           </div>
         </div>
       </section>
 
-      {/* Quote Section */}
-      <section className="py-28 quote-section border-b border-neutral-100 relative overflow-hidden">
-        <div className="quote-float-1 absolute top-10 left-[10%] w-72 h-72 bg-blue-100/20 rounded-full blur-3xl" />
-        <div className="quote-float-2 absolute bottom-10 right-[10%] w-60 h-60 bg-purple-100/20 rounded-full blur-3xl" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      {/* ── Quote ── */}
+      <section className="py-24 quote-section border-b border-neutral-100 relative overflow-hidden">
+        <div className="quote-float-1 absolute top-10 left-[10%] w-72 h-72 bg-blue-100/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="quote-float-2 absolute bottom-10 right-[10%] w-60 h-60 bg-purple-100/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <ScrollReveal>
             <blockquote className="relative">
-              <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-8xl text-neutral-200/60 font-serif select-none quote-mark">&ldquo;</span>
-              <p className="text-2xl md:text-3xl font-light text-neutral-800 leading-relaxed italic mb-5">
-                &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
-              </p>
-              <p className="text-lg md:text-xl text-neutral-600 font-light mb-8 leading-relaxed">
+              <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-7xl text-neutral-200/70 font-serif select-none quote-mark leading-none">&ldquo;</span>
+              <p className="text-base sm:text-lg md:text-xl font-light text-neutral-700 leading-relaxed italic mb-4 pt-4">
                 &ldquo;지구는 인류의 요람이다. 그러나 영원히 요람 속에 머물 수는 없다.&rdquo;
               </p>
-              <div className="w-12 h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-auto mb-5" />
-              <footer className="text-base text-neutral-400 tracking-wide">
+              <p className="text-sm text-neutral-400 italic mb-6">
+                &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
+              </p>
+              <div className="w-10 h-px bg-neutral-300 mx-auto mb-5" />
+              <footer className="text-sm text-neutral-400 tracking-wide">
                 <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
-                <span className="mx-2 text-neutral-300">|</span>
+                <span className="mx-2 text-neutral-300">/</span>
                 <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
-                <span className="mx-2 text-neutral-300">|</span>
-                <span className="text-neutral-400 text-sm tracking-widest">1857 – 1935</span>
+                <span className="mx-2 text-neutral-300">/</span>
+                <span className="font-mono text-neutral-400 text-xs">1857 – 1935</span>
               </footer>
             </blockquote>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-24 bg-neutral-50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
+      {/* ── Stats ── */}
+      <section className="py-20 bg-neutral-50 border-b border-neutral-100 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.025] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <h2 className="text-center text-sm md:text-base text-neutral-400 uppercase tracking-[0.3em] mb-14">Platform Overview</h2>
+            <p className="section-label text-center mb-10">Platform Overview</p>
           </ScrollReveal>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {[
-              { label: "총 문제 수", value: stats?.problems ?? 0, icon: "Q" },
-              { label: "등록 대회", value: stats?.contests ?? 0, icon: "#" },
-              { label: "토론 댓글 수", value: stats?.discussions ?? 0, icon: ">" },
-              { label: "참여자 수", value: stats?.authors ?? 0, icon: "@" },
+              { label: "총 문제 수", value: stats?.problems ?? 0 },
+              { label: "등록 대회", value: stats?.contests ?? 0 },
+              { label: "토론 수", value: stats?.discussions ?? 0 },
+              { label: "참여자 수", value: stats?.authors ?? 0 },
             ].map((stat, i) => (
-              <ScrollReveal key={stat.label} delay={i * 100}>
-                <div className="p-8 text-center border border-neutral-200 bg-white stat-card group">
-                  <div className="text-5xl md:text-6xl font-extralight text-black transition-transform duration-300 group-hover:scale-110">
-                    {statsConfirmed ? <CountUp target={stat.value} /> : <span className="inline-block w-12 h-10 bg-neutral-100 animate-pulse rounded" />}
+              <ScrollReveal key={stat.label} delay={i * 80}>
+                <div className="stat-card-v2">
+                  <div className="stat-number mb-2">
+                    {statsConfirmed
+                      ? <CountUp target={stat.value} />
+                      : <span className="inline-block w-14 h-10 skeleton rounded" />
+                    }
                   </div>
-                  <div className="text-sm text-neutral-400 mt-3 uppercase tracking-[0.2em]">{stat.label}</div>
+                  <div className="text-[11px] text-neutral-400 uppercase tracking-[0.22em]">{stat.label}</div>
                 </div>
               </ScrollReveal>
             ))}
@@ -260,30 +262,34 @@ export default function HomeContent({
         </div>
       </section>
 
-      {/* Contests Preview */}
+      {/* ── Contests Preview ── */}
       <section className="py-24 border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex items-end justify-between mb-12">
               <div>
-                <h2 className="text-3xl md:text-4xl font-light text-black mb-2 section-heading">기출문제 아카이브</h2>
-                <p className="text-base text-neutral-400">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
+                <span className="section-label">Archives</span>
+                <h2 className="text-3xl md:text-4xl font-light text-black">기출문제 아카이브</h2>
+                <p className="text-sm text-neutral-400 mt-2">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
               </div>
-              <Link href="/contests" className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2 link-hover-arrow">
-                전체 보기 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span>
+              <Link href="/contests" className="link-arrow mb-1 shrink-0">
+                전체 보기
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </Link>
             </div>
           </ScrollReveal>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {topContests.map((contest, i) => (
-              <ScrollReveal key={contest.id} delay={i * 100}>
-                <Link href={`/contests/${contest.id}`}>
-                  <div className="border border-neutral-200 p-6 bg-white group h-full flex flex-col contest-card">
-                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-widest mb-2 group-hover:text-blue-500 transition-colors duration-300">{contest.short_name}</span>
-                    <h3 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors mb-2 flex-1">{contest.name}</h3>
-                    <div className="flex items-center justify-between text-xs text-neutral-400 pt-3 border-t border-neutral-100 group-hover:border-neutral-300 transition-colors">
-                      <span>{contest.years.length > 0 ? `${contest.years[contest.years.length - 1]}–${contest.years[0]}` : ""}</span>
-                      <span className="font-medium text-neutral-500 group-hover:text-black transition-colors">{problemCounts[contest.id] || 0}문제</span>
+              <ScrollReveal key={contest.id} delay={i * 80}>
+                <Link href={`/contests/${contest.id}`} className="block h-full">
+                  <div className="contest-card-v2">
+                    <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-[0.2em] mb-3 block">{contest.short_name}</span>
+                    <h3 className="text-[15px] font-medium text-neutral-800 mb-3 flex-1 leading-snug">{contest.name}</h3>
+                    <div className="mt-auto flex items-center justify-between pt-3 border-t border-neutral-100 text-xs text-neutral-400">
+                      <span className="font-mono">{contest.years.length > 0 ? `${contest.years[contest.years.length - 1]}–${contest.years[0]}` : ""}</span>
+                      <span className="font-medium text-neutral-600">{problemCounts[contest.id] || 0}문제</span>
                     </div>
                   </div>
                 </Link>
@@ -293,54 +299,68 @@ export default function HomeContent({
         </div>
       </section>
 
-      {/* Recent Problems */}
-      <section className="py-24">
+      {/* ── Recent Problems ── */}
+      <section className="py-24 border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex items-end justify-between mb-10">
               <div>
-                <h2 className="text-3xl md:text-4xl font-light text-black mb-2">최근 문제</h2>
-                <p className="text-base text-neutral-400">새로 등록된 문제들을 확인하세요</p>
+                <span className="section-label">Recently Added</span>
+                <h2 className="text-3xl md:text-4xl font-light text-black">최근 문제</h2>
               </div>
-              <Link href="/problems" className="text-neutral-400 hover:text-black transition-colors text-sm group flex items-center gap-2">
-                전체 보기 <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+              <Link href="/problems" className="link-arrow mb-1 shrink-0">
+                전체 보기
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </Link>
             </div>
           </ScrollReveal>
           <div className="space-y-2">
             {recentProblems.map((problem, i) => (
               <ScrollReveal key={problem.id} delay={i * 80}>
-                <div className="problem-card-hover">
-                  <ProblemCard problem={problem} />
-                </div>
+                <ProblemCard problem={problem} />
               </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-24 bg-black text-white relative overflow-hidden">
-        <div className="features-glow-1 absolute top-0 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl" />
-        <div className="features-glow-2 absolute bottom-0 right-1/4 w-80 h-80 bg-purple-600/5 rounded-full blur-3xl" />
+      {/* ── Features ── */}
+      <section className="py-24 bg-neutral-200 relative overflow-hidden">
+        <div className="features-glow-1 absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="features-glow-2 absolute bottom-0 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <h2 className="text-3xl md:text-5xl font-light text-center mb-5">열린 과학 토론의 장</h2>
-            <p className="text-neutral-500 text-base md:text-lg text-center mb-16">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
+            <p className="section-label text-center text-neutral-400 mb-4">Why LOTC</p>
+            <h2 className="text-3xl md:text-5xl font-extralight text-center text-black mb-3 tracking-tight">열린 과학 토론의 장</h2>
+            <p className="text-neutral-500 text-sm text-center mb-16 tracking-wide">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
           </ScrollReveal>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: "\u221E", title: "경계 없는 탐구", desc: "중등 올림피아드부터 대학원 연구 문제까지, 물리·화학·생물·수학·지구과학 전 분야를 다룹니다." },
-              { icon: "\u21CC", title: "실시간 토론", desc: "각 문제마다 토론 스레드가 열립니다. 풀이를 공유하고, 다른 접근법을 제시하며 깊이 있는 대화를 나누세요." },
-              { icon: "\u03A3", title: "LaTeX 수식 지원", desc: "수학적 논증을 정확하게 표현할 수 있습니다. 토론과 풀이에서 자유롭게 LaTeX 수식을 사용하세요." },
+              {
+                symbol: "∞",
+                title: "경계 없는 탐구",
+                desc: "중등 올림피아드부터 대학원 연구 문제까지, 물리·화학·생물·수학·지구과학 전 분야를 다룹니다.",
+              },
+              {
+                symbol: "⇌",
+                title: "실시간 토론",
+                desc: "각 문제마다 토론 스레드가 열립니다. 풀이를 공유하고, 다른 접근법을 제시하며 깊이 있는 대화를 나누세요.",
+              },
+              {
+                symbol: "✦",
+                title: "문제 학습 AI",
+                desc: "AI 튜터가 문제 풀이를 도와줍니다. 힌트 요청, 개념 질문, 풀이 검증까지 자유롭게 대화하세요.",
+              },
             ].map((feature, i) => (
-              <ScrollReveal key={feature.title} delay={i * 150}>
-                <div className="p-8 border border-neutral-800 feature-card group h-full flex flex-col">
-                  <div className="w-14 h-14 border border-neutral-700 flex items-center justify-center mb-6 group-hover:border-white transition-colors duration-300 feature-icon-box">
-                    <span className="text-2xl font-light text-neutral-400 group-hover:text-white transition-colors duration-300">{feature.icon}</span>
+              <ScrollReveal key={feature.title} delay={i * 120}>
+                <div className="feature-card-v2 group bg-white border border-neutral-200 rounded-xl">
+                  <div className="w-12 h-12 border border-neutral-200 rounded-lg flex items-center justify-center mb-6 group-hover:border-neutral-400 transition-colors">
+                    <span className="text-xl font-light text-neutral-400 group-hover:text-black transition-colors">{feature.symbol}</span>
                   </div>
-                  <h3 className="font-medium text-base uppercase tracking-widest mb-4">{feature.title}</h3>
-                  <p className="text-neutral-500 text-base leading-relaxed group-hover:text-neutral-400 transition-colors duration-300 flex-1">{feature.desc}</p>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.15em] mb-3 text-neutral-800 group-hover:text-black transition-colors">{feature.title}</h3>
+                  <p className="text-neutral-500 text-sm leading-relaxed group-hover:text-neutral-700 transition-colors">{feature.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -348,65 +368,79 @@ export default function HomeContent({
         </div>
       </section>
 
-      {/* Quick Links */}
-      <section className="py-24 bg-neutral-50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.015]" />
+      {/* ── Quick Links ── */}
+      <section className="py-24 bg-neutral-50 border-b border-neutral-100 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.4] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-14 section-heading">빠른 탐색</h2>
+            <p className="section-label text-center mb-3">Explore</p>
+            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-12">빠른 탐색</h2>
           </ScrollReveal>
-          <div className="grid md:grid-cols-3 gap-6">
-            <ScrollReveal delay={0}>
-              <Link href="/problems" className="block h-full">
-                <div className="border border-neutral-200 bg-white p-8 transition-all group h-full flex flex-col quick-link-card">
-                  <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-300">
-                    <span className="text-lg font-light text-neutral-400 group-hover:text-white transition-colors duration-300">?</span>
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              {
+                href: "/problems",
+                symbol: "?",
+                title: "문제 목록",
+                desc: "태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.",
+                meta: statsConfirmed ? `${stats.problems}개의 문제` : "—",
+              },
+              {
+                href: "/contests",
+                symbol: "#",
+                title: "기출문제",
+                desc: "대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.",
+                meta: statsConfirmed ? `${stats.contests}개의 대회` : "—",
+              },
+              {
+                href: "/community",
+                symbol: ">",
+                title: "커뮤니티",
+                desc: "자유 토론과 질문을 통해 다른 학습자들과 소통하세요.",
+                meta: "토론 참여하기",
+              },
+            ].map((item, i) => (
+              <ScrollReveal key={item.href} delay={i * 80}>
+                <Link href={item.href} className="block h-full">
+                  <div className="ql-card group">
+                    <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-250">
+                      <span className="text-base font-light text-neutral-400 group-hover:text-white transition-colors">{item.symbol}</span>
+                    </div>
+                    <h3 className="text-base font-semibold mb-2 text-neutral-800 group-hover:text-black transition-colors">{item.title}</h3>
+                    <p className="text-sm text-neutral-400 leading-relaxed flex-1">{item.desc}</p>
+                    <span className="inline-flex items-center gap-1.5 mt-5 text-xs text-neutral-400 group-hover:text-black transition-colors font-medium tracking-wide">
+                      {item.meta}
+                      <svg className="w-3 h-3 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
                   </div>
-                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">문제 목록</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.problems : "—"}개의 문제 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
-                </div>
-              </Link>
-            </ScrollReveal>
-            <ScrollReveal delay={100}>
-              <Link href="/contests" className="block h-full">
-                <div className="border border-neutral-200 bg-white p-8 transition-all group h-full flex flex-col quick-link-card">
-                  <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-300">
-                    <span className="text-lg font-light text-neutral-400 group-hover:text-white transition-colors duration-300">#</span>
-                  </div>
-                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">기출문제</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">{statsConfirmed ? stats.contests : "—"}개의 대회 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
-                </div>
-              </Link>
-            </ScrollReveal>
-            <ScrollReveal delay={200}>
-              <Link href="/community" className="block h-full">
-                <div className="border border-neutral-200 bg-white p-8 transition-all group h-full flex flex-col quick-link-card">
-                  <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center mb-5 group-hover:border-black group-hover:bg-black transition-all duration-300">
-                    <span className="text-lg font-light text-neutral-400 group-hover:text-white transition-colors duration-300">&gt;</span>
-                  </div>
-                  <h3 className="text-lg font-medium mb-2 group-hover:text-black transition-colors">커뮤니티</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed flex-1">자유 토론과 질문을 통해 다른 학습자들과 소통하세요.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm text-neutral-400 group-hover:text-black transition-colors">토론 참여하기 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5">&rarr;</span></span>
-                </div>
-              </Link>
-            </ScrollReveal>
+                </Link>
+              </ScrollReveal>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 border-t border-neutral-200 relative overflow-hidden">
-        <div className="cta-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-100/20 via-purple-100/20 to-blue-100/20 rounded-full blur-3xl" />
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      {/* ── CTA ── */}
+      <section className="py-28 relative overflow-hidden">
+        <div className="cta-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[150px] sm:w-[500px] sm:h-[250px] bg-gradient-to-r from-blue-100/15 via-purple-100/15 to-blue-100/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <ScrollReveal>
-            <h2 className="text-3xl md:text-5xl font-light text-black mb-5">과학의 경계를 넓혀보세요</h2>
-            <p className="text-neutral-400 text-base md:text-lg mb-10 max-w-lg mx-auto">문제를 풀고, 풀이를 공유하고, 함께 성장하세요.</p>
-            <div className="flex items-center justify-center gap-4">
-              <Link href="/problems" className="cta-btn-primary px-10 py-3.5 bg-black text-white text-sm font-medium tracking-widest uppercase transition-all duration-300">문제 풀기</Link>
+            <span className="section-label mb-4 inline-block">Get Started</span>
+            <h2 className="text-3xl md:text-5xl font-extralight text-black mb-4 tracking-tight">과학의 경계를 넓혀보세요</h2>
+            <p className="text-neutral-400 text-sm mb-10 max-w-md mx-auto leading-relaxed tracking-wide">
+              문제를 풀고, 풀이를 공유하고, 함께 성장하세요.
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Link href="/problems" className="cta-primary-v2">
+                문제 풀기
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
               {!user && (
-                <Link href="/login" className="cta-btn-outline px-10 py-3.5 border border-neutral-300 text-neutral-700 text-sm font-medium tracking-widest uppercase transition-all duration-300">계정 만들기</Link>
+                <Link href="/login" className="cta-secondary-v2">계정 만들기</Link>
               )}
             </div>
           </ScrollReveal>

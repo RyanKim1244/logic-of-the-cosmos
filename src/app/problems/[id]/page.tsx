@@ -33,6 +33,7 @@ export default async function ProblemDetailPage({
     tags: problemData.tags,
     content: problemData.content,
     officialSolution: problemData.official_solution,
+    problemUrl: problemData.problem_url ?? null,
     createdAt: problemData.created_at,
     updatedAt: problemData.updated_at,
   };

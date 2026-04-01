@@ -7,6 +7,7 @@ export interface Problem {
   tags: string[];
   content: string;
   officialSolution: string;
+  problemUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +37,13 @@ export interface Contest {
   shortName: string;
   description: string;
   website?: string;
+  years: number[];
+}
+
+export interface ContestPreview {
+  id: string;
+  name: string;
+  short_name: string;
   years: number[];
 }
 

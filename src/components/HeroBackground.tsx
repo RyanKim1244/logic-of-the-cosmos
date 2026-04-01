@@ -186,11 +186,11 @@ function HeroBackgroundInner() {
       </g>
 
       {/* Multiple shooting stars — tail (x2,y2) points opposite to movement direction */}
-      <line x1="0" y1="0" x2="65" y2="-25" stroke="url(#shootingStar)" strokeWidth="1.5" strokeLinecap="round" className="hero-shooting-star-1" />
-      <line x1="0" y1="0" x2="46" y2="-19" stroke="url(#shootingStar2)" strokeWidth="1" strokeLinecap="round" className="hero-shooting-star-2" />
-      <line x1="0" y1="0" x2="35" y2="-20" stroke="url(#shootingStar3)" strokeWidth="0.8" strokeLinecap="round" className="hero-shooting-star-3" />
-      <line x1="0" y1="0" x2="31" y2="-45" stroke="url(#shootingStar)" strokeWidth="1.2" strokeLinecap="round" className="hero-shooting-star-4" />
-      <line x1="0" y1="0" x2="31" y2="-16" stroke="url(#shootingStar2)" strokeWidth="0.7" strokeLinecap="round" className="hero-shooting-star-5" />
+      <line x1="0" y1="0" x2="220" y2="-85" stroke="url(#shootingStar)" strokeWidth="2" strokeLinecap="round" className="hero-shooting-star-1" />
+      <line x1="0" y1="0" x2="160" y2="-65" stroke="url(#shootingStar2)" strokeWidth="1.5" strokeLinecap="round" className="hero-shooting-star-2" />
+      <line x1="0" y1="0" x2="130" y2="-75" stroke="url(#shootingStar3)" strokeWidth="1.2" strokeLinecap="round" className="hero-shooting-star-3" />
+      <line x1="0" y1="0" x2="110" y2="-160" stroke="url(#shootingStar)" strokeWidth="1.6" strokeLinecap="round" className="hero-shooting-star-4" />
+      <line x1="0" y1="0" x2="105" y2="-55" stroke="url(#shootingStar2)" strokeWidth="1" strokeLinecap="round" className="hero-shooting-star-5" />
     </svg>
   );
 }

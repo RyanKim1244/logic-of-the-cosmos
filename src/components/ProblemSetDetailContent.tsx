@@ -157,13 +157,13 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       {/* Header */}
-      <div className="border border-neutral-200 p-8 mb-8">
+      <div className="border border-neutral-200 rounded-xl p-8 mb-8">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <h1 className="text-2xl font-light">{setDetail.title}</h1>
               {!setDetail.isPublic && (
-                <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 text-neutral-400 uppercase">
+                <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 rounded-md text-neutral-400 uppercase">
                   비공개
                 </span>
               )}
@@ -211,7 +211,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
 
       {/* Start exam CTA for sets without time limit */}
       {!setDetail.timeLimitMinutes && problems.length > 0 && (
-        <div className="border border-dashed border-neutral-300 p-6 mb-8 text-center">
+        <div className="border border-dashed border-neutral-300 rounded-xl p-6 mb-8 text-center">
           <p className="text-sm text-neutral-500 mb-3">
             이 세트에는 시간 제한이 설정되어 있지 않습니다. 모의시험 모드를 사용하려면 시간 제한을 설정하세요.
           </p>
@@ -222,7 +222,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
       <section>
         <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">문제 목록</h2>
         {problems.length === 0 ? (
-          <div className="border border-neutral-200 p-8 text-center">
+          <div className="border border-neutral-200 rounded-xl p-8 text-center">
             <p className="text-neutral-400 text-sm">이 세트에 문제가 없습니다.</p>
           </div>
         ) : (
@@ -231,7 +231,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
               <Link
                 key={p.id}
                 href={`/problems/${p.id}`}
-                className="block border border-neutral-200 p-4 hover:border-black transition-colors"
+                className="block border border-neutral-200 rounded-lg p-4 hover:border-black transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-neutral-300 font-mono w-8 shrink-0">{i + 1}.</span>

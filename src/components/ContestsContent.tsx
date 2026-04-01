@@ -110,13 +110,14 @@ export default function ContestsContent({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-light text-black mb-3">기출문제</h1>
-      <p className="text-sm text-neutral-400 mb-10">
-        대회 및 기관별 기출문제를 연도별로 정리했습니다.
-      </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-header">
+        <span className="section-label">Archives</span>
+        <h1 className="text-3xl md:text-4xl font-light text-black mb-2">기출문제</h1>
+        <p className="text-sm text-neutral-400">대회 및 기관별 기출문제를 연도별로 정리했습니다.</p>
+      </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 pb-16">
         {[...contests].sort((a, b) => a.name.localeCompare(b.name)).map((contest) => {
           const yearRange =
             contest.years.length > 0
@@ -124,25 +125,27 @@ export default function ContestsContent({
               : "";
 
           return (
-            <Link key={contest.id} href={`/contests/${contest.id}`}>
-              <div className="border border-neutral-200 p-6 hover:border-black transition-all duration-200 bg-white group h-full flex flex-col">
+            <Link key={contest.id} href={`/contests/${contest.id}`} className="block h-full">
+              <div className="contest-card-v2 group">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-[0.2em]">
                     {contest.short_name}
                   </span>
                   {contest.website && (
-                    <span className="w-1.5 h-1.5 bg-neutral-300 rounded-full" />
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" title="공식 웹사이트 있음" />
                   )}
                 </div>
-                <h2 className="text-base font-medium text-neutral-900 group-hover:text-black transition-colors mb-2">
+                <h2 className="text-[15px] font-medium text-neutral-800 group-hover:text-black transition-colors mb-2 flex-1 leading-snug">
                   {contest.name}
                 </h2>
-                <p className="text-xs text-neutral-400 mb-4 line-clamp-2 flex-1">
+                <p className="text-xs text-neutral-400 mb-4 line-clamp-2 leading-relaxed">
                   {contest.description}
                 </p>
-                <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
-                  <span className="text-xs text-neutral-400">{yearRange}</span>
-                  <span className="text-xs text-neutral-500 font-medium">{problemCounts[contest.id] || 0}문제</span>
+                <div className="flex items-center justify-between pt-3 border-t border-neutral-100 group-hover:border-neutral-200 transition-colors">
+                  <span className="text-xs font-mono text-neutral-400">{yearRange}</span>
+                  <span className="text-xs font-semibold text-neutral-500 group-hover:text-black transition-colors">
+                    {problemCounts[contest.id] || 0}문제
+                  </span>
                 </div>
               </div>
             </Link>

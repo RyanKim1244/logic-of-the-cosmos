@@ -6,8 +6,6 @@ import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
-import FilterSidebar from "@/components/FilterSidebar";
-import type { SortOption, StatusFilter } from "@/components/FilterSidebar";
 
 interface ProblemsContentProps {
   initialProblems: Problem[];
@@ -23,11 +21,11 @@ export default function ProblemsContent({
   const { user } = useAuth();
   const [problems, setProblems] = useState<Problem[]>(initialProblems);
   const [loading, setLoading] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("number");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [selectedTags] = useState<string[]>([]);
+  const [selectedSources] = useState<string[]>([]);
+  const [searchQuery] = useState("");
+  const [sortBy] = useState("number");
+  const [statusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [solvedCounts, setSolvedCounts] = useState<Record<string, number>>(initialSolvedCounts);
@@ -236,54 +234,45 @@ export default function ProblemsContent({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-light text-black mb-10">문제 목록</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-header">
+        <span className="section-label">Problems</span>
+        <h1 className="text-3xl md:text-4xl font-light text-black">문제 목록</h1>
+      </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        <FilterSidebar
-          selectedTags={selectedTags}
-          selectedSources={selectedSources}
-          searchQuery={searchQuery}
-          onTagChange={setSelectedTags}
-          onSourceChange={setSelectedSources}
-          onSearchChange={setSearchQuery}
-          problems={problems}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-        />
-
-        <div className="flex-1">
+      <div className="pb-16">
+        <div>
           {filteredProblems.length === 0 ? (
-            <div className="text-center py-20 text-neutral-400">
-              <p className="text-base">검색 결과가 없습니다.</p>
-              <p className="text-sm mt-2">필터를 조정해 보세요.</p>
+            <div className="text-center py-24 text-neutral-400 border border-neutral-100">
+              <p className="text-sm font-medium mb-1">검색 결과가 없습니다</p>
+              <p className="text-xs text-neutral-300">필터를 조정해 보세요.</p>
             </div>
           ) : (
             <>
-              <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">
-                {filteredProblems.length}개의 문제
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] text-neutral-400 uppercase tracking-[0.18em]">
+                  {filteredProblems.length}개의 문제
+                </p>
                 {totalPages > 1 && (
-                  <span className="ml-2">· 페이지 {currentPage}/{totalPages}</span>
+                  <p className="text-[11px] text-neutral-400 font-mono">
+                    {currentPage} / {totalPages}
+                  </p>
                 )}
-              </p>
-              <div className="space-y-2">
+              </div>
+              <div className="space-y-1.5">
                 {paginatedProblems.map((problem) => (
-                  <div key={problem.id} className="problem-card-hover">
-                    <ProblemCard problem={problem} solvedCount={solvedCounts[problem.id] || 0} />
-                  </div>
+                  <ProblemCard key={problem.id} problem={problem} solvedCount={solvedCounts[problem.id] || 0} />
                 ))}
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-10">
+                <div className="flex items-center justify-center gap-1.5 mt-10">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+                    className="page-btn px-3"
                   >
-                    &larr;
+                    ←
                   </button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter((page) => {
@@ -295,15 +284,11 @@ export default function ProblemsContent({
                     .map((page, i, arr) => {
                       const showEllipsis = i > 0 && page - arr[i - 1] > 1;
                       return (
-                        <span key={page} className="flex items-center gap-2">
-                          {showEllipsis && <span className="text-neutral-300 text-sm px-1">···</span>}
+                        <span key={page} className="flex items-center gap-1.5">
+                          {showEllipsis && <span className="text-neutral-300 text-xs px-1 select-none">···</span>}
                           <button
                             onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 text-sm border transition-colors ${
-                              page === currentPage
-                                ? "bg-black text-white border-black"
-                                : "border-neutral-200 hover:border-black"
-                            }`}
+                            className={`page-btn ${page === currentPage ? "active" : ""}`}
                           >
                             {page}
                           </button>
@@ -313,9 +298,9 @@ export default function ProblemsContent({
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+                    className="page-btn px-3"
                   >
-                    &rarr;
+                    →
                   </button>
                 </div>
               )}

@@ -216,7 +216,7 @@ export default function CommunityContent({
 
       {/* Create Form */}
       {showCreateForm && (
-        <form onSubmit={handleCreateTopic} className="border border-neutral-200 p-6 mb-8">
+        <form onSubmit={handleCreateTopic} className="border border-neutral-200 rounded-xl p-6 mb-8">
           <h2 className="text-sm font-medium text-black mb-4 uppercase tracking-widest">새 토픽 만들기</h2>
           <div className="space-y-4">
             <div>
@@ -246,14 +246,14 @@ export default function CommunityContent({
       )}
 
       {/* Search & Sort */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
         <div className="flex-1 relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="토픽 검색..." className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="토픽 검색..." className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-lg text-sm focus:border-black focus:outline-none transition-colors" />
         </div>
-        <div className="flex border border-neutral-200">
+        <div className="flex border border-neutral-200 rounded-lg overflow-hidden">
           <button onClick={() => setSortBy("latest")} className={`px-4 py-2.5 text-xs font-medium tracking-wider transition-colors ${sortBy === "latest" ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>최신순</button>
           <button onClick={() => setSortBy("popular")} className={`px-4 py-2.5 text-xs font-medium tracking-wider transition-colors ${sortBy === "popular" ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>인기순</button>
         </div>
@@ -269,12 +269,12 @@ export default function CommunityContent({
       {/* Topic List */}
       <div className="space-y-3">
         {filteredTopics.length === 0 ? (
-          <div className="text-center py-16 border border-neutral-200">
+          <div className="text-center py-16 border border-neutral-200 rounded-xl">
             <p className="text-neutral-400 text-sm">검색 결과가 없습니다.</p>
           </div>
         ) : (
           paginatedTopics.map((topic) => (
-            <Link key={topic.id} href={`/community/${topic.id}`} className="block border border-neutral-200 p-5 hover:border-black transition-all group">
+            <Link key={topic.id} href={`/community/${topic.id}`} className="block border border-neutral-200 rounded-xl p-5 hover:border-black transition-all group">
               <div className="flex gap-4">
                 <div className="flex flex-col items-center shrink-0 pt-0.5">
                   <svg className="w-4 h-4 text-neutral-300 group-hover:text-neutral-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,7 +306,7 @@ export default function CommunityContent({
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+            className="px-3 py-2 border border-neutral-200 rounded-lg text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
           >
             &larr;
           </button>
@@ -324,7 +324,7 @@ export default function CommunityContent({
                   {showEllipsis && <span className="text-neutral-300 text-sm px-1">···</span>}
                   <button
                     onClick={() => setCurrentPage(page)}
-                    className={`w-9 h-9 text-sm border transition-colors ${
+                    className={`w-9 h-9 text-sm border rounded-lg transition-colors ${
                       page === currentPage
                         ? "bg-black text-white border-black"
                         : "border-neutral-200 hover:border-black"
@@ -338,7 +338,7 @@ export default function CommunityContent({
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-2 border border-neutral-200 text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
+            className="px-3 py-2 border border-neutral-200 rounded-lg text-sm hover:border-black transition-colors disabled:opacity-30 disabled:hover:border-neutral-200"
           >
             &rarr;
           </button>

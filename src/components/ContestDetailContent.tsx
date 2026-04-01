@@ -37,7 +37,7 @@ function YearAccordion({ problemsByYear }: { problemsByYear: { year: number; pro
       {problemsByYear.map(({ year, problems: yearProblems }) => {
         const isOpen = openYears.has(year);
         return (
-          <div key={year} className="border border-neutral-200">
+          <div key={year} className="border border-neutral-200 rounded-xl overflow-hidden">
             <button
               onClick={() => toggle(year)}
               className="w-full flex items-center justify-between px-6 py-4 hover:bg-neutral-50 transition-colors"
@@ -57,7 +57,7 @@ function YearAccordion({ problemsByYear }: { problemsByYear: { year: number; pro
               <div className="px-6 pb-5 space-y-2">
                 {yearProblems.map((problem) => (
                   <Link key={problem.id} href={`/problems/${problem.id}`} className="block">
-                    <div className="border border-neutral-200 px-4 py-3 hover:border-black transition-all duration-200 bg-white group flex items-center gap-3">
+                    <div className="border border-neutral-200 rounded-lg px-4 py-3 hover:border-black transition-all duration-200 bg-white group flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
                           <span className="text-[10px] text-neutral-300 font-mono shrink-0">#{problem.problem_number}</span>
@@ -100,7 +100,7 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
         </Link>
       </nav>
 
-      <div className="border border-neutral-200 p-8 mb-8">
+      <div className="border border-neutral-200 rounded-xl p-8 mb-8">
         <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">{contest.short_name}</span>
         <h1 className="text-2xl font-light text-black mt-2 mb-3">{contest.name}</h1>
         <p className="text-sm text-neutral-500 mb-4">{contest.description}</p>
@@ -131,7 +131,7 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
             {contest.years
               .filter((y) => !problemsByYear.some((g) => g.year === y))
               .map((y) => (
-                <span key={y} className="px-3 py-1 border border-neutral-200 text-xs text-neutral-400">{y}</span>
+                <span key={y} className="px-3 py-1 border border-neutral-200 rounded-md text-xs text-neutral-400">{y}</span>
               ))}
           </div>
         </div>

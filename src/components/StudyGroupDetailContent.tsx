@@ -201,7 +201,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       {/* Header */}
-      <div className="border border-neutral-200 p-8 mb-8">
+      <div className="border border-neutral-200 rounded-xl p-8 mb-8">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-light mb-2">{group.name}</h1>
@@ -247,7 +247,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       {/* Members */}
       <section className="mb-8">
         <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">멤버</h2>
-        <div className="border border-neutral-200 divide-y divide-neutral-100">
+        <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 overflow-hidden">
           {members.map((m) => (
             <div key={m.userId} className="flex items-center justify-between px-6 py-3">
               <div className="flex items-center gap-3">
@@ -288,7 +288,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
         </div>
 
         {showAddSet && (
-          <div className="border border-neutral-200 p-4 mb-4 animate-fade-slide-up">
+          <div className="border border-neutral-200 rounded-xl p-4 mb-4 animate-fade-slide-up">
             <h4 className="text-xs text-neutral-400 uppercase tracking-widest mb-3">공개 문제 세트 선택</h4>
             {availableSets.length === 0 ? (
               <p className="text-sm text-neutral-400">추가할 수 있는 문제 세트가 없습니다.</p>
@@ -298,7 +298,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                   <button
                     key={s.id}
                     onClick={() => handleAddSet(s.id)}
-                    className="w-full text-left border border-neutral-200 p-3 hover:border-black transition-colors"
+                    className="w-full text-left border border-neutral-200 rounded-lg p-3 hover:border-black transition-colors"
                   >
                     <span className="text-sm font-medium">{s.title}</span>
                     {s.timeLimitMinutes && (
@@ -318,7 +318,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
         )}
 
         {linkedSets.length === 0 ? (
-          <div className="border border-neutral-200 p-8 text-center">
+          <div className="border border-neutral-200 rounded-xl p-8 text-center">
             <p className="text-neutral-400 text-sm">연결된 문제 세트가 없습니다.</p>
             {isOwner && (
               <button onClick={loadAvailableSets} className="text-sm text-black hover:underline mt-2 inline-block">
@@ -332,7 +332,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
               <Link
                 key={s.id}
                 href={`/problem-sets/${s.id}`}
-                className="block border border-neutral-200 p-4 hover:border-black transition-colors"
+                className="block border border-neutral-200 rounded-lg p-4 hover:border-black transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{s.title}</span>

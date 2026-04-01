@@ -180,7 +180,7 @@ export default function ProblemSetsContent() {
 
       {/* Create Form */}
       {showCreate && (
-        <div className="border border-neutral-200 p-6 mb-8 animate-fade-slide-up">
+        <div className="border border-neutral-200 rounded-xl p-6 mb-8 animate-fade-slide-up">
           <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">새 문제 세트</h3>
           <div className="space-y-4">
             <input
@@ -235,7 +235,7 @@ export default function ProblemSetsContent() {
               />
               {searching && <p className="text-xs text-neutral-400 mt-1">검색 중...</p>}
               {searchResults.length > 0 && (
-                <div className="border border-neutral-200 mt-1 max-h-48 overflow-y-auto">
+                <div className="border border-neutral-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
                   {searchResults.map((p) => (
                     <button
                       key={p.id}
@@ -261,7 +261,7 @@ export default function ProblemSetsContent() {
                   {selectedProblems.map((p, i) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between border border-neutral-200 px-4 py-2"
+                      className="flex items-center justify-between border border-neutral-200 rounded-lg px-4 py-2"
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-neutral-300 font-mono w-6">{i + 1}.</span>
@@ -297,14 +297,14 @@ export default function ProblemSetsContent() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="border border-neutral-200 p-6 animate-pulse">
+            <div key={i} className="border border-neutral-200 rounded-xl p-6 animate-pulse">
               <div className="h-5 bg-neutral-100 rounded w-48 mb-3" />
               <div className="h-4 bg-neutral-50 rounded w-72" />
             </div>
           ))}
         </div>
       ) : sets.length === 0 ? (
-        <div className="border border-neutral-200 p-12 text-center">
+        <div className="border border-neutral-200 rounded-xl p-12 text-center">
           <p className="text-neutral-400 text-sm">아직 문제 세트가 없습니다.</p>
           {user && (
             <button
@@ -321,14 +321,14 @@ export default function ProblemSetsContent() {
             <Link
               key={set.id}
               href={`/problem-sets/${set.id}`}
-              className="block border border-neutral-200 p-6 hover:border-black transition-colors group"
+              className="block border border-neutral-200 rounded-xl p-6 hover:border-black transition-colors group"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-medium">{set.title}</h3>
                     {!set.isPublic && (
-                      <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 text-neutral-400 uppercase">
+                      <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 rounded-md text-neutral-400 uppercase">
                         비공개
                       </span>
                     )}
