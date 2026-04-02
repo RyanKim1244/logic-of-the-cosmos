@@ -34,6 +34,7 @@ type ContestRow = {
 
 type ProblemFormData = {
   problemType: "lotc" | "external";
+  problemNumber: number | null;
   title: MultiLangContent;
   source: string;
   year: number;
@@ -59,6 +60,7 @@ type ContestFormData = {
 const emptyProblemForm: ProblemFormData = {
   problemType: "external",
   title: { ko: "" },
+  problemNumber: null,
   source: "",
   year: new Date().getFullYear(),
   tags: "",
@@ -238,6 +240,7 @@ export default function AdminPage() {
     const isLoTC = p.source.trim().toLowerCase() === "lotc";
     setProblemForm({
       problemType: isLoTC ? "lotc" : "external",
+      problemNumber: p.problem_number,
       title: parseMultiLang(data?.title ?? p.title), source: p.source, year: p.year, tags: p.tags.join(", "),
       problemUrl: data?.problem_url ?? "",
       solutionUrl: data?.solution_url ?? "",
@@ -268,6 +271,7 @@ export default function AdminPage() {
 
     if (problemMode === "edit" && editingProblemId) {
       const { error } = await supabase.from("problems").update({
+        ...(problemForm.problemNumber ? { problem_number: problemForm.problemNumber } : {}),
         title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
         problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
@@ -282,7 +286,7 @@ export default function AdminPage() {
         return;
       }
       setAllProblems(allProblems.map((p) =>
-        p.id === editingProblemId ? { ...p, title: titleStr, source: finalSource, year: finalYear, tags, updated_at: now } : p
+        p.id === editingProblemId ? { ...p, title: titleStr, source: finalSource, year: finalYear, tags, updated_at: now, ...(problemForm.problemNumber ? { problem_number: problemForm.problemNumber } : {}) } : p
       ));
     } else {
       const id = `custom-${Date.now()}`;
@@ -460,7 +464,12 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                <MultiLangEditor label="제목" value={problemForm.title} onChange={(title) => setProblemForm({ ...problemForm, title })} rows={1} placeholder="문제 제목" required />
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div className="col-span-2"><MultiLangEditor label="제목" value={problemForm.title} onChange={(title) => setProblemForm({ ...problemForm, title })} rows={1} placeholder="문제 제목" required /></div>
+                  {problemMode === "edit" && (
+                    <div><label className={labelClass}>문제 번호</label><input type="number" value={problemForm.problemNumber ?? ""} onChange={(e) => { const v = e.target.valueAsNumber; setProblemForm({ ...problemForm, problemNumber: isNaN(v) ? null : v }); }} onWheel={(e) => e.currentTarget.blur()} className={inputClass} /></div>
+                  )}
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-5">
                   {problemForm.problemType === "external" && (
