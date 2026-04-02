@@ -164,8 +164,8 @@ function CommentThread({
   if (comment.is_deleted && replies.length === 0) return null;
 
   return (
-    <div className={`${depth > 0 ? "pl-4 sm:pl-5" : ""}`}>
-      <div className="flex gap-2 group">
+    <div className={`${depth > 0 ? "pl-5 sm:pl-6" : ""}`}>
+      <div className="flex gap-3 group">
         {/* Collapse line */}
         {depth > 0 && (
           <button
@@ -299,7 +299,7 @@ function CommentThread({
 
               {/* Nested replies */}
               {replies.length > 0 && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-3 space-y-3">
                   {replies.map((reply) => (
                     <CommentThread
                       key={reply.id}
@@ -658,10 +658,11 @@ export default function TopicDetailContent({
       </div>
 
       {/* ── Sort & Count ── */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-neutral-400">
-          {comments.filter((c) => !c.is_deleted).length} {locale === "ko" ? "개의 댓글" : "comments"}
-        </span>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-semibold text-black">{locale === "ko" ? "댓글" : "Comments"}</h3>
+          <span className="text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">{comments.filter((c) => !c.is_deleted).length}</span>
+        </div>
         <div className="flex items-center gap-1 bg-neutral-100 rounded-full p-0.5">
           {(["best", "new", "controversial"] as SortMode[]).map((mode) => (
             <button
@@ -680,7 +681,7 @@ export default function TopicDetailContent({
       </div>
 
       {/* ── Comments ── */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {topLevel.length === 0 && (
           <div className="text-center py-12 border border-dashed border-neutral-200 rounded-xl">
             <svg className="w-8 h-8 text-neutral-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -692,7 +693,7 @@ export default function TopicDetailContent({
           </div>
         )}
         {topLevel.map((comment) => (
-          <div key={comment.id} className="border border-neutral-200 rounded-xl p-4">
+          <div key={comment.id} className="border border-neutral-200 rounded-xl p-5 sm:p-6">
             <CommentThread
               comment={comment}
               allComments={comments}

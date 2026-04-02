@@ -271,37 +271,57 @@ export default function CommunityContent({
       </p>
 
       {/* Topic List */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filteredTopics.length === 0 ? (
           <div className="text-center py-16 border border-neutral-200 rounded-xl">
             <p className="text-neutral-400 text-sm">{t.communityPage.noResults}</p>
           </div>
         ) : (
           paginatedTopics.map((topic) => (
-            <Link key={topic.id} href={`/community/${topic.id}`} className="block border border-neutral-200 rounded-xl p-5 hover:border-black transition-all group">
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center shrink-0 pt-0.5 gap-0.5">
+            <Link key={topic.id} href={`/community/${topic.id}`} className="block border border-neutral-200 rounded-xl p-6 hover:border-black hover:shadow-sm transition-all group">
+              <div className="flex gap-5">
+                {/* Vote display */}
+                <div className="flex flex-col items-center shrink-0 pt-1 gap-0.5 w-10">
                   <svg className="w-4 h-4 text-neutral-300 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
                   </svg>
-                  <span className="text-xs font-semibold text-neutral-500 tabular-nums">{topic.upvotes - (topic.downvotes || 0)}</span>
+                  <span className="text-sm font-semibold text-neutral-500 tabular-nums">{topic.upvotes - (topic.downvotes || 0)}</span>
                   <svg className="w-4 h-4 text-neutral-300 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
+
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-medium text-black group-hover:text-neutral-700 transition-colors mb-1.5 line-clamp-1">{topic.title}</h2>
-                  <div className="text-sm text-neutral-500 line-clamp-2 mb-3 leading-relaxed">
+                  <h2 className="text-base font-semibold text-black group-hover:text-neutral-700 transition-colors mb-2 line-clamp-1">{topic.title}</h2>
+                  <div className="text-sm text-neutral-500 line-clamp-2 mb-4 leading-relaxed">
                     <LatexRenderer content={topic.content} />
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {topic.tags.map((tag) => (<span key={tag} className="text-xs text-neutral-400">#{tag}</span>))}
-                    <span className="text-xs text-neutral-300">|</span>
-                    <span className="text-xs text-neutral-400">{topic.author_name}</span>
-                    <span className="text-xs text-neutral-300">&middot;</span>
-                    <span className="text-xs text-neutral-400">{formatDate(topic.created_at)}</span>
-                    <span className="text-xs text-neutral-300">&middot;</span>
-                    <span className="text-xs text-neutral-400">{t.communityPage.replies} {commentCounts[topic.id] || 0}</span>
+
+                  {/* Tags */}
+                  {topic.tags.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                      {topic.tags.map((tag) => (
+                        <span key={tag} className="text-[11px] text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-md">#{tag}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Meta */}
+                  <div className="flex items-center gap-2 text-xs text-neutral-400">
+                    <span className="w-5 h-5 bg-neutral-200 text-neutral-600 flex items-center justify-center text-[9px] font-medium rounded-full shrink-0">
+                      {topic.author_name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="font-medium text-neutral-500">{topic.author_name}</span>
+                    <span className="text-neutral-300">&middot;</span>
+                    <span>{formatDate(topic.created_at)}</span>
+                    <span className="text-neutral-300">&middot;</span>
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      {commentCounts[topic.id] || 0}
+                    </span>
                   </div>
                 </div>
               </div>
