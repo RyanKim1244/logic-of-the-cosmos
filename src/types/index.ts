@@ -8,6 +8,7 @@ export interface Problem {
   content: string;
   officialSolution: string;
   problemUrl?: string | null;
+  solutionUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

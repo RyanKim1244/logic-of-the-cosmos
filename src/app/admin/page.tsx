@@ -39,6 +39,7 @@ type ProblemFormData = {
   year: number;
   tags: string;
   problemUrl: string;
+  solutionUrl: string;
   section: string;
   content: MultiLangContent;
   officialSolution: MultiLangContent;
@@ -62,6 +63,7 @@ const emptyProblemForm: ProblemFormData = {
   year: new Date().getFullYear(),
   tags: "",
   problemUrl: "",
+  solutionUrl: "",
   section: "",
   content: { ko: "" },
   officialSolution: { ko: "" },
@@ -232,12 +234,13 @@ export default function AdminPage() {
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
   const openEditProblem = async (p: ProblemRow) => {
     // Fetch content & official_solution on demand (not loaded in list query)
-    const { data } = await supabase.from("problems").select("title, content, official_solution, problem_url, section").eq("id", p.id).single();
+    const { data } = await supabase.from("problems").select("title, content, official_solution, problem_url, solution_url, section").eq("id", p.id).single();
     const isLoTC = p.source.trim().toLowerCase() === "lotc";
     setProblemForm({
       problemType: isLoTC ? "lotc" : "external",
       title: parseMultiLang(data?.title ?? p.title), source: p.source, year: p.year, tags: p.tags.join(", "),
       problemUrl: data?.problem_url ?? "",
+      solutionUrl: data?.solution_url ?? "",
       section: data?.section ?? "",
       content: parseMultiLang(data?.content ?? ""),
       officialSolution: parseMultiLang(data?.official_solution ?? ""),
@@ -268,6 +271,7 @@ export default function AdminPage() {
         title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
         problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
+        solution_url: problemForm.problemType === "external" ? (problemForm.solutionUrl || null) : null,
         section: problemForm.section || null,
         updated_at: now,
       }).eq("id", editingProblemId);
@@ -290,6 +294,7 @@ export default function AdminPage() {
         id, problem_number: nextNumber, title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
         problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
+        solution_url: problemForm.problemType === "external" ? (problemForm.solutionUrl || null) : null,
         section: problemForm.section || null,
       }).select("id, problem_number, title, source, year, tags, created_at, updated_at").single();
 
@@ -470,8 +475,12 @@ export default function AdminPage() {
                 </div>
 
                 {problemForm.problemType === "external" && (
+                  <>
                   <div className="grid md:grid-cols-2 gap-5">
                     <div><label className={labelClass}>문제 링크 (선택)</label><input type="url" value={problemForm.problemUrl} onChange={(e) => setProblemForm({ ...problemForm, problemUrl: e.target.value })} className={inputClass} placeholder="https://..." /></div>
+                    <div><label className={labelClass}>풀이 링크 (선택)</label><input type="url" value={problemForm.solutionUrl} onChange={(e) => setProblemForm({ ...problemForm, solutionUrl: e.target.value })} className={inputClass} placeholder="https://..." /></div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-5">
                     <div>
                       <label className={labelClass}>섹션 (선택)</label>
                       {(() => {
@@ -499,6 +508,7 @@ export default function AdminPage() {
                       })()}
                     </div>
                   </div>
+                  </>
                 )}
 
                 {problemForm.problemType === "lotc" && (

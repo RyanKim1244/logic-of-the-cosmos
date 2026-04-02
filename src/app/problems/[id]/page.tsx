@@ -34,6 +34,7 @@ export default async function ProblemDetailPage({
     content: problemData.content,
     officialSolution: problemData.official_solution,
     problemUrl: problemData.problem_url ?? null,
+    solutionUrl: problemData.solution_url ?? null,
     createdAt: problemData.created_at,
     updatedAt: problemData.updated_at,
   };
@@ -41,10 +42,21 @@ export default async function ProblemDetailPage({
   const solvedCount =
     solvedCountRes.status === "fulfilled" ? (solvedCountRes.value.count ?? 0) : 0;
 
+  // Find matching contest for source linking
+  let contestId: string | null = null;
+  if (problem.source.toLowerCase() !== "lotc") {
+    const { data: contests } = await supabase.from("contests").select("id, short_name");
+    if (contests) {
+      const match = contests.find((c) => problem.source.toLowerCase().includes(c.short_name.toLowerCase()));
+      if (match) contestId = match.id;
+    }
+  }
+
   return (
     <ProblemDetailContent
       initialProblem={problem}
       initialSolvedCount={solvedCount}
+      contestId={contestId}
     />
   );
 }

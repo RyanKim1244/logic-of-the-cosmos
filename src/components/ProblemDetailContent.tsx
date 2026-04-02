@@ -28,6 +28,7 @@ const DiscussionSection = dynamic(() => import("@/components/DiscussionSection")
 interface ProblemDetailContentProps {
   initialProblem: Problem;
   initialSolvedCount: number;
+  contestId?: string | null;
 }
 
 const isLoTC = (source: string) => source.trim().toLowerCase() === "lotc";
@@ -35,6 +36,7 @@ const isLoTC = (source: string) => source.trim().toLowerCase() === "lotc";
 export default function ProblemDetailContent({
   initialProblem,
   initialSolvedCount,
+  contestId,
 }: ProblemDetailContentProps) {
   const { user, toggleSolved, toggleBookmark } = useAuth();
   const { t } = useLanguage();
@@ -292,6 +294,8 @@ export default function ProblemDetailContent({
         <ProblemSourceCard
           source={problem.source}
           problemUrl={problem.problemUrl}
+          solutionUrl={problem.solutionUrl}
+          contestId={contestId}
         />
       )}
 
