@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Problem } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 export type SortOption = "number" | "latest" | "most_solved" | "most_discussed";
 export type StatusFilter = "all" | "solved" | "unsolved" | "bookmarked";
@@ -33,6 +34,7 @@ function Dropdown({
   onToggle: (item: string) => void;
   renderItem: (item: string) => React.ReactNode;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -76,7 +78,7 @@ function Dropdown({
             <div className="p-2 border-b border-neutral-100">
               <input
                 type="text"
-                placeholder="검색..."
+                placeholder={t.common.search + "..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full px-2 py-1.5 text-xs border border-neutral-200 focus:border-black focus:outline-none"
@@ -109,7 +111,7 @@ function Dropdown({
               );
             })}
             {filtered.length === 0 && (
-              <p className="px-3 py-2 text-xs text-neutral-400 text-center">결과 없음</p>
+              <p className="px-3 py-2 text-xs text-neutral-400 text-center">{t.problemsPage.noResult}</p>
             )}
           </div>
         </div>
@@ -117,20 +119,6 @@ function Dropdown({
     </div>
   );
 }
-
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "number", label: "번호순" },
-  { value: "latest", label: "최신순" },
-  { value: "most_solved", label: "많이 푼 순" },
-  { value: "most_discussed", label: "토론 많은 순" },
-];
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "전체" },
-  { value: "unsolved", label: "미풀이" },
-  { value: "solved", label: "풀이 완료" },
-  { value: "bookmarked", label: "북마크" },
-];
 
 export default function FilterSidebar({
   selectedTags,
@@ -145,6 +133,22 @@ export default function FilterSidebar({
   statusFilter = "all",
   onStatusFilterChange,
 }: FilterSidebarProps) {
+  const { t } = useLanguage();
+
+  const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+    { value: "number", label: t.problemsPage.sortNumber },
+    { value: "latest", label: t.problemsPage.sortLatest },
+    { value: "most_solved", label: t.problemsPage.sortMostSolved },
+    { value: "most_discussed", label: t.problemsPage.sortMostDiscussed },
+  ];
+
+  const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+    { value: "all", label: t.problemsPage.statusAll },
+    { value: "unsolved", label: t.problemsPage.statusUnsolved },
+    { value: "solved", label: t.problemsPage.statusSolved },
+    { value: "bookmarked", label: t.problemsPage.statusBookmarked },
+  ];
+
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     problems.forEach((p) => p.tags.forEach((t) => tags.add(t)));
@@ -172,7 +176,7 @@ export default function FilterSidebar({
       <div className="border border-neutral-200 sticky top-20">
         {/* Header */}
         <div className="px-3 py-2.5 bg-black text-white flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">필터</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">{t.problemsPage.filter}</span>
           {activeCount > 0 && (
             <span className="inline-flex items-center justify-center w-4 h-4 bg-white text-black text-[10px] font-bold leading-none">
               {activeCount}
@@ -188,8 +192,8 @@ export default function FilterSidebar({
             </svg>
             <input
               type="text"
-              placeholder="번호, 제목 검색..."
-              aria-label="문제 검색"
+              placeholder={t.problemsPage.searchPlaceholder}
+              aria-label={t.problemsPage.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-7 pr-3 py-1.5 border border-neutral-200 text-[11px] focus:border-black focus:outline-none bg-neutral-50 focus:bg-white placeholder:text-neutral-400"
@@ -206,7 +210,7 @@ export default function FilterSidebar({
           {/* Sort */}
           {onSortChange && (
             <div>
-              <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.18em] mb-1">정렬</p>
+              <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.18em] mb-1">{t.problemsPage.sort}</p>
               <div className="grid grid-cols-2 gap-0.5">
                 {SORT_OPTIONS.map((opt) => (
                   <button
@@ -228,7 +232,7 @@ export default function FilterSidebar({
           {/* Status Filter */}
           {onStatusFilterChange && (
             <div>
-              <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.18em] mb-1">풀이 상태</p>
+              <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.18em] mb-1">{t.problemsPage.solveStatus}</p>
               <div className="grid grid-cols-2 gap-0.5">
                 {STATUS_OPTIONS.map((opt) => (
                   <button
@@ -249,7 +253,7 @@ export default function FilterSidebar({
 
           {/* Source Dropdown */}
           <Dropdown
-            label="출처"
+            label={t.problemsPage.source}
             items={allSources}
             selected={selectedSources}
             onToggle={toggleSource}
@@ -265,7 +269,7 @@ export default function FilterSidebar({
 
           {/* Tag Dropdown */}
           <Dropdown
-            label="태그"
+            label={t.problemsPage.tag}
             items={allTags}
             selected={selectedTags}
             onToggle={toggleTag}
@@ -302,7 +306,7 @@ export default function FilterSidebar({
               onClick={() => { onTagChange([]); onSourceChange([]); onSearchChange(""); onSortChange?.("number"); onStatusFilterChange?.("all"); }}
               className="w-full text-[10px] text-neutral-400 hover:text-black font-medium py-1.5 border border-neutral-200 hover:border-black transition-all uppercase tracking-widest"
             >
-              초기화
+              {t.problemsPage.reset}
             </button>
           )}
         </div>

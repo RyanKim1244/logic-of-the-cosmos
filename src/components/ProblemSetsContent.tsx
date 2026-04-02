@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
 import type { ProblemSet } from "@/types";
 
@@ -15,6 +16,7 @@ interface ProblemOption {
 
 export default function ProblemSetsContent() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [sets, setSets] = useState<ProblemSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -165,15 +167,15 @@ export default function ProblemSetsContent() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-2xl font-light tracking-tight">문제 세트</h1>
-          <p className="text-sm text-neutral-400 mt-1">문제를 모아 나만의 세트를 만들고 모의시험을 치르세요</p>
+          <h1 className="text-2xl font-light tracking-tight">{t.problemSetsPage.title}</h1>
+          <p className="text-sm text-neutral-400 mt-1">{t.problemSetsPage.subtitle}</p>
         </div>
         {user && (
           <button
             onClick={() => setShowCreate(!showCreate)}
             className="px-5 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
           >
-            {showCreate ? "취소" : "세트 만들기"}
+            {showCreate ? t.common.cancel : t.problemSetsPage.create}
           </button>
         )}
       </div>
@@ -181,26 +183,26 @@ export default function ProblemSetsContent() {
       {/* Create Form */}
       {showCreate && (
         <div className="border border-neutral-200 rounded-xl p-6 mb-8 animate-fade-slide-up">
-          <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">새 문제 세트</h3>
+          <h3 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">{t.problemSetsPage.newSet}</h3>
           <div className="space-y-4">
             <input
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="세트 이름"
+              placeholder={t.problemSetsPage.setName}
               className="w-full border border-neutral-200 px-4 py-3 text-sm focus:border-black focus:outline-none"
             />
             <textarea
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="설명 (선택)"
+              placeholder={t.problemSetsPage.description}
               rows={2}
               className="w-full border border-neutral-200 px-4 py-3 text-sm focus:border-black focus:outline-none resize-none"
             />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-neutral-400 block mb-1">시간 제한 (분, 선택)</label>
+                <label className="text-xs text-neutral-400 block mb-1">{t.problemSetsPage.timeLimit}</label>
                 <input
                   type="number"
                   value={newTimeLimit}
@@ -218,19 +220,19 @@ export default function ProblemSetsContent() {
                     onChange={(e) => setIsPublic(e.target.checked)}
                     className="w-4 h-4 accent-black"
                   />
-                  <span className="text-sm text-neutral-600">공개</span>
+                  <span className="text-sm text-neutral-600">{t.problemSetsPage.public}</span>
                 </label>
               </div>
             </div>
 
             {/* Problem search */}
             <div>
-              <label className="text-xs text-neutral-400 block mb-2">문제 추가</label>
+              <label className="text-xs text-neutral-400 block mb-2">{t.problemSetsPage.addProblem}</label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="문제 번호 또는 제목으로 검색..."
+                placeholder={t.problemSetsPage.searchProblem}
                 className="w-full border border-neutral-200 px-4 py-3 text-sm focus:border-black focus:outline-none"
               />
               {searching && <p className="text-xs text-neutral-400 mt-1">검색 중...</p>}
@@ -255,7 +257,7 @@ export default function ProblemSetsContent() {
             {selectedProblems.length > 0 && (
               <div>
                 <label className="text-xs text-neutral-400 block mb-2">
-                  선택된 문제 ({selectedProblems.length}개)
+                  {t.problemSetsPage.selectedProblems} ({selectedProblems.length})
                 </label>
                 <div className="space-y-1">
                   {selectedProblems.map((p, i) => (
@@ -305,13 +307,13 @@ export default function ProblemSetsContent() {
         </div>
       ) : sets.length === 0 ? (
         <div className="border border-neutral-200 rounded-xl p-12 text-center">
-          <p className="text-neutral-400 text-sm">아직 문제 세트가 없습니다.</p>
+          <p className="text-neutral-400 text-sm">{t.problemSetsPage.noSets}</p>
           {user && (
             <button
               onClick={() => setShowCreate(true)}
               className="text-sm text-black hover:underline mt-3 inline-block"
             >
-              첫 세트를 만들어보세요 &rarr;
+              {t.problemSetsPage.createFirst} &rarr;
             </button>
           )}
         </div>
@@ -329,7 +331,7 @@ export default function ProblemSetsContent() {
                     <h3 className="text-base font-medium">{set.title}</h3>
                     {!set.isPublic && (
                       <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 rounded-md text-neutral-400 uppercase">
-                        비공개
+                        {t.problemSetsPage.private}
                       </span>
                     )}
                   </div>

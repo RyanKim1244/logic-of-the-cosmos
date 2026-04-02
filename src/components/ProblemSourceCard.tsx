@@ -1,11 +1,15 @@
 "use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 interface ProblemSourceCardProps {
   source: string;
   problemUrl?: string | null;
 }
 
 export default function ProblemSourceCard({ source, problemUrl }: ProblemSourceCardProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="border border-neutral-200 rounded-xl mb-6">
       <div className="px-8 sm:px-10 py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -24,7 +28,7 @@ export default function ProblemSourceCard({ source, problemUrl }: ProblemSourceC
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            공식 문제 보기
+            {t.problemDetail.viewProblem}
             <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
@@ -35,7 +39,7 @@ export default function ProblemSourceCard({ source, problemUrl }: ProblemSourceC
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            링크 준비 중
+            {t.problemDetail.linkPreparing}
           </div>
         )}
       </div>

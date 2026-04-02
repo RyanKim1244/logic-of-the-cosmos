@@ -5,6 +5,8 @@ import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, invalidateCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import LatexRenderer from "@/components/LatexRenderer";
 
 interface Topic {
   id: string;
@@ -15,6 +17,7 @@ interface Topic {
   tags: string[];
   created_at: string;
   upvotes: number;
+  downvotes: number;
 }
 
 interface CommunityContentProps {
@@ -27,6 +30,7 @@ export default function CommunityContent({
   initialCommentCounts,
 }: CommunityContentProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "popular">("latest");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -181,15 +185,15 @@ export default function CommunityContent({
 
   if (loadingTopics) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-neutral-400 text-center py-20 text-sm">로딩 중...</p>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="space-y-3 py-8">{[1,2,3].map(i => <div key={i} className="border border-neutral-200 rounded-xl p-5 animate-pulse"><div className="h-5 bg-neutral-100 rounded w-48 mb-3" /><div className="h-4 bg-neutral-50 rounded w-full mb-2" /><div className="h-3 bg-neutral-50 rounded w-32" /></div>)}</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center py-20">
           <p className="text-red-500 text-sm mb-4">{error}</p>
           <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
@@ -203,42 +207,42 @@ export default function CommunityContent({
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-light text-black mb-2">커뮤니티</h1>
-          <p className="text-sm text-neutral-400">자유롭게 토픽을 만들고 토론에 참여하세요</p>
+          <h1 className="text-3xl font-light text-black mb-2">{t.communityPage.title}</h1>
+          <p className="text-sm text-neutral-400">{t.communityPage.subtitle}</p>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors shrink-0"
         >
-          {showCreateForm ? "취소" : "새 토픽"}
+          {showCreateForm ? t.common.cancel : t.communityPage.newTopic}
         </button>
       </div>
 
       {/* Create Form */}
       {showCreateForm && (
         <form onSubmit={handleCreateTopic} className="border border-neutral-200 rounded-xl p-6 mb-8">
-          <h2 className="text-sm font-medium text-black mb-4 uppercase tracking-widest">새 토픽 만들기</h2>
+          <h2 className="text-sm font-medium text-black mb-4 uppercase tracking-widest">{t.communityPage.createTopic}</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-neutral-400 uppercase tracking-widest mb-1.5">제목</label>
-              <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="토픽 제목을 입력하세요" required className="w-full px-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors" />
+              <label className="block text-xs text-neutral-400 uppercase tracking-widest mb-1.5">{t.communityPage.topicTitle}</label>
+              <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={t.communityPage.topicTitle} required className="w-full px-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors" />
             </div>
             <div>
-              <label className="block text-xs text-neutral-400 uppercase tracking-widest mb-1.5">내용</label>
-              <textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="토론하고 싶은 주제를 자세히 설명해주세요" required rows={5} className="w-full px-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors resize-none" />
+              <label className="block text-xs text-neutral-400 uppercase tracking-widest mb-1.5">{t.communityPage.topicContent}</label>
+              <textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={t.communityPage.topicContent} required rows={5} className="w-full px-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors resize-none" />
             </div>
             <div>
               <label className="block text-xs text-neutral-400 uppercase tracking-widest mb-1.5">
-                태그 <span className="normal-case">(쉼표로 구분)</span>
+                {t.communityPage.topicTags}
               </label>
-              <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="물리학, 양자역학, 토론" className="w-full px-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors" />
+              <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder={t.communityPage.topicTags} className="w-full px-4 py-2.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors" />
             </div>
             <div className="flex items-center justify-between pt-2">
               <span className="text-xs text-neutral-400">
                 작성자: <span className="text-neutral-600">{user ? user.name : "Guest"}</span>
               </span>
               <button type="submit" disabled={!newTitle.trim() || !newContent.trim()} className="px-6 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                등록
+                {t.common.create}
               </button>
             </div>
           </div>
@@ -251,16 +255,16 @@ export default function CommunityContent({
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="토픽 검색..." className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-lg text-sm focus:border-black focus:outline-none transition-colors" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.communityPage.search} className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-lg text-sm focus:border-black focus:outline-none transition-colors" />
         </div>
         <div className="flex border border-neutral-200 rounded-lg overflow-hidden">
-          <button onClick={() => setSortBy("latest")} className={`px-4 py-2.5 text-xs font-medium tracking-wider transition-colors ${sortBy === "latest" ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>최신순</button>
-          <button onClick={() => setSortBy("popular")} className={`px-4 py-2.5 text-xs font-medium tracking-wider transition-colors ${sortBy === "popular" ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>인기순</button>
+          <button onClick={() => setSortBy("latest")} className={`px-4 py-2.5 text-xs font-medium tracking-wider transition-colors ${sortBy === "latest" ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>{t.communityPage.latest}</button>
+          <button onClick={() => setSortBy("popular")} className={`px-4 py-2.5 text-xs font-medium tracking-wider transition-colors ${sortBy === "popular" ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>{t.communityPage.popular}</button>
         </div>
       </div>
 
       <p className="text-xs text-neutral-400 mb-4 uppercase tracking-wider">
-        {filteredTopics.length}개의 토픽
+        {filteredTopics.length} {t.communityPage.topics}
         {totalPages > 1 && (
           <span className="ml-2">· 페이지 {currentPage}/{totalPages}</span>
         )}
@@ -270,21 +274,26 @@ export default function CommunityContent({
       <div className="space-y-3">
         {filteredTopics.length === 0 ? (
           <div className="text-center py-16 border border-neutral-200 rounded-xl">
-            <p className="text-neutral-400 text-sm">검색 결과가 없습니다.</p>
+            <p className="text-neutral-400 text-sm">{t.communityPage.noResults}</p>
           </div>
         ) : (
           paginatedTopics.map((topic) => (
             <Link key={topic.id} href={`/community/${topic.id}`} className="block border border-neutral-200 rounded-xl p-5 hover:border-black transition-all group">
               <div className="flex gap-4">
-                <div className="flex flex-col items-center shrink-0 pt-0.5">
-                  <svg className="w-4 h-4 text-neutral-300 group-hover:text-neutral-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                <div className="flex flex-col items-center shrink-0 pt-0.5 gap-0.5">
+                  <svg className="w-4 h-4 text-neutral-300 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
                   </svg>
-                  <span className="text-sm font-medium text-neutral-600">{topic.upvotes}</span>
+                  <span className="text-xs font-semibold text-neutral-500 tabular-nums">{topic.upvotes - (topic.downvotes || 0)}</span>
+                  <svg className="w-4 h-4 text-neutral-300 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base font-medium text-black group-hover:text-neutral-700 transition-colors mb-1.5 line-clamp-1">{topic.title}</h2>
-                  <p className="text-sm text-neutral-500 line-clamp-2 mb-3 leading-relaxed">{topic.content}</p>
+                  <div className="text-sm text-neutral-500 line-clamp-2 mb-3 leading-relaxed">
+                    <LatexRenderer content={topic.content} />
+                  </div>
                   <div className="flex items-center gap-3 flex-wrap">
                     {topic.tags.map((tag) => (<span key={tag} className="text-xs text-neutral-400">#{tag}</span>))}
                     <span className="text-xs text-neutral-300">|</span>
@@ -292,7 +301,7 @@ export default function CommunityContent({
                     <span className="text-xs text-neutral-300">&middot;</span>
                     <span className="text-xs text-neutral-400">{formatDate(topic.created_at)}</span>
                     <span className="text-xs text-neutral-300">&middot;</span>
-                    <span className="text-xs text-neutral-400">댓글 {commentCounts[topic.id] || 0}</span>
+                    <span className="text-xs text-neutral-400">{t.communityPage.replies} {commentCounts[topic.id] || 0}</span>
                   </div>
                 </div>
               </div>

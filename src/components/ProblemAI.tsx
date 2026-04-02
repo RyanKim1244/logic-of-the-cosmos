@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import LatexRenderer from "@/components/LatexRenderer";
+import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface Message {
   role: "user" | "ai";
@@ -27,6 +30,9 @@ export default function ProblemAI({
   problemTags = [],
   problemContent = "",
 }: ProblemAIProps) {
+  const { t, locale } = useLanguage();
+  const { user } = useAuth();
+  const isPlus = user?.subscriptionTier === "plus";
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -34,6 +40,8 @@ export default function ProblemAI({
   const [error, setError] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<"flash" | "pro">("flash");
+  const [showProHint, setShowProHint] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +50,7 @@ export default function ProblemAI({
     if (open && messages.length === 0) {
       setMessages([{
         role: "ai",
-        content: "안녕하세요! LoTC 문제 튜터입니다. 문제의 파일을 첨부하면 내용을 읽고 답변할 수 있습니다.",
+        content: t.ai.greeting,
       }]);
     }
   }, [open, messages.length, problemSource]);
@@ -59,11 +67,11 @@ export default function ProblemAI({
   const handleFile = useCallback((file: File) => {
     const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      setError("PDF 또는 이미지 파일만 첨부할 수 있습니다.");
+      setError(t.ai.fileError);
       return;
     }
     if (file.size > 20 * 1024 * 1024) {
-      setError("파일 크기는 20MB 이하만 가능합니다.");
+      setError(t.ai.fileSizeError);
       return;
     }
     const reader = new FileReader();
@@ -117,11 +125,19 @@ export default function ProblemAI({
           problemContent,
           history,
           file: currentFile ? { base64: currentFile.base64, mimeType: currentFile.type } : undefined,
+          model: selectedModel,
+          userId: user?.id,
         }),
       });
 
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
+        if (data.error === "DAILY_LIMIT_REACHED") {
+          throw new Error("DAILY_LIMIT");
+        }
+        if (data.error === "FREE_LIMIT_REACHED" || data.error === "PLUS_LIMIT_REACHED" || data.error === "FLASH_LIMIT_REACHED" || data.error === "PRO_LIMIT_REACHED") {
+          throw new Error("TOKEN_LIMIT");
+        }
         throw new Error(data.error ?? "서버 오류");
       }
 
@@ -144,7 +160,12 @@ export default function ProblemAI({
         });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
+      const msg = e instanceof Error ? e.message : "오류가 발생했습니다.";
+      if (msg === "TOKEN_LIMIT" || msg === "DAILY_LIMIT") {
+        setError(msg);
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -178,13 +199,13 @@ export default function ProblemAI({
             </svg>
           </div>
           <div className="text-left">
-            <p className="text-sm font-medium text-black">AI 학습 도우미</p>
-            <p className="text-[11px] text-neutral-400 mt-0.5">이 문제에 특화된 AI에게 질문하세요</p>
+            <p className="text-sm font-medium text-black">{t.ai.title}</p>
+            <p className="text-[11px] text-neutral-400 mt-0.5">{t.ai.subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-neutral-400 uppercase tracking-widest hidden sm:block">
-            {open ? "닫기" : "열기"}
+            {open ? t.common.close : t.common.open}
           </span>
           <svg
             className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
@@ -208,7 +229,7 @@ export default function ProblemAI({
           >
             {dragOver && (
               <div className="flex items-center justify-center h-full">
-                <p className="text-sm text-blue-400 font-medium">여기에 파일을 놓으세요</p>
+                <p className="text-sm text-blue-400 font-medium">{t.ai.dropHere}</p>
               </div>
             )}
 
@@ -270,9 +291,31 @@ export default function ProblemAI({
 
             {!dragOver && error && (
               <div className="flex justify-start animate-fade-slide-up">
-                <div className="bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-600 max-w-[82%] rounded-xl">
-                  {error}
-                </div>
+                {error === "DAILY_LIMIT" ? (
+                  <div className="bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700 max-w-[82%] rounded-xl">
+                    <p className="font-medium mb-1">
+                      {locale === "ko" ? "오늘의 무료 AI 사용 횟수(3회)를 모두 사용했습니다." : "You've used all 3 free AI requests for today."}
+                    </p>
+                    <Link href="/pricing" className="underline hover:text-amber-900 font-medium">
+                      {locale === "ko" ? "Plus로 무제한 사용하기 →" : "Go unlimited with Plus →"}
+                    </Link>
+                  </div>
+                ) : error === "TOKEN_LIMIT" ? (
+                  <div className="bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700 max-w-[82%] rounded-xl">
+                    <p className="font-medium mb-1">
+                      {locale === "ko" ? "주간 AI 토큰을 모두 사용했습니다." : "Weekly AI token limit reached."}
+                    </p>
+                    <Link href="/pricing" className="underline hover:text-amber-900 font-medium">
+                      {isPlus
+                        ? (locale === "ko" ? "다음 주에 초기화됩니다." : "Resets next week.")
+                        : (locale === "ko" ? "Plus로 업그레이드하기" : "Upgrade to Plus")}
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-600 max-w-[82%] rounded-xl">
+                    {error}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -312,7 +355,7 @@ export default function ProblemAI({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="w-12 self-stretch flex items-center justify-center text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors rounded-lg shrink-0"
-                title="파일 첨부 (PDF, 이미지)"
+                title={t.ai.attachFile}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -323,7 +366,7 @@ export default function ProblemAI({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="이 문제에 대해 질문하세요... (Enter로 전송)"
+                placeholder={t.ai.placeholder}
                 rows={4}
                 className="flex-1 min-h-[100px] px-4 py-3 border border-neutral-200 text-sm resize-none focus:border-black focus:outline-none bg-neutral-50 focus:bg-white placeholder:text-neutral-400 leading-relaxed"
                 disabled={loading}
@@ -339,10 +382,59 @@ export default function ProblemAI({
               </button>
             </div>
             <div className="flex items-center justify-between mt-2.5">
-              <p className="text-[10px] text-neutral-300">Shift+Enter로 줄바꿈 · 드래그앤드롭으로 파일 첨부</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-neutral-100 rounded-full p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedModel("flash")}
+                    className={`px-2.5 py-0.5 text-[10px] font-medium rounded-full transition-all ${
+                      selectedModel === "flash" ? "bg-black text-white" : "text-neutral-400 hover:text-neutral-600"
+                    }`}
+                  >
+                    Flash
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isPlus) {
+                        setSelectedModel("pro");
+                        setShowProHint(false);
+                      } else {
+                        setShowProHint(true);
+                      }
+                    }}
+                    className={`px-2.5 py-0.5 text-[10px] font-medium rounded-full transition-all flex items-center gap-1 ${
+                      selectedModel === "pro" ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white" : "text-neutral-400 hover:text-neutral-600"
+                    }`}
+                  >
+                    Pro
+                    {!isPlus && (
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {showProHint && !isPlus ? (
+                  <Link
+                    href="/pricing"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/60 rounded-full text-[10px] text-blue-600 hover:from-blue-100 hover:to-purple-100 hover:border-blue-300 transition-all font-medium animate-fade-slide-up animate-subtle-vibrate"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    {locale === "ko" ? "Plus로 Pro 모델 사용하기" : "Unlock Pro with Plus"}
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                ) : (
+                  <p className="text-[10px] text-neutral-300">{t.ai.shiftEnter}</p>
+                )}
+              </div>
               {messages.length > 1 && (
                 <button onClick={clearChat} className="text-[10px] text-neutral-300 hover:text-neutral-600 transition-colors">
-                  대화 초기화
+                  {t.ai.clearChat}
                 </button>
               )}
             </div>

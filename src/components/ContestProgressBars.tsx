@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { contests } from "@/data/contests";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ContestProgress {
   contestId: string;
@@ -41,6 +42,7 @@ function AnimatedBar({ percentage, delay }: { percentage: number; delay: number 
 }
 
 export default function ContestProgressBars({ solvedProblemIds }: { solvedProblemIds: string[] }) {
+  const { t } = useLanguage();
   const [progressData, setProgressData] = useState<ContestProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -109,13 +111,13 @@ export default function ContestProgressBars({ solvedProblemIds }: { solvedProble
 
   return (
     <section className="mb-8">
-      <div className="border border-neutral-200">
+      <div className="border border-neutral-200 rounded-xl overflow-hidden">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-full flex items-center justify-between px-6 py-4 hover:bg-neutral-50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">대회별 진행률</h2>
+            <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{t.contestProgress.title}</h2>
             <span className="text-xs text-neutral-400">
               {totalSolved} / {totalProblems}
             </span>

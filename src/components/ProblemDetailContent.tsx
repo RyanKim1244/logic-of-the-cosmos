@@ -10,6 +10,7 @@ import { parseMultiLang, getLanguages, getLangLabel } from "@/lib/multilang";
 import LatexRenderer from "@/components/LatexRenderer";
 import ProblemSourceCard from "@/components/ProblemSourceCard";
 import ProblemAI from "@/components/ProblemAI";
+import { useLanguage } from "@/context/LanguageContext";
 
 const DiscussionSection = dynamic(() => import("@/components/DiscussionSection"), {
   ssr: false,
@@ -36,6 +37,7 @@ export default function ProblemDetailContent({
   initialSolvedCount,
 }: ProblemDetailContentProps) {
   const { user, toggleSolved, toggleBookmark } = useAuth();
+  const { t } = useLanguage();
   const [problem, setProblem] = useState<Problem>(initialProblem);
   const [solvedCount, setSolvedCount] = useState(initialSolvedCount);
   const [showSolution, setShowSolution] = useState(false);
@@ -126,7 +128,7 @@ export default function ProblemDetailContent({
   }, [id]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
 
       {/* Breadcrumb */}
       <nav className="mb-8 flex items-center gap-2">
@@ -164,7 +166,7 @@ export default function ProblemDetailContent({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               </span>
-              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider whitespace-nowrap">풀이 완료</span>
+              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider whitespace-nowrap">{t.problemDetail.solved}</span>
             </div>
           )}
         </div>
@@ -173,7 +175,7 @@ export default function ProblemDetailContent({
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-5">
           <div className="flex items-center gap-1.5">
             {isOriginal && (
-              <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">LoTC Original</span>
+              <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">{t.problemDetail.lotcOriginal}</span>
             )}
             {!isOriginal && <span className="w-1.5 h-1.5 bg-black rounded-full" />}
             {!isOriginal && (
@@ -243,7 +245,7 @@ export default function ProblemDetailContent({
           {/* Problem content */}
           <div className="border border-neutral-200 rounded-xl p-6 sm:p-8 mb-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Problem Statement</h2>
+              <h2 className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">{t.problemDetail.problemStatement}</h2>
               {availableLangs.length > 1 && (
                 <div className="flex items-center gap-0 border border-neutral-200">
                   {availableLangs.map((lang) => (
@@ -277,7 +279,7 @@ export default function ProblemDetailContent({
                     : "bg-black text-white hover:bg-neutral-800"
                 }`}
               >
-                {showSolution ? "풀이 숨기기" : "풀이 보기"}
+                {showSolution ? t.problemDetail.hideSolution : t.problemDetail.showSolution}
               </button>
             </div>
             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showSolution ? "max-h-[2000px] mt-6 pt-6 border-t border-neutral-100" : "max-h-0"}`}>

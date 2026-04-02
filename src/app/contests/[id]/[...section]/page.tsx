@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { getDisplayText } from "@/lib/multilang";
-import ContestDetailContent from "@/components/ContestDetailContent";
+import { ContestSectionContent } from "@/components/ContestDetailContent";
 
-export default async function ContestDetailPage({
+export default async function ContestSectionPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; section: string[] }>;
 }) {
-  const { id } = await params;
+  const { id, section: sectionParts } = await params;
+  const sectionPath = sectionParts.map(decodeURIComponent).join("/");
   const supabase = createServerSupabase();
 
   const { data: contest } = await supabase
@@ -17,9 +18,7 @@ export default async function ContestDetailPage({
     .eq("id", id)
     .single();
 
-  if (!contest) {
-    notFound();
-  }
+  if (!contest) notFound();
 
   const { data: problems } = await supabase
     .from("problems")
@@ -34,9 +33,10 @@ export default async function ContestDetailPage({
   }));
 
   return (
-    <ContestDetailContent
+    <ContestSectionContent
       contest={contest}
       contestProblems={parsedProblems}
+      sectionPath={sectionPath}
     />
   );
 }

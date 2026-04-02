@@ -5,8 +5,10 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
 import { getDisplayText } from "@/lib/multilang";
+import CountUp from "@/components/CountUp";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
   ssr: false,
@@ -60,6 +62,7 @@ function CollapsibleSection({
   bookmarkedIds?: Set<string>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <section className="mb-8">
@@ -79,7 +82,7 @@ function CollapsibleSection({
           >
             <div className="flex items-center gap-3">
               <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{title}</h2>
-              <span className="text-xs text-neutral-400">{count}개</span>
+              <span className="text-xs text-neutral-400">{count}</span>
             </div>
             <svg
               className={`w-4 h-4 text-neutral-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
@@ -135,6 +138,7 @@ function CollapsibleSection({
 
 export default function ProfilePageContent({ initialData }: { initialData: ProfileData | null }) {
   const { user, loading: authLoading, logout, updateProfile } = useAuth();
+  const { t, locale } = useLanguage();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -161,8 +165,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
           .from("user_stats")
           .select("solved_count, solution_count, discussion_count")
           .eq("user_id", userId)
-          .single(),
-        supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 183 }),
+          .maybeSingle(),
+        supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 370 }),
         supabase
           .from("user_solved_problems")
           .select("problem_id, created_at")
@@ -274,8 +278,9 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
   if (!data) {
     if (authLoading) {
       return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <p className="text-neutral-400 text-sm">로딩 중...</p>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="border border-neutral-200 rounded-xl p-8 mb-8 animate-pulse"><div className="flex items-center gap-6"><div className="w-20 h-20 bg-neutral-100 rounded-xl" /><div><div className="h-6 bg-neutral-100 rounded w-32 mb-2" /><div className="h-4 bg-neutral-50 rounded w-48" /></div></div></div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{[1,2,3].map(i => <div key={i} className="border border-neutral-200 rounded-xl p-6 animate-pulse"><div className="h-8 bg-neutral-100 rounded w-16 mx-auto mb-2" /><div className="h-3 bg-neutral-50 rounded w-24 mx-auto" /></div>)}</div>
         </div>
       );
     }
@@ -283,9 +288,9 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
     if (!user) {
       return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
-          <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
+          <p className="text-neutral-500 mb-4">{t.profile.loginRequired}</p>
           <Link href="/login" className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors">
-            로그인
+            {t.common.login}
           </Link>
         </div>
       );
@@ -302,15 +307,17 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
     is_admin: false,
     solvedProblems: solvedProblems.map(p => p.id),
     bookmarkedProblems: bookmarkedProblems.map(p => p.id),
+    subscriptionTier: "free" as const,
+    subscriptionExpiresAt: null,
   } : null);
 
   // If we have neither server data nor auth user, redirect to login
   if (!profile) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
-        <p className="text-neutral-500 mb-4">로그인이 필요합니다.</p>
+        <p className="text-neutral-500 mb-4">{t.profile.loginRequired}</p>
         <Link href="/login" className="px-6 py-2.5 bg-black text-white text-sm tracking-widest uppercase hover:bg-neutral-800 transition-colors">
-          로그인
+          {t.common.login}
         </Link>
       </div>
     );
@@ -347,6 +354,46 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Supporter Banner */}
+      {profile.subscriptionTier === "plus" ? (
+        <div className="mb-4 rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">✦</span>
+            <div>
+              <p className="text-sm font-semibold text-white">Plus Supporter</p>
+              <p className="text-[11px] text-white/70">{locale === "ko" ? "LoTC를 후원해 주셔서 감사합니다" : "Thank you for supporting LoTC"}</p>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/stripe/portal", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: profile.id }),
+              });
+              const data = await res.json();
+              if (data.url) window.location.href = data.url;
+            }}
+            className="text-[11px] text-white/70 hover:text-white transition-colors underline underline-offset-2 shrink-0"
+          >
+            {locale === "ko" ? "구독 관리" : "Manage"}
+          </button>
+        </div>
+      ) : (
+        <Link href="/pricing" className="mb-4 rounded-xl border border-dashed border-neutral-300 p-4 flex items-center justify-between hover:border-neutral-400 transition-colors block group">
+          <div className="flex items-center gap-3">
+            <span className="text-xl text-neutral-300 group-hover:text-neutral-500 transition-colors">✦</span>
+            <div>
+              <p className="text-sm font-medium text-neutral-500 group-hover:text-black transition-colors">{locale === "ko" ? "Plus로 업그레이드" : "Upgrade to Plus"}</p>
+              <p className="text-[11px] text-neutral-400">{locale === "ko" ? "Flash 20배 + Pro 모델로 학습하세요" : "20x Flash tokens + Pro model access"}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-neutral-300 group-hover:text-black transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      )}
+
       {/* Profile Header */}
       <div className="border border-neutral-200 rounded-xl p-6 sm:p-8 mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
@@ -358,10 +405,10 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
               {isEditing && user ? (
                 <div className="space-y-3">
                   <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="block text-xl font-light border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none" />
-                  <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="자기소개를 입력하세요" rows={2} className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none" />
+                  <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder={t.profile.bioPlaceholder} rows={2} className="block w-full text-sm border border-neutral-200 px-3 py-1.5 focus:border-black focus:outline-none resize-none" />
                   <div className="flex gap-2">
-                    <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors">저장</button>
-                    <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">취소</button>
+                    <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors">{t.common.save}</button>
+                    <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">{t.common.cancel}</button>
                   </div>
                 </div>
               ) : (
@@ -369,7 +416,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                   <h1 className="text-2xl font-light mb-1">{profile.name}</h1>
                   {profile.bio && <p className="text-sm text-neutral-500 mb-2">{profile.bio}</p>}
                   <p className="text-xs text-neutral-400">{profile.email}</p>
-                  <p className="text-xs text-neutral-400 mt-1">가입일: {joinDate}</p>
+                  <p className="text-xs text-neutral-400 mt-1">{t.profile.joinDate}: {joinDate}</p>
                 </>
               )}
             </div>
@@ -377,8 +424,8 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
           {!isEditing && user && (
             <div className="flex gap-2">
-              <button onClick={startEdit} className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">편집</button>
-              <button onClick={async () => { await logout(); router.push("/"); }} className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors">로그아웃</button>
+              <button onClick={startEdit} className="px-4 py-2 border border-neutral-200 text-xs tracking-widest uppercase hover:border-black transition-colors">{t.common.edit}</button>
+              <button onClick={async () => { await logout(); router.push("/"); }} className="px-4 py-2 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors">{t.common.logout}</button>
             </div>
           )}
         </div>
@@ -386,18 +433,18 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="border border-neutral-200 rounded-xl p-6 text-center">
-          <div className="text-3xl font-extralight">{solvedCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">해결한 문제</div>
-        </div>
-        <div className="border border-neutral-200 rounded-xl p-6 text-center">
-          <div className="text-3xl font-extralight">{solutionCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">작성한 풀이</div>
-        </div>
-        <div className="border border-neutral-200 rounded-xl p-6 text-center">
-          <div className="text-3xl font-extralight">{discussionCount}</div>
-          <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">토론 참여</div>
-        </div>
+        {[
+          { label: t.profile.solvedProblems, value: solvedCount },
+          { label: t.profile.writtenSolutions, value: solutionCount },
+          { label: t.profile.discussions, value: discussionCount },
+        ].map((stat, i) => (
+          <div key={stat.label} className="stat-card-v2 rounded-xl">
+            <div className="stat-number mb-2">
+              <CountUp target={stat.value} />
+            </div>
+            <div className="text-xs text-neutral-400 mt-2 uppercase tracking-widest">{stat.label}</div>
+          </div>
+        ))}
       </div>
 
       {/* Contribution Heatmap */}
@@ -410,11 +457,11 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Solve History */}
       <section className="mb-8">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">풀이 기록</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-6">{t.profile.solveHistory}</h2>
         {solveHistory.length === 0 ? (
           <div className="border border-neutral-200 rounded-xl p-8 text-center">
-            <p className="text-neutral-400 text-sm">아직 풀이 기록이 없습니다.</p>
-            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">문제 풀러 가기 &rarr;</Link>
+            <p className="text-neutral-400 text-sm">{t.profile.noHistory}</p>
+            <Link href="/problems" className="text-sm text-black hover:underline mt-2 inline-block">{t.profile.goSolve} &rarr;</Link>
           </div>
         ) : (
           <div className="space-y-6">
@@ -423,7 +470,7 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
                   <h3 className="text-sm font-medium text-neutral-600">{date}</h3>
-                  <span className="text-xs text-neutral-400">{records.length}문제</span>
+                  <span className="text-xs text-neutral-400">{records.length}</span>
                 </div>
                 <div className="space-y-1.5 ml-5 border-l border-neutral-200 pl-4">
                   {records.map((record, i) => {
@@ -474,11 +521,11 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Bookmarked Problems */}
       <CollapsibleSection
-        title="북마크한 문제"
+        title={t.profile.bookmarked}
         count={bookmarkedProblems.length}
-        emptyText="아직 북마크한 문제가 없습니다."
+        emptyText={t.profile.noBookmarks}
         emptyLink="/problems"
-        emptyLinkText="문제 목록 보기"
+        emptyLinkText={t.profile.viewProblems}
         items={bookmarkedProblems}
         solvedIds={solvedIdSet}
         bookmarkedIds={bookmarkedIdSet}
@@ -486,11 +533,11 @@ export default function ProfilePageContent({ initialData }: { initialData: Profi
 
       {/* Solved Problems */}
       <CollapsibleSection
-        title="풀이 완료"
+        title={t.profile.completedProblems}
         count={solvedProblems.length}
-        emptyText="아직 풀이를 완료한 문제가 없습니다."
+        emptyText={t.profile.noCompleted}
         emptyLink="/problems"
-        emptyLinkText="문제 풀러 가기"
+        emptyLinkText={t.profile.goSolve}
         items={solvedProblems}
         solvedIds={solvedIdSet}
         bookmarkedIds={bookmarkedIdSet}

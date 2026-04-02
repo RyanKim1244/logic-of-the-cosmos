@@ -28,6 +28,8 @@ type ContestRow = {
   description: string;
   website: string | null;
   years: number[];
+  sections: string[];
+  sections_tree: SectionNode[];
 };
 
 type ProblemFormData = {
@@ -37,9 +39,12 @@ type ProblemFormData = {
   year: number;
   tags: string;
   problemUrl: string;
+  section: string;
   content: MultiLangContent;
   officialSolution: MultiLangContent;
 };
+
+type SectionNode = { name: string; children: SectionNode[] };
 
 type ContestFormData = {
   name: string;
@@ -47,6 +52,7 @@ type ContestFormData = {
   description: string;
   website: string;
   years: string;
+  sectionsTree: SectionNode[];
 };
 
 const emptyProblemForm: ProblemFormData = {
@@ -56,6 +62,7 @@ const emptyProblemForm: ProblemFormData = {
   year: new Date().getFullYear(),
   tags: "",
   problemUrl: "",
+  section: "",
   content: { ko: "" },
   officialSolution: { ko: "" },
 };
@@ -66,7 +73,77 @@ const emptyContestForm: ContestFormData = {
   description: "",
   website: "",
   years: "",
+  sectionsTree: [],
 };
+
+function SectionTreeEditor({ nodes, onChange, depth }: { nodes: SectionNode[]; onChange: (nodes: SectionNode[]) => void; depth: number }) {
+  const update = (i: number, patch: Partial<SectionNode>) => {
+    const next = [...nodes];
+    next[i] = { ...next[i], ...patch };
+    onChange(next);
+  };
+  const remove = (i: number) => onChange(nodes.filter((_, j) => j !== i));
+  const moveUp = (i: number) => {
+    if (i === 0) return;
+    const next = [...nodes];
+    [next[i - 1], next[i]] = [next[i], next[i - 1]];
+    onChange(next);
+  };
+  const moveDown = (i: number) => {
+    if (i >= nodes.length - 1) return;
+    const next = [...nodes];
+    [next[i], next[i + 1]] = [next[i + 1], next[i]];
+    onChange(next);
+  };
+  const add = () => onChange([...nodes, { name: "", children: [] }]);
+
+  return (
+    <div className={depth > 0 ? "pl-6 border-l-2 border-neutral-100 ml-2" : ""}>
+      <div className="space-y-2">
+        {nodes.map((node, i) => (
+          <div key={i}>
+            <div className="flex items-center gap-1.5">
+              {depth > 0 && <span className="text-neutral-300 text-xs">└</span>}
+              <input
+                type="text"
+                value={node.name}
+                onChange={(e) => update(i, { name: e.target.value })}
+                placeholder={depth === 0 ? "섹션 이름" : "하위 섹션 이름"}
+                className="flex-1 px-3 py-1.5 border border-neutral-200 text-sm focus:border-black focus:outline-none transition-colors"
+              />
+              <button type="button" onClick={() => moveUp(i)} className="p-1 text-neutral-300 hover:text-black transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+              </button>
+              <button type="button" onClick={() => moveDown(i)} className="p-1 text-neutral-300 hover:text-black transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <button type="button" onClick={() => update(i, { children: [...node.children, { name: "", children: [] }] })} className="p-1 text-neutral-300 hover:text-blue-500 transition-colors" title="하위 섹션 추가">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              </button>
+              <button type="button" onClick={() => remove(i)} className="p-1 text-neutral-300 hover:text-red-500 transition-colors" title="삭제">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            {node.children.length > 0 && (
+              <SectionTreeEditor
+                nodes={node.children}
+                onChange={(children) => update(i, { children })}
+                depth={depth + 1}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={add}
+        className="mt-2 text-xs text-neutral-400 hover:text-black transition-colors font-medium"
+      >
+        + {depth === 0 ? "섹션 추가" : "하위 섹션 추가"}
+      </button>
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
@@ -76,6 +153,8 @@ export default function AdminPage() {
   const [editingProblemId, setEditingProblemId] = useState<string | null>(null);
   const [problemForm, setProblemForm] = useState<ProblemFormData>(emptyProblemForm);
   const [allProblems, setAllProblems] = useState<ProblemRow[]>([]);
+
+  const [submitting, setSubmitting] = useState(false);
 
   const [contestMode, setContestMode] = useState<"none" | "add" | "edit">("none");
   const [editingContestId, setEditingContestId] = useState<string | null>(null);
@@ -153,12 +232,13 @@ export default function AdminPage() {
   const openAddProblem = () => { setProblemForm(emptyProblemForm); setEditingProblemId(null); setProblemMode("add"); };
   const openEditProblem = async (p: ProblemRow) => {
     // Fetch content & official_solution on demand (not loaded in list query)
-    const { data } = await supabase.from("problems").select("title, content, official_solution, problem_url").eq("id", p.id).single();
+    const { data } = await supabase.from("problems").select("title, content, official_solution, problem_url, section").eq("id", p.id).single();
     const isLoTC = p.source.trim().toLowerCase() === "lotc";
     setProblemForm({
       problemType: isLoTC ? "lotc" : "external",
       title: parseMultiLang(data?.title ?? p.title), source: p.source, year: p.year, tags: p.tags.join(", "),
       problemUrl: data?.problem_url ?? "",
+      section: data?.section ?? "",
       content: parseMultiLang(data?.content ?? ""),
       officialSolution: parseMultiLang(data?.official_solution ?? ""),
     });
@@ -168,6 +248,8 @@ export default function AdminPage() {
 
   const handleProblemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     setSubmitError(null);
     const tags = problemForm.tags.split(",").map((t) => t.trim()).filter(Boolean);
     const now = new Date().toISOString();
@@ -186,11 +268,13 @@ export default function AdminPage() {
         title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
         problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
+        section: problemForm.section || null,
         updated_at: now,
       }).eq("id", editingProblemId);
 
       if (error) {
         setSubmitError(`문제 수정 실패: ${error.message}`);
+        setSubmitting(false);
         return;
       }
       setAllProblems(allProblems.map((p) =>
@@ -206,16 +290,19 @@ export default function AdminPage() {
         id, problem_number: nextNumber, title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
         problem_url: problemForm.problemType === "external" ? (problemForm.problemUrl || null) : null,
+        section: problemForm.section || null,
       }).select("id, problem_number, title, source, year, tags, created_at, updated_at").single();
 
       if (error) {
         setSubmitError(`문제 등록 실패: ${error.message}`);
+        setSubmitting(false);
         return;
       }
       if (data) {
         setAllProblems([data, ...allProblems]);
       }
     }
+    setSubmitting(false);
     closeProblemForm();
   };
 
@@ -229,7 +316,7 @@ export default function AdminPage() {
   // Contest handlers
   const openAddContest = () => { setContestForm(emptyContestForm); setEditingContestId(null); setContestMode("add"); };
   const openEditContest = (c: ContestRow) => {
-    setContestForm({ name: c.name, shortName: c.short_name, description: c.description, website: c.website || "", years: c.years.join(", ") });
+    setContestForm({ name: c.name, shortName: c.short_name, description: c.description, website: c.website || "", years: c.years.join(", "), sectionsTree: c.sections_tree || [] });
     setEditingContestId(c.id); setContestMode("edit");
   };
   const closeContestForm = () => { setContestMode("none"); setEditingContestId(null); setContestForm(emptyContestForm); };
@@ -238,11 +325,13 @@ export default function AdminPage() {
     e.preventDefault();
     setSubmitError(null);
     const years = contestForm.years.split(",").map((y) => parseInt(y.trim())).filter((y) => !isNaN(y)).sort((a, b) => b - a);
+    // Flatten tree to get top-level section names for backward compat
+    const flatSections = contestForm.sectionsTree.map((s) => s.name).filter(Boolean);
 
     if (contestMode === "edit" && editingContestId) {
       const { error } = await supabase.from("contests").update({
         name: contestForm.name, short_name: contestForm.shortName, description: contestForm.description,
-        website: contestForm.website || null, years,
+        website: contestForm.website || null, years, sections: flatSections, sections_tree: contestForm.sectionsTree,
       }).eq("id", editingContestId);
 
       if (error) {
@@ -250,13 +339,13 @@ export default function AdminPage() {
         return;
       }
       setAllContests(allContests.map((c) =>
-        c.id === editingContestId ? { ...c, name: contestForm.name, short_name: contestForm.shortName, description: contestForm.description, website: contestForm.website || null, years } : c
+        c.id === editingContestId ? { ...c, name: contestForm.name, short_name: contestForm.shortName, description: contestForm.description, website: contestForm.website || null, years, sections: flatSections, sections_tree: contestForm.sectionsTree } : c
       ));
     } else {
       const id = contestForm.shortName.toLowerCase().replace(/\s+/g, "-");
       const { data, error } = await supabase.from("contests").insert({
         id, name: contestForm.name, short_name: contestForm.shortName,
-        description: contestForm.description, website: contestForm.website || null, years,
+        description: contestForm.description, website: contestForm.website || null, years, sections: flatSections, sections_tree: contestForm.sectionsTree,
       }).select().single();
 
       if (error) {
@@ -381,7 +470,35 @@ export default function AdminPage() {
                 </div>
 
                 {problemForm.problemType === "external" && (
-                  <div><label className={labelClass}>공식 문제 링크 (선택)</label><input type="url" value={problemForm.problemUrl} onChange={(e) => setProblemForm({ ...problemForm, problemUrl: e.target.value })} className={inputClass} placeholder="https://..." /></div>
+                  <div className="grid md:grid-cols-2 gap-5">
+                    <div><label className={labelClass}>문제 링크 (선택)</label><input type="url" value={problemForm.problemUrl} onChange={(e) => setProblemForm({ ...problemForm, problemUrl: e.target.value })} className={inputClass} placeholder="https://..." /></div>
+                    <div>
+                      <label className={labelClass}>섹션 (선택)</label>
+                      {(() => {
+                        const matchedContest = allContests.find((c) => problemForm.source.toLowerCase().includes(c.short_name.toLowerCase()));
+                        const tree = matchedContest?.sections_tree || [];
+                        // Flatten tree to paths
+                        const flattenTree = (nodes: SectionNode[], prefix = ""): string[] => {
+                          const result: string[] = [];
+                          for (const n of nodes) {
+                            const path = prefix ? `${prefix}/${n.name}` : n.name;
+                            result.push(path);
+                            result.push(...flattenTree(n.children, path));
+                          }
+                          return result;
+                        };
+                        const paths = flattenTree(tree);
+                        return paths.length > 0 ? (
+                          <select value={problemForm.section} onChange={(e) => setProblemForm({ ...problemForm, section: e.target.value })} className={inputClass}>
+                            <option value="">— 없음 —</option>
+                            {paths.map((p) => <option key={p} value={p}>{p.includes("/") ? "└ " + p : p}</option>)}
+                          </select>
+                        ) : (
+                          <input type="text" value={problemForm.section} onChange={(e) => setProblemForm({ ...problemForm, section: e.target.value })} className={inputClass} placeholder="예: Theory/Mechanics" />
+                        );
+                      })()}
+                    </div>
+                  </div>
                 )}
 
                 {problemForm.problemType === "lotc" && (
@@ -392,7 +509,7 @@ export default function AdminPage() {
                 )}
 
                 <div className="flex gap-3 pt-2">
-                  <button type="submit" className="px-6 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider">{problemMode === "edit" ? "수정 완료" : "문제 등록"}</button>
+                  <button type="submit" disabled={submitting} className="px-6 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? "처리 중..." : problemMode === "edit" ? "수정 완료" : "문제 등록"}</button>
                   <button type="button" onClick={closeProblemForm} className="px-6 py-2.5 border border-neutral-300 text-neutral-700 text-xs font-medium hover:border-black hover:text-black transition-colors uppercase tracking-wider">취소</button>
                 </div>
               </form>
@@ -445,6 +562,14 @@ export default function AdminPage() {
                 <div className="grid md:grid-cols-2 gap-5">
                   <div><label className={labelClass}>공식 웹사이트 (선택)</label><input type="url" value={contestForm.website} onChange={(e) => setContestForm({ ...contestForm, website: e.target.value })} className={inputClass} placeholder="https://..." /></div>
                   <div><label className={labelClass}>연도 (쉼표로 구분)</label><input type="text" required value={contestForm.years} onChange={(e) => setContestForm({ ...contestForm, years: e.target.value })} className={inputClass} placeholder="예: 2023, 2022, 2021, 2020" /></div>
+                </div>
+                <div>
+                  <label className={labelClass}>섹션 구조 (선택)</label>
+                  <SectionTreeEditor
+                    nodes={contestForm.sectionsTree}
+                    onChange={(tree) => setContestForm({ ...contestForm, sectionsTree: tree })}
+                    depth={0}
+                  />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="submit" className="px-6 py-2.5 bg-black text-white text-xs font-medium hover:bg-neutral-800 transition-colors uppercase tracking-wider">{contestMode === "edit" ? "수정 완료" : "대회 등록"}</button>

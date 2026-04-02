@@ -25,8 +25,8 @@ export default async function ProfilePage() {
       .from("user_stats")
       .select("solved_count, solution_count, discussion_count")
       .eq("user_id", userId)
-      .single(),
-    supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 183 }),
+      .maybeSingle(),
+    supabase.rpc("get_solve_heatmap", { p_user_id: userId, p_days: 370 }),
     supabase
       .from("user_solved_problems")
       .select("problem_id, created_at")

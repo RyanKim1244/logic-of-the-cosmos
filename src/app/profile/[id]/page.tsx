@@ -13,8 +13,8 @@ export default async function PublicProfilePage({
   // Phase 1: All independent queries in parallel
   const [profileRes, statsRes, heatmapRes, historyRes] = await Promise.allSettled([
     supabase.from("profiles").select("id, name, bio, created_at").eq("id", id).single(),
-    supabase.from("user_stats").select("solved_count, solution_count, discussion_count").eq("user_id", id).single(),
-    supabase.rpc("get_solve_heatmap", { p_user_id: id, p_days: 183 }),
+    supabase.from("user_stats").select("solved_count, solution_count, discussion_count").eq("user_id", id).maybeSingle(),
+    supabase.rpc("get_solve_heatmap", { p_user_id: id, p_days: 370 }),
     supabase
       .from("user_solved_problems")
       .select("problem_id, created_at")

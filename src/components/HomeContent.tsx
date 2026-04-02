@@ -10,6 +10,7 @@ import ProblemCard from "@/components/ProblemCard";
 import HeroBackground from "@/components/HeroBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 import CountUp from "@/components/CountUp";
+import { useLanguage } from "@/context/LanguageContext";
 
 
 interface HomeStats {
@@ -33,6 +34,7 @@ export default function HomeContent({
   initialProblemCounts,
 }: HomeContentProps) {
   const { user } = useAuth();
+  const { t, locale } = useLanguage();
   const [recentProblems, setRecentProblems] = useState<Problem[]>(initialProblems);
   const [topContests, setTopContests] = useState<ContestPreview[]>(initialContests);
   const [stats, setStats] = useState<HomeStats>(initialStats);
@@ -186,21 +188,18 @@ export default function HomeContent({
           <ScrollReveal>
             <span className="section-label text-neutral-500 mb-6 inline-block">Beautiful Science</span>
           </ScrollReveal>
-          <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-extralight mb-6 tracking-tight hero-title leading-none">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-extralight mb-6 tracking-tight hero-title leading-none">
             Logic of The <span className="hero-gradient-text">Cosmos</span>
           </h1>
-          <div className="w-20 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent mx-auto mb-8 hero-line" />
-          <p className="text-xl md:text-2xl text-neutral-400 mb-14 max-w-2xl mx-auto font-light hero-subtitle tracking-wide">
-            과학의 모든 영역을 탐구하는 거대한 토론의 장
-          </p>
+          <div className="w-20 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent mx-auto mb-14 hero-line" />
           <div className="flex items-center justify-center gap-3 hero-cta flex-wrap">
             <Link href="/problems" className="hero-btn-v2-primary">
-              문제 풀러 가기
+              {t.hero.explore}
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
-            <Link href="/contests" className="hero-btn-v2-outline">기출문제</Link>
+            <Link href="/contests" className="hero-btn-v2-outline">{t.hero.pastProblems}</Link>
           </div>
         </div>
       </section>
@@ -214,16 +213,20 @@ export default function HomeContent({
             <blockquote className="relative">
               <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-7xl text-neutral-200/70 font-serif select-none quote-mark leading-none">&ldquo;</span>
               <p className="text-base sm:text-lg md:text-xl font-light text-neutral-700 leading-relaxed italic mb-4 pt-4">
-                &ldquo;지구는 인류의 요람이다. 그러나 영원히 요람 속에 머물 수는 없다.&rdquo;
+                &ldquo;{t.quote.text}&rdquo;
               </p>
               <p className="text-sm text-neutral-400 italic mb-6">
-                &ldquo;Земля — колыбель разума, но нельзя вечно жить в колыбели.&rdquo;
+                &ldquo;{t.quote.original}&rdquo;
               </p>
               <div className="w-10 h-px bg-neutral-300 mx-auto mb-5" />
               <footer className="text-sm text-neutral-400 tracking-wide">
-                <span className="font-medium text-neutral-600">Konstantin Tsiolkovsky</span>
-                <span className="mx-2 text-neutral-300">/</span>
-                <span className="text-neutral-500">콘스탄틴 치올콥스키</span>
+                <span className="font-medium text-neutral-600">{t.quote.author}</span>
+                {t.quote.authorKo && (
+                  <>
+                    <span className="mx-2 text-neutral-300">/</span>
+                    <span className="text-neutral-500">{t.quote.authorKo}</span>
+                  </>
+                )}
                 <span className="mx-2 text-neutral-300">/</span>
                 <span className="font-mono text-neutral-400 text-xs">1857 – 1935</span>
               </footer>
@@ -241,10 +244,10 @@ export default function HomeContent({
           </ScrollReveal>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {[
-              { label: "총 문제 수", value: stats?.problems ?? 0 },
-              { label: "등록 대회", value: stats?.contests ?? 0 },
-              { label: "토론 수", value: stats?.discussions ?? 0 },
-              { label: "참여자 수", value: stats?.authors ?? 0 },
+              { label: t.stats.problems, value: stats?.problems ?? 0 },
+              { label: t.stats.contests, value: stats?.contests ?? 0 },
+              { label: t.stats.discussions, value: stats?.discussions ?? 0 },
+              { label: t.stats.authors, value: stats?.authors ?? 0 },
             ].map((stat, i) => (
               <ScrollReveal key={stat.label} delay={i * 80}>
                 <div className="stat-card-v2">
@@ -269,11 +272,11 @@ export default function HomeContent({
             <div className="flex items-end justify-between mb-12">
               <div>
                 <span className="section-label">Archives</span>
-                <h2 className="text-3xl md:text-4xl font-light text-black">기출문제 아카이브</h2>
-                <p className="text-sm text-neutral-400 mt-2">국제 올림피아드부터 대학 기출까지, 연도별로 정리된 문제를 풀어보세요</p>
+                <h2 className="text-3xl md:text-4xl font-light text-black">{t.archives.title}</h2>
+                <p className="text-sm text-neutral-400 mt-2">{t.archives.subtitle}</p>
               </div>
               <Link href="/contests" className="link-arrow mb-1 shrink-0">
-                전체 보기
+                {t.archives.viewAll}
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -289,7 +292,7 @@ export default function HomeContent({
                     <h3 className="text-[15px] font-medium text-neutral-800 mb-3 flex-1 leading-snug">{contest.name}</h3>
                     <div className="mt-auto flex items-center justify-between pt-3 border-t border-neutral-100 text-xs text-neutral-400">
                       <span className="font-mono">{contest.years.length > 0 ? `${contest.years[contest.years.length - 1]}–${contest.years[0]}` : ""}</span>
-                      <span className="font-medium text-neutral-600">{problemCounts[contest.id] || 0}문제</span>
+                      <span className="font-medium text-neutral-600">{problemCounts[contest.id] || 0} {t.archives.problemCount}</span>
                     </div>
                   </div>
                 </Link>
@@ -306,10 +309,10 @@ export default function HomeContent({
             <div className="flex items-end justify-between mb-10">
               <div>
                 <span className="section-label">Recently Added</span>
-                <h2 className="text-3xl md:text-4xl font-light text-black">최근 문제</h2>
+                <h2 className="text-3xl md:text-4xl font-light text-black">{t.recentProblems.title}</h2>
               </div>
               <Link href="/problems" className="link-arrow mb-1 shrink-0">
-                전체 보기
+                {t.recentProblems.viewAll}
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -332,26 +335,26 @@ export default function HomeContent({
         <div className="features-glow-2 absolute bottom-0 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <p className="section-label text-center text-neutral-400 mb-4">Why LOTC</p>
-            <h2 className="text-3xl md:text-5xl font-extralight text-center text-black mb-3 tracking-tight">열린 과학 토론의 장</h2>
-            <p className="text-neutral-500 text-sm text-center mb-16 tracking-wide">분야와 수준의 경계를 넘어, 함께 탐구하는 커뮤니티</p>
+            <p className="section-label text-center text-neutral-400 mb-4">{t.whyLotc.label}</p>
+            <h2 className="text-3xl md:text-5xl font-extralight text-center text-black mb-3 tracking-tight">{t.whyLotc.title}</h2>
+            <p className="text-neutral-500 text-sm text-center mb-16 tracking-wide">{t.whyLotc.subtitle}</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-5">
             {[
               {
                 symbol: "∞",
-                title: "경계 없는 탐구",
-                desc: "중등 올림피아드부터 대학원 연구 문제까지, 물리·화학·생물·수학·지구과학 전 분야를 다룹니다.",
+                title: t.whyLotc.feature1Title,
+                desc: t.whyLotc.feature1Desc,
               },
               {
                 symbol: "⇌",
-                title: "실시간 토론",
-                desc: "각 문제마다 토론 스레드가 열립니다. 풀이를 공유하고, 다른 접근법을 제시하며 깊이 있는 대화를 나누세요.",
+                title: t.whyLotc.feature2Title,
+                desc: t.whyLotc.feature2Desc,
               },
               {
                 symbol: "✦",
-                title: "문제 학습 AI",
-                desc: "AI 튜터가 문제 풀이를 도와줍니다. 힌트 요청, 개념 질문, 풀이 검증까지 자유롭게 대화하세요.",
+                title: t.whyLotc.feature3Title,
+                desc: t.whyLotc.feature3Desc,
               },
             ].map((feature, i) => (
               <ScrollReveal key={feature.title} delay={i * 120}>
@@ -373,31 +376,31 @@ export default function HomeContent({
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.4] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollReveal>
-            <p className="section-label text-center mb-3">Explore</p>
-            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-12">빠른 탐색</h2>
+            <p className="section-label text-center mb-3">{t.quickLinks.label}</p>
+            <h2 className="text-3xl md:text-4xl font-light text-center text-black mb-12">{t.quickLinks.title}</h2>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-5">
             {[
               {
                 href: "/problems",
                 symbol: "?",
-                title: "문제 목록",
-                desc: "태그와 출처로 문제를 검색하고, 번호로 빠르게 찾아보세요.",
-                meta: statsConfirmed ? `${stats.problems}개의 문제` : "—",
+                title: t.quickLinks.problemsTitle,
+                desc: t.quickLinks.problemsDesc,
+                meta: statsConfirmed ? `${stats.problems}${locale === "ko" ? "개의 문제" : " problems"}` : "—",
               },
               {
                 href: "/contests",
                 symbol: "#",
-                title: "기출문제",
-                desc: "대회별 기출문제를 연도별로 정리해 체계적으로 학습하세요.",
-                meta: statsConfirmed ? `${stats.contests}개의 대회` : "—",
+                title: t.quickLinks.contestsTitle,
+                desc: t.quickLinks.contestsDesc,
+                meta: statsConfirmed ? `${stats.contests}${locale === "ko" ? "개의 대회" : " contests"}` : "—",
               },
               {
                 href: "/community",
                 symbol: ">",
-                title: "커뮤니티",
-                desc: "자유 토론과 질문을 통해 다른 학습자들과 소통하세요.",
-                meta: "토론 참여하기",
+                title: t.quickLinks.communityTitle,
+                desc: t.quickLinks.communityDesc,
+                meta: t.quickLinks.communityMeta,
               },
             ].map((item, i) => (
               <ScrollReveal key={item.href} delay={i * 80}>
@@ -428,19 +431,19 @@ export default function HomeContent({
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <ScrollReveal>
             <span className="section-label mb-4 inline-block">Get Started</span>
-            <h2 className="text-3xl md:text-5xl font-extralight text-black mb-4 tracking-tight">과학의 경계를 넓혀보세요</h2>
+            <h2 className="text-3xl md:text-5xl font-extralight text-black mb-4 tracking-tight">{t.cta.title}</h2>
             <p className="text-neutral-400 text-sm mb-10 max-w-md mx-auto leading-relaxed tracking-wide">
-              문제를 풀고, 풀이를 공유하고, 함께 성장하세요.
+              {t.cta.subtitle}
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <Link href="/problems" className="cta-primary-v2">
-                문제 풀기
+                {t.cta.browseProblems}
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
               {!user && (
-                <Link href="/login" className="cta-secondary-v2">계정 만들기</Link>
+                <Link href="/login" className="cta-secondary-v2">{t.cta.startNow}</Link>
               )}
             </div>
           </ScrollReveal>

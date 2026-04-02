@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
 import type { StudyGroupMember, ProblemSet } from "@/types";
 
@@ -18,6 +19,7 @@ interface GroupDetail {
 
 export default function StudyGroupDetailContent({ groupId }: { groupId: string }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [members, setMembers] = useState<StudyGroupMember[]>([]);
@@ -221,7 +223,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 disabled={joining}
                 className="px-5 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-40"
               >
-                {joining ? "참여 중..." : "참여하기"}
+                {joining ? "..." : t.studyGroupsPage.join}
               </button>
             )}
             {user && isMember && !isOwner && (
@@ -229,7 +231,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 onClick={handleLeave}
                 className="px-5 py-2.5 border border-neutral-200 text-xs tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
               >
-                탈퇴
+                {t.studyGroupsPage.leave}
               </button>
             )}
             {isOwner && (
@@ -237,7 +239,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
                 onClick={handleDelete}
                 className="px-5 py-2.5 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
               >
-                삭제
+                {t.common.delete}
               </button>
             )}
           </div>
@@ -246,7 +248,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
 
       {/* Members */}
       <section className="mb-8">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">멤버</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">{t.studyGroupsPage.members}</h2>
         <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 overflow-hidden">
           {members.map((m) => (
             <div key={m.userId} className="flex items-center justify-between px-6 py-3">
@@ -276,13 +278,13 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       {/* Linked Problem Sets */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">문제 세트</h2>
+          <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{t.studyGroupsPage.linkedSets}</h2>
           {isOwner && (
             <button
               onClick={loadAvailableSets}
               className="text-xs text-black hover:underline"
             >
-              세트 추가 +
+              {t.studyGroupsPage.addSet}
             </button>
           )}
         </div>
@@ -312,17 +314,17 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
               onClick={() => setShowAddSet(false)}
               className="text-xs text-neutral-400 hover:text-black mt-3"
             >
-              닫기
+              {t.common.close}
             </button>
           </div>
         )}
 
         {linkedSets.length === 0 ? (
           <div className="border border-neutral-200 rounded-xl p-8 text-center">
-            <p className="text-neutral-400 text-sm">연결된 문제 세트가 없습니다.</p>
+            <p className="text-neutral-400 text-sm">{t.studyGroupsPage.noSets}</p>
             {isOwner && (
               <button onClick={loadAvailableSets} className="text-sm text-black hover:underline mt-2 inline-block">
-                문제 세트 추가하기 &rarr;
+                {t.studyGroupsPage.addSets} &rarr;
               </button>
             )}
           </div>

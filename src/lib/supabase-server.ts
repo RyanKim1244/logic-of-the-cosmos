@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || "";
 
 /**
  * Anon Supabase client for ISR/static pages (public data only).
@@ -24,6 +25,16 @@ export function createServerSupabase() {
  * ⚠️ Calling this makes the page dynamic (no ISR). Only use for
  * pages that need user-specific data (e.g. profile).
  */
+/**
+ * Service-role Supabase client for API routes.
+ * Bypasses RLS — use only in trusted server-side code.
+ */
+export function createServiceSupabase() {
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 export async function createAuthServerSupabase() {
   const cookieStore = await cookies();
 

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { getCached, setCache, isCacheStale } from "@/lib/cache";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Problem } from "@/types";
 import ProblemCard from "@/components/ProblemCard";
 
@@ -19,6 +20,7 @@ export default function ProblemsContent({
   initialDiscussionCounts,
 }: ProblemsContentProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [problems, setProblems] = useState<Problem[]>(initialProblems);
   const [loading, setLoading] = useState(false);
   const [selectedTags] = useState<string[]>([]);
@@ -78,7 +80,7 @@ export default function ProblemsContent({
       );
       if (fetchError) {
         if (problems.length === 0) {
-          setError(`문제 목록을 불러오는 데 실패했습니다. (${fetchError.message})`);
+          setError(`${t.problemsPage.loadError} (${fetchError.message})`);
         }
       } else if (data && data.length > 0) {
         const mapped = data.map(mapProblem);
@@ -88,7 +90,7 @@ export default function ProblemsContent({
     } catch (e) {
       if (signal?.aborted) return;
       if (problems.length === 0) {
-        setError(`문제 목록을 불러오는 데 실패했습니다. (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
+        setError(`${t.problemsPage.loadError} (${e instanceof Error ? e.message : "알 수 없는 오류"})`);
       }
     }
     setLoading(false);
@@ -217,7 +219,7 @@ export default function ProblemsContent({
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-neutral-400 text-center py-20 text-sm">로딩 중...</p>
+        <div className="space-y-2 py-8">{[1,2,3,4,5].map(i => <div key={i} className="border border-neutral-200 rounded-xl p-4 animate-pulse"><div className="h-4 bg-neutral-100 rounded w-64 mb-2" /><div className="h-3 bg-neutral-50 rounded w-32" /></div>)}</div>
       </div>
     );
   }
@@ -227,7 +229,7 @@ export default function ProblemsContent({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center py-20">
           <p className="text-red-500 text-sm mb-4">{error}</p>
-          <button onClick={() => fetchProblems()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">다시 시도</button>
+          <button onClick={() => fetchProblems()} className="px-5 py-2.5 bg-black text-white text-xs font-medium tracking-widest uppercase hover:bg-neutral-800 transition-colors">{t.problemsPage.retry}</button>
         </div>
       </div>
     );
@@ -237,21 +239,21 @@ export default function ProblemsContent({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="page-header">
         <span className="section-label">Problems</span>
-        <h1 className="text-3xl md:text-4xl font-light text-black">문제 목록</h1>
+        <h1 className="text-3xl md:text-4xl font-light text-black">{t.problemsPage.title}</h1>
       </div>
 
       <div className="pb-16">
         <div>
           {filteredProblems.length === 0 ? (
             <div className="text-center py-24 text-neutral-400 border border-neutral-100">
-              <p className="text-sm font-medium mb-1">검색 결과가 없습니다</p>
-              <p className="text-xs text-neutral-300">필터를 조정해 보세요.</p>
+              <p className="text-sm font-medium mb-1">{t.problemsPage.noProblems}</p>
+              <p className="text-xs text-neutral-300">{t.problemsPage.resetFilters}</p>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[11px] text-neutral-400 uppercase tracking-[0.18em]">
-                  {filteredProblems.length}개의 문제
+                  {t.problemsPage.count.replace("{count}", String(filteredProblems.length))}
                 </p>
                 {totalPages > 1 && (
                   <p className="text-[11px] text-neutral-400 font-mono">

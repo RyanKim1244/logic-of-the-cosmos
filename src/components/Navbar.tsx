@@ -5,26 +5,28 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import Logo from "@/components/Logo";
 
 const SearchModal = dynamic(() => import("@/components/SearchModal"), {
   ssr: false,
 });
 
-const links = [
-  { href: "/problems", label: "문제 목록" },
-  { href: "/contests", label: "기출문제" },
-  { href: "/community", label: "커뮤니티" },
-  { href: "/problem-sets", label: "문제 세트" },
-  { href: "/study-groups", label: "스터디" },
-];
-
 export default function Navbar() {
   const { user, loading } = useAuth();
+  const { locale, setLocale, t } = useLanguage();
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+
+  const links = [
+    { href: "/problems", label: t.common.problems },
+    { href: "/contests", label: t.common.contests },
+    { href: "/community", label: t.common.community },
+    { href: "/problem-sets", label: t.common.problemSets },
+    { href: "/study-groups", label: locale === "ko" ? "스터디" : "Study" },
+  ];
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -45,13 +47,14 @@ export default function Navbar() {
 
   const closeMenu = () => setMenuOpen(false);
 
+
   return (
     <>
       <nav
-        aria-label="메인 내비게이션"
+        aria-label="Main navigation"
         className={`sticky top-0 z-50 transition-all duration-300 border-b ${
           scrolled
-            ? "bg-black backdrop-blur-md border-neutral-800/60 shadow-[0_1px_0_rgba(255,255,255,0.04)]"
+            ? "bg-black backdrop-blur-md border-neutral-800/60 shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
             : "bg-black border-neutral-800"
         }`}
       >
@@ -110,40 +113,70 @@ export default function Navbar() {
                     href="/admin"
                     className="relative px-4 py-2 text-[13px] font-medium tracking-wide text-neutral-500 hover:text-neutral-200 hover:bg-white/5 rounded-sm transition-colors"
                   >
-                    관리자
+                    {t.common.admin}
                   </Link>
                 )}
               </div>
 
               <div className="w-px h-4 bg-neutral-800 mx-2" />
 
+              {/* Language toggle */}
+              <button
+                onClick={() => setLocale(locale === "ko" ? "en" : "ko")}
+                className="w-8 h-8 flex items-center justify-center text-[11px] font-semibold text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-colors mr-1"
+                title={locale === "ko" ? "Switch to English" : "한국어로 전환"}
+              >
+                {locale === "ko" ? "EN" : "KR"}
+              </button>
+
               {/* Auth */}
               {loading ? (
                 <span className="w-7 h-7 skeleton rounded-sm" />
               ) : user ? (
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-2.5 text-neutral-400 hover:text-white transition-colors text-sm font-medium pl-1 group"
-                >
-                  <span className="w-7 h-7 bg-white text-black flex items-center justify-center text-[11px] font-semibold tracking-wide shrink-0">
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="hidden sm:inline text-[13px] text-neutral-400 group-hover:text-white transition-colors">
-                    {user.name}
-                  </span>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {user.subscriptionTier === "plus" ? (
+                    <span className="px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full">Plus</span>
+                  ) : (
+                    <Link href="/pricing" className="px-2 py-0.5 text-[10px] font-medium text-neutral-500 hover:text-white border border-neutral-700 hover:border-neutral-500 rounded-full transition-colors">
+                      Plus
+                    </Link>
+                  )}
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors text-sm font-medium group"
+                  >
+                    <span className="w-7 h-7 bg-white text-black flex items-center justify-center text-[11px] font-semibold tracking-wide shrink-0">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="hidden sm:inline text-[13px] text-neutral-400 group-hover:text-white transition-colors">
+                      {user.name}
+                    </span>
+                  </Link>
+                </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="px-4 py-1.5 border border-neutral-700 text-neutral-400 hover:border-neutral-400 hover:text-white transition-all text-[13px] tracking-wide ml-1"
-                >
-                  로그인
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link href="/pricing" className="px-2.5 py-1 text-[10px] font-medium text-neutral-500 hover:text-white border border-neutral-700 hover:border-neutral-500 rounded-full transition-colors">
+                    Plus
+                  </Link>
+                  <Link
+                    href={`/login?redirect=${encodeURIComponent(pathname)}`}
+                    className="px-4 py-1.5 border border-neutral-700 text-neutral-400 hover:border-neutral-400 hover:text-white transition-all text-[13px] tracking-wide"
+                  >
+                    {t.common.login}
+                  </Link>
+                </div>
               )}
             </div>
 
             {/* Mobile buttons */}
             <div className="flex items-center gap-1 md:hidden">
+              {/* Mobile language toggle */}
+              <button
+                onClick={() => setLocale(locale === "ko" ? "en" : "ko")}
+                className="w-7 h-7 flex items-center justify-center text-[10px] font-semibold text-neutral-400 hover:text-white rounded-full transition-colors"
+              >
+                {locale === "ko" ? "EN" : "KR"}
+              </button>
               <button
                 onClick={() => setSearchOpen(true)}
                 className="p-2 text-neutral-400 hover:text-white transition-colors"
@@ -155,7 +188,7 @@ export default function Navbar() {
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="p-2 text-neutral-400 hover:text-white transition-colors"
-                aria-label="메뉴"
+                aria-label="Menu"
               >
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen
@@ -195,7 +228,7 @@ export default function Navbar() {
                   onClick={closeMenu}
                   className="px-3 py-2.5 text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-white/5 rounded-sm transition-colors"
                 >
-                  관리자
+                  {t.common.admin}
                 </Link>
               )}
             </div>
@@ -215,11 +248,11 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <Link
-                  href="/login"
+                  href={`/login?redirect=${encodeURIComponent(pathname)}`}
                   onClick={closeMenu}
                   className="block px-4 py-2 border border-neutral-700 text-neutral-300 hover:border-neutral-400 hover:text-white transition-all text-sm tracking-wide text-center"
                 >
-                  로그인
+                  {t.common.login}
                 </Link>
               )}
             </div>

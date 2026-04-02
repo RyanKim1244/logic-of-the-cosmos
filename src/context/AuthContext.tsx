@@ -14,6 +14,8 @@ export interface User {
   is_admin: boolean;
   solvedProblems: string[];
   bookmarkedProblems: string[];
+  subscriptionTier: "free" | "plus";
+  subscriptionExpiresAt: string | null;
 }
 
 interface AuthContextType {
@@ -21,6 +23,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithOAuth: (provider: "google" | "github") => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<Pick<User, "name" | "bio">>) => Promise<void>;
   toggleSolved: (problemId: string) => Promise<void>;
@@ -66,7 +69,7 @@ async function fetchProfile(authUser: SupabaseUser): Promise<User | null> {
 async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
   // Run all three queries in parallel to eliminate the sequential waterfall
   const [profileResult, solvedResult, bookmarkedResult] = await Promise.allSettled([
-    supabase.from("profiles").select("id, email, name, created_at, bio, is_admin").eq("id", authUser.id).single(),
+    supabase.from("profiles").select("id, email, name, created_at, bio, is_admin, subscription_tier, subscription_expires_at").eq("id", authUser.id).single(),
     supabase.from("user_solved_problems").select("problem_id").eq("user_id", authUser.id),
     supabase.from("user_bookmarked_problems").select("problem_id").eq("user_id", authUser.id),
   ]);
@@ -78,6 +81,8 @@ async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
   const solved = solvedResult.status === "fulfilled" ? solvedResult.value.data : null;
   const bookmarked = bookmarkedResult.status === "fulfilled" ? bookmarkedResult.value.data : null;
 
+  const isExpired = profile.subscription_expires_at && new Date(profile.subscription_expires_at) < new Date();
+
   return {
     id: profile.id,
     email: profile.email,
@@ -87,6 +92,8 @@ async function fetchProfileInner(authUser: SupabaseUser): Promise<User | null> {
     is_admin: profile.is_admin,
     solvedProblems: solved?.map((s) => s.problem_id) || [],
     bookmarkedProblems: bookmarked?.map((b) => b.problem_id) || [],
+    subscriptionTier: (!isExpired && profile.subscription_tier === "plus") ? "plus" : "free",
+    subscriptionExpiresAt: profile.subscription_expires_at,
   };
 }
 
@@ -233,6 +240,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: false, error: "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요." };
   };
 
+  const loginWithOAuth = async (provider: "google" | "github") => {
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+  };
+
   const logout = async () => {
     // createBrowserClient manages auto-refresh internally.
     // signOut() cleans up the session and cookies automatically.
@@ -327,7 +343,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, toggleSolved, toggleBookmark }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithOAuth, logout, updateProfile, toggleSolved, toggleBookmark }}>
       {children}
     </AuthContext.Provider>
   );

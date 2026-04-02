@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ContributionHeatmapProps {
   solvedDates: string[];
@@ -14,9 +15,11 @@ function getColor(count: number): string {
   return "#047857";
 }
 
-const WEEKS = 26;
+const WEEKS = 52;
 
 export default function ContributionHeatmap({ solvedDates }: ContributionHeatmapProps) {
+  const { t, locale } = useLanguage();
+
   const { grid, monthLabels, totalSolved, currentStreak, longestStreak } = useMemo(() => {
     const countMap: Record<string, number> = {};
     for (const d of solvedDates) {
@@ -27,15 +30,18 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayDay = today.getDay(); // 0=Sun
+    const todayDay = today.getDay();
 
-    // Start aligned to Sunday, WEEKS weeks ago
     const start = new Date(today);
     start.setDate(start.getDate() - WEEKS * 7 - todayDay);
 
     const weeks: { date: string; count: number }[][] = [];
     const months: { label: string; weekIndex: number }[] = [];
     let prevMonth = -1;
+
+    const monthNames = locale === "en"
+      ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      : null;
 
     for (let w = 0; w <= WEEKS; w++) {
       const week: { date: string; count: number }[] = [];
@@ -48,13 +54,16 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
 
         if (d === 0 && date.getMonth() !== prevMonth) {
           prevMonth = date.getMonth();
-          months.push({ label: `${date.getMonth() + 1}월`, weekIndex: w });
+          const label = monthNames ? monthNames[date.getMonth()] : `${date.getMonth() + 1}월`;
+          const lastWeekIndex = months.length > 0 ? months[months.length - 1].weekIndex : -10;
+          if (w - lastWeekIndex >= 3) {
+            months.push({ label, weekIndex: w });
+          }
         }
       }
       weeks.push(week);
     }
 
-    // Longest streak
     let longest = 0;
     let streak = 0;
     for (let i = 0; i <= (WEEKS + 1) * 7; i++) {
@@ -70,7 +79,6 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
       }
     }
 
-    // Current streak
     let current = 0;
     for (let i = 0; ; i++) {
       const date = new Date(today);
@@ -90,7 +98,7 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
       currentStreak: current,
       longestStreak: longest,
     };
-  }, [solvedDates]);
+  }, [solvedDates, locale]);
 
   const CELL = 11;
   const GAP = 2;
@@ -101,23 +109,22 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
   const svgHeight = TOP_PAD + 7 * COL;
 
   const dayLabels = [
-    { label: "월", row: 1 },
-    { label: "수", row: 3 },
-    { label: "금", row: 5 },
+    { label: t.heatmap.mon, row: 1 },
+    { label: t.heatmap.wed, row: 3 },
+    { label: t.heatmap.fri, row: 5 },
   ];
 
   return (
-    <div className="border border-neutral-200 p-6">
+    <div className="border border-neutral-200 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">풀이 활동</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em]">{t.heatmap.title}</h2>
         <span className="text-xs text-neutral-500">
-          최근 {WEEKS}주간 <span className="font-medium text-black">{totalSolved}</span>문제 풀이
+          {t.heatmap.recentWeeks.replace("{weeks}", String(WEEKS))} <span className="font-medium text-black">{totalSolved}</span> {t.heatmap.solvedSuffix}
         </span>
       </div>
 
       <div className="overflow-x-auto">
         <svg width={svgWidth} height={svgHeight} className="block">
-          {/* Month labels */}
           {monthLabels.map((m, i) => (
             <text
               key={i}
@@ -130,7 +137,6 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
             </text>
           ))}
 
-          {/* Day labels */}
           {dayLabels.map((d) => (
             <text
               key={d.row}
@@ -143,7 +149,6 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
             </text>
           ))}
 
-          {/* Grid */}
           {grid.map((week, wi) =>
             week.map((day, di) => {
               if (day.count === -1) return null;
@@ -157,7 +162,7 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
                   rx={2}
                   fill={getColor(day.count)}
                 >
-                  <title>{day.date}: {day.count}문제</title>
+                  <title>{day.date}: {day.count} {t.heatmap.problemSuffix}</title>
                 </rect>
               );
             })
@@ -165,20 +170,19 @@ export default function ContributionHeatmap({ solvedDates }: ContributionHeatmap
         </svg>
       </div>
 
-      {/* Legend */}
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-4 text-xs text-neutral-400">
-          <span>연속 <span className="font-medium text-black">{currentStreak}</span>일</span>
-          <span>최장 <span className="font-medium text-black">{longestStreak}</span>일</span>
+          <span>{t.heatmap.streak} <span className="font-medium text-black">{currentStreak}</span>{t.heatmap.daySuffix}</span>
+          <span>{t.heatmap.longestStreak} <span className="font-medium text-black">{longestStreak}</span>{t.heatmap.daySuffix}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-neutral-400 mr-1">적음</span>
+          <span className="text-[10px] text-neutral-400 mr-1">{t.heatmap.less}</span>
           {[0, 1, 2, 3, 5].map((count) => (
             <svg key={count} width={CELL} height={CELL}>
               <rect width={CELL} height={CELL} rx={2} fill={getColor(count)} />
             </svg>
           ))}
-          <span className="text-[10px] text-neutral-400 ml-1">많음</span>
+          <span className="text-[10px] text-neutral-400 ml-1">{t.heatmap.more}</span>
         </div>
       </div>
     </div>

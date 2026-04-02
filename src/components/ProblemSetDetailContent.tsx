@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
 import { getDisplayText } from "@/lib/multilang";
 import type { Problem } from "@/types";
@@ -28,6 +29,7 @@ interface SetDetail {
 
 export default function ProblemSetDetailContent({ setId }: { setId: string }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [setDetail, setSetDetail] = useState<SetDetail | null>(null);
   const [problems, setProblems] = useState<SetProblem[]>([]);
@@ -164,7 +166,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
               <h1 className="text-2xl font-light">{setDetail.title}</h1>
               {!setDetail.isPublic && (
                 <span className="text-[10px] px-1.5 py-0.5 border border-neutral-200 rounded-md text-neutral-400 uppercase">
-                  비공개
+                  {t.problemSetsPage.private}
                 </span>
               )}
             </div>
@@ -194,7 +196,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
                 onClick={() => setExamMode(true)}
                 className="px-5 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
               >
-                모의시험 시작
+                {t.problemSetsPage.startExam}
               </button>
             )}
             {isOwner && (
@@ -202,7 +204,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
                 onClick={handleDelete}
                 className="px-5 py-2.5 border border-neutral-200 text-xs text-neutral-400 tracking-widest uppercase hover:border-red-300 hover:text-red-500 transition-colors"
               >
-                삭제
+                {t.common.delete}
               </button>
             )}
           </div>
@@ -220,10 +222,10 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
 
       {/* Problem List */}
       <section>
-        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">문제 목록</h2>
+        <h2 className="text-xs text-neutral-400 uppercase tracking-[0.3em] mb-4">{t.problemSetsPage.problemList}</h2>
         {problems.length === 0 ? (
           <div className="border border-neutral-200 rounded-xl p-8 text-center">
-            <p className="text-neutral-400 text-sm">이 세트에 문제가 없습니다.</p>
+            <p className="text-neutral-400 text-sm">{t.problemSetsPage.noProblems}</p>
           </div>
         ) : (
           <div className="space-y-2">
