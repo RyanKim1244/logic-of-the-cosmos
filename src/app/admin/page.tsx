@@ -176,8 +176,8 @@ export default function AdminPage() {
     setFetchError(null);
     try {
       const [pRes, cRes] = await Promise.allSettled([
-        withRetry(async () => withTimeout(supabase.from("problems").select("id, problem_number, title, source, year, tags, created_at, updated_at").order("problem_number"), 10000, sig)),
-        withRetry(async () => withTimeout(supabase.from("contests").select("*"), 8000, sig)),
+        supabase.from("problems").select("id, problem_number, title, source, year, tags, created_at, updated_at").order("problem_number"),
+        supabase.from("contests").select("*"),
       ]);
 
       if (sig?.aborted) return;

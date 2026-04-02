@@ -41,15 +41,6 @@ export default function ProblemDetailContent({
   const { user, toggleSolved, toggleBookmark } = useAuth();
   const { t, locale } = useLanguage();
   const [problem, setProblem] = useState<Problem>(initialProblem);
-
-  // Force refresh when returning from bfcache (fixes disappearing buttons)
-  useEffect(() => {
-    const handler = (e: PageTransitionEvent) => {
-      if (e.persisted) setProblem({ ...initialProblem });
-    };
-    window.addEventListener("pageshow", handler);
-    return () => window.removeEventListener("pageshow", handler);
-  }, [initialProblem]);
   const [solvedCount, setSolvedCount] = useState(initialSolvedCount);
   const [showSolution, setShowSolution] = useState(false);
   const [activeLang, setActiveLang] = useState<string | null>(null);
@@ -105,6 +96,7 @@ export default function ProblemDetailContent({
           content: data.content,
           officialSolution: data.official_solution,
           problemUrl: data.problem_url ?? null,
+          solutionUrl: data.solution_url ?? null,
           createdAt: data.created_at,
           updatedAt: data.updated_at,
         });
