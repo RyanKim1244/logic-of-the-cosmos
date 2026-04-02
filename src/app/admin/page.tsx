@@ -286,10 +286,8 @@ export default function AdminPage() {
       ));
     } else {
       const id = `custom-${Date.now()}`;
-      const maxNum = allProblems.length > 0
-        ? Math.max(...allProblems.map((p) => p.problem_number || 0))
-        : 999;
-      const nextNumber = Math.max(maxNum + 1, 1000);
+      const { data: maxRow } = await supabase.from("problems").select("problem_number").order("problem_number", { ascending: false }).limit(1).single();
+      const nextNumber = Math.max((maxRow?.problem_number ?? 999) + 1, 1000);
       const { data, error } = await supabase.from("problems").insert({
         id, problem_number: nextNumber, title: titleStr, source: finalSource, year: finalYear,
         tags, content: contentStr, official_solution: solutionStr,
