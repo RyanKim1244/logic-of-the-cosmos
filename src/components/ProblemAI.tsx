@@ -417,7 +417,7 @@ export default function ProblemAI({
                 {showProHint && !isPlus ? (
                   <Link
                     href="/pricing"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/60 rounded-full text-[10px] text-blue-600 hover:from-blue-100 hover:to-purple-100 hover:border-blue-300 transition-all font-medium animate-fade-slide-up animate-subtle-vibrate"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/60 rounded-full text-[10px] text-blue-600 hover:from-blue-100 hover:to-purple-100 hover:border-blue-300 transition-all font-medium"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />

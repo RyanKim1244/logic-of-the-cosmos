@@ -139,7 +139,7 @@ export default function ContestDetailContent({ contest, contestProblems }: Conte
   const problemsByYear = contest.years
     .map((year) => ({
       year,
-      problems: contestProblems.filter((p) => p.year === year),
+      problems: contestProblems.filter((p) => p.year === year).sort((a, b) => a.problem_number - b.problem_number),
     }))
     .filter((group) => group.problems.length > 0);
 
@@ -246,7 +246,7 @@ export function ContestSectionContent({ contest, contestProblems, sectionPath }:
   const problemsByYear = contest.years
     .map((year) => ({
       year,
-      problems: directProblems.filter((p) => p.year === year),
+      problems: directProblems.filter((p) => p.year === year).sort((a, b) => a.problem_number - b.problem_number),
     }))
     .filter((group) => group.problems.length > 0);
 
@@ -338,7 +338,7 @@ export function ContestSectionContent({ contest, contestProblems, sectionPath }:
         )
       ) : directProblems.length > 0 ? (
         <div className="space-y-2">
-          {directProblems.map((problem) => (
+          {[...directProblems].sort((a, b) => a.problem_number - b.problem_number).map((problem) => (
             <Link key={problem.id} href={`/problems/${problem.id}`} className="block">
               <div className="border border-neutral-200 rounded-xl px-6 py-6 hover:border-black hover:shadow-sm transition-all duration-200 bg-white group flex items-center gap-4">
                 <span className="text-[10px] text-neutral-300 font-mono shrink-0">#{problem.problem_number}</span>
