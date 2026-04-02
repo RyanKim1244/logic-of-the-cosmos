@@ -16,7 +16,7 @@ interface ProblemOption {
 
 export default function ProblemSetsContent() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [sets, setSets] = useState<ProblemSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -72,7 +72,7 @@ export default function ProblemSetsContent() {
         title: s.title,
         description: s.description || "",
         ownerId: s.owner_id,
-        ownerName: ownerMap.get(s.owner_id) || "알 수 없음",
+        ownerName: ownerMap.get(s.owner_id) || "Unknown",
         isPublic: s.is_public,
         timeLimitMinutes: s.time_limit_minutes,
         problemCount: itemCounts[s.id] || 0,
@@ -289,7 +289,7 @@ export default function ProblemSetsContent() {
               disabled={creating || !newTitle.trim() || selectedProblems.length === 0}
               className="px-6 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-40"
             >
-              {creating ? "생성 중..." : `세트 생성 (${selectedProblems.length}문제)`}
+              {creating ? (locale === "ko" ? "생성 중..." : "Creating...") : (locale === "ko" ? `세트 생성 (${selectedProblems.length}문제)` : `Create Set (${selectedProblems.length})`)}
             </button>
           </div>
         </div>

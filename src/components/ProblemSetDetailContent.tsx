@@ -65,7 +65,7 @@ export default function ProblemSetDetailContent({ setId }: { setId: string }) {
         title: setData.title,
         description: setData.description || "",
         ownerId: setData.owner_id,
-        ownerName: ownerProfile?.name || "알 수 없음",
+        ownerName: ownerProfile?.name || "Unknown",
         isPublic: setData.is_public,
         timeLimitMinutes: setData.time_limit_minutes,
         createdAt: setData.created_at,

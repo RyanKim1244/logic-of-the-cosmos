@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
 import type { Problem } from "@/types";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -16,6 +17,7 @@ interface ExamModeProps {
 
 export default function ExamMode({ problemSetId, problemSetTitle, problems, timeLimitMinutes }: ExamModeProps) {
   const { user } = useAuth();
+  const { locale } = useLanguage();
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -335,7 +337,7 @@ export default function ExamMode({ problemSetId, problemSetTitle, problems, time
                 : "border border-neutral-200 hover:border-black"
             }`}
           >
-            {currentIndex === problems.length - 1 ? "제출" : "다음"}
+            {currentIndex === problems.length - 1 ? (locale === "ko" ? "제출" : "Submit") : (locale === "ko" ? "다음" : "Next")}
           </button>
         </div>
       </div>

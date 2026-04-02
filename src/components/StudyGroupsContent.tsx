@@ -9,7 +9,7 @@ import type { StudyGroup } from "@/types";
 
 export default function StudyGroupsContent() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -57,7 +57,7 @@ export default function StudyGroupsContent() {
         name: g.name,
         description: g.description || "",
         ownerId: g.owner_id,
-        ownerName: ownerMap.get(g.owner_id) || "알 수 없음",
+        ownerName: ownerMap.get(g.owner_id) || "Unknown",
         memberCount: memberCounts[g.id] || 0,
         createdAt: g.created_at,
       }))
@@ -134,7 +134,7 @@ export default function StudyGroupsContent() {
               disabled={creating || !newName.trim()}
               className="px-6 py-2.5 bg-black text-white text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors disabled:opacity-40"
             >
-              {creating ? "생성 중..." : "생성"}
+              {creating ? (locale === "ko" ? "생성 중..." : "Creating...") : (locale === "ko" ? "생성" : "Create")}
             </button>
           </div>
         </div>

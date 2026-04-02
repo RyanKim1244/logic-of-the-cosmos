@@ -58,7 +58,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       name: g.name,
       description: g.description || "",
       ownerId: g.owner_id,
-      ownerName: ownerProfile?.name || "알 수 없음",
+      ownerName: ownerProfile?.name || "Unknown",
       createdAt: g.created_at,
     });
 
@@ -74,7 +74,7 @@ export default function StudyGroupDetailContent({ groupId }: { groupId: string }
       const mappedMembers: StudyGroupMember[] = memberData.map((m) => ({
         groupId: m.group_id,
         userId: m.user_id,
-        userName: nameMap.get(m.user_id) || "알 수 없음",
+        userName: nameMap.get(m.user_id) || "Unknown",
         role: m.role as "owner" | "member",
         joinedAt: m.joined_at,
       }));

@@ -1,37 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface ProblemSourceCardProps {
   source: string;
   problemUrl?: string | null;
   solutionUrl?: string | null;
-  contestId?: string | null;
 }
 
-export default function ProblemSourceCard({ source, problemUrl, solutionUrl, contestId }: ProblemSourceCardProps) {
+export default function ProblemSourceCard({ source, problemUrl, solutionUrl }: ProblemSourceCardProps) {
   const { t, locale } = useLanguage();
 
   return (
     <div className="border border-neutral-200 rounded-xl mb-6">
-      <div className="px-8 sm:px-10 py-8">
-        {contestId ? (
-          <Link href={`/contests/${contestId}`} className="text-base font-medium text-black hover:underline mb-5 inline-block">
-            {source} →
-          </Link>
-        ) : (
-          <p className="text-base font-medium text-black mb-5">{source}</p>
-        )}
+      <div className="px-8 sm:px-10 py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <p className="text-base font-medium text-black">{source}</p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {/* Problem link */}
           {problemUrl ? (
             <a
               href={problemUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-black text-white text-xs font-medium tracking-widest hover:bg-neutral-800 transition-colors rounded-lg"
+              className="group inline-flex items-center gap-2.5 px-6 py-3 bg-black text-white text-xs font-medium tracking-widest hover:bg-neutral-800 transition-colors rounded-lg"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -40,7 +32,7 @@ export default function ProblemSourceCard({ source, problemUrl, solutionUrl, con
               {t.problemDetail.viewProblem}
             </a>
           ) : (
-            <div className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-neutral-200 text-xs text-neutral-400 cursor-not-allowed rounded-lg">
+            <div className="inline-flex items-center gap-2 px-6 py-3 border border-neutral-200 text-xs text-neutral-400 cursor-not-allowed rounded-lg">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -49,13 +41,12 @@ export default function ProblemSourceCard({ source, problemUrl, solutionUrl, con
             </div>
           )}
 
-          {/* Solution link */}
           {solutionUrl && (
             <a
               href={solutionUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center justify-center gap-2.5 px-6 py-3 border border-neutral-200 text-black text-xs font-medium tracking-widest hover:border-black hover:bg-neutral-50 transition-colors rounded-lg"
+              className="group inline-flex items-center gap-2.5 px-6 py-3 border border-neutral-200 text-black text-xs font-medium tracking-widest hover:border-black hover:bg-neutral-50 transition-colors rounded-lg"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

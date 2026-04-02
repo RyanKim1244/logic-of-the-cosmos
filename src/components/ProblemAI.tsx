@@ -200,7 +200,6 @@ export default function ProblemAI({
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-black">{t.ai.title}</p>
-            <p className="text-[11px] text-neutral-400 mt-0.5">{t.ai.subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

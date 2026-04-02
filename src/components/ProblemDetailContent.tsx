@@ -39,7 +39,7 @@ export default function ProblemDetailContent({
   contestId,
 }: ProblemDetailContentProps) {
   const { user, toggleSolved, toggleBookmark } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [problem, setProblem] = useState<Problem>(initialProblem);
   const [solvedCount, setSolvedCount] = useState(initialSolvedCount);
   const [showSolution, setShowSolution] = useState(false);
@@ -144,7 +144,13 @@ export default function ProblemDetailContent({
           문제 목록
         </Link>
         <span className="text-neutral-200 text-xs">/</span>
-        <span className="text-neutral-400 text-xs font-mono">{isOriginal ? "LoTC" : problem.source}</span>
+        {!isOriginal && contestId ? (
+          <Link href={`/contests/${contestId}`} className="text-neutral-400 text-xs font-mono hover:text-black transition-colors">
+            {problem.source}
+          </Link>
+        ) : (
+          <span className="text-neutral-400 text-xs font-mono">{isOriginal ? "LoTC" : problem.source}</span>
+        )}
       </nav>
 
       {/* Problem Header */}
@@ -180,9 +186,13 @@ export default function ProblemDetailContent({
               <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">{t.problemDetail.lotcOriginal}</span>
             )}
             {!isOriginal && <span className="w-1.5 h-1.5 bg-black rounded-full" />}
-            {!isOriginal && (
+            {!isOriginal && contestId ? (
+              <Link href={`/contests/${contestId}`} className="text-xs font-medium text-black hover:underline">
+                {problem.source}
+              </Link>
+            ) : !isOriginal ? (
               <span className="text-xs font-medium text-black">{problem.source}</span>
-            )}
+            ) : null}
           </div>
           {solvedCount > 0 && (
             <div className="flex items-center gap-1 text-xs text-neutral-400">
@@ -220,7 +230,7 @@ export default function ProblemDetailContent({
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              {isSolved ? "풀이 완료!" : "풀이 완료 표시"}
+              {isSolved ? (locale === "ko" ? "풀이 완료!" : "Solved!") : (locale === "ko" ? "풀이 완료 표시" : "Mark as Solved")}
             </button>
             <button
               onClick={() => toggleBookmark(id)}
@@ -233,7 +243,7 @@ export default function ProblemDetailContent({
               <svg className="w-3.5 h-3.5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
-              {isBookmarked ? "북마크됨" : "북마크"}
+              {isBookmarked ? (locale === "ko" ? "북마크됨" : "Bookmarked") : (locale === "ko" ? "북마크" : "Bookmark")}
             </button>
           </div>
         )}
@@ -295,7 +305,6 @@ export default function ProblemDetailContent({
           source={problem.source}
           problemUrl={problem.problemUrl}
           solutionUrl={problem.solutionUrl}
-          contestId={contestId}
         />
       )}
 

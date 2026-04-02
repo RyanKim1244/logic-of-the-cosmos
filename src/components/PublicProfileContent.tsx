@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { getDisplayText } from "@/lib/multilang";
 
 const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), {
@@ -45,6 +46,7 @@ export default function PublicProfileContent({
   solveHistory,
 }: PublicProfileContentProps) {
   const { user } = useAuth();
+  const { locale } = useLanguage();
   const router = useRouter();
 
   // Redirect to own profile page if viewing self
@@ -132,7 +134,7 @@ export default function PublicProfileContent({
                       className="block border border-emerald-300 p-3 hover:border-black transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0" title="풀이 완료">
+                        <span className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0" title={locale === "ko" ? "풀이 완료" : "Solved"}>
                           <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>

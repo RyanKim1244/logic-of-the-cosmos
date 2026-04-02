@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { supabase, withTimeout, withRetry } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import LatexRenderer from "@/components/LatexRenderer";
 import ImageUploadButton from "@/components/ImageUploadButton";
 
@@ -18,6 +19,7 @@ interface Solution {
 
 export default function SolutionSection({ problemId }: { problemId: string }) {
   const { user } = useAuth();
+  const { locale } = useLanguage();
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [newSolution, setNewSolution] = useState("");
   const [isWriting, setIsWriting] = useState(false);
@@ -276,7 +278,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
       {/* Solutions list */}
       {sortedSolutions.length === 0 && !isWriting ? (
         <p className="text-neutral-400 text-center py-8 text-xs">
-          아직 공유된 풀이가 없습니다. {user ? "첫 번째 풀이를 작성해보세요!" : "로그인 후 풀이를 작성할 수 있습니다."}
+          {locale === "ko" ? "아직 공유된 풀이가 없습니다." : "No shared solutions yet."} {user ? (locale === "ko" ? "첫 번째 풀이를 작성해보세요!" : "Write the first solution!") : (locale === "ko" ? "로그인 후 풀이를 작성할 수 있습니다." : "Log in to write a solution.")}
         </p>
       ) : (
         <div className="space-y-4">
@@ -292,7 +294,7 @@ export default function SolutionSection({ problemId }: { problemId: string }) {
                       onClick={(e) => { e.stopPropagation(); handleUpvote(solution.id); }}
                       disabled={!user}
                       className={`p-1 transition-colors ${votedSolutions.has(solution.id) ? "text-black" : "text-neutral-300 hover:text-neutral-500"} disabled:cursor-not-allowed`}
-                      title={user ? (votedSolutions.has(solution.id) ? "추천 취소" : "추천") : "로그인 후 추천할 수 있습니다"}
+                      title={user ? (votedSolutions.has(solution.id) ? (locale === "ko" ? "추천 취소" : "Unvote") : (locale === "ko" ? "추천" : "Upvote")) : (locale === "ko" ? "로그인 후 추천할 수 있습니다" : "Log in to upvote")}
                     >
                       <svg className="w-4 h-4" fill={votedSolutions.has(solution.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
